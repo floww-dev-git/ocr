@@ -1,0 +1,190 @@
+$comment: 'Reference schema for YAML task-breakdown files (tasks-ADR-*.yaml — the single tasks format).
+  This is a human/LLM-readable CONTRACT DOCUMENT, not a JSON-Schema file — it is never $ref''d or run
+  through a JSON-Schema validator. The executable version of these rules lives in code:
+  .claude/scripts/tasks_lib.py''s validate_schema() (structural: required fields, enums, duplicate ids,
+  quoted-string ids), check_tick_evidence() (a ''done'' task needs >=1 resolving artifact),
+  check_ordering() (depends_on graph: unknown ids, cycles, done-before-dependency), and
+  check_slice_naming() (a slice/foundation outcome is a caller-nameable behaviour, never a bare layer
+  noun). validate_all() runs all four and is fired on every
+  write by the check-tasks-yaml.py PostToolUse hook. A tasks-*.yaml file is one object shaped like
+  ''feature'' below; its ''tasks'' array holds objects shaped like ''task'' below.'
+feature:
+  $comment: Top-level shape of a tasks-ADR-*.yaml file — one file per approved ADR/plan, under a
+    feature's tasks/ folder, per feature-folder.md.
+  adr:
+    type: string
+    required: true
+    $comment: Required. Repo-relative path to the ADR this task breakdown implements, e.g. 'workflow_engine/docs/features/workflow-engine-consolidation/ADR-003-s2-guard-battery.md'.
+      validate_schema() flags the file if this key is absent.
+  module:
+    type: string
+    required: false
+    $comment: Optional. The single app/module this breakdown is scoped to, when the feature is module-scale
+      (the design-module 'module lane'), e.g. 'workflow_engine'. Omit for a feature-lane breakdown that
+      spans multiple apps — the per-task 'outline'/'inputs' fields carry app context instead.
+  what:
+    type: string
+    required: false
+    $comment: Optional. One-line summary of what this breakdown delivers, for a reader who hasn't read
+      the ADR yet. Omit when the ADR title already says it plainly.
+  tasks:
+    type: array
+    items: task
+    required: true
+    $comment: 'Required. The task list — see ''task'' below for the shape of each entry. Array order is
+      authoring order (roughly: foundation, then each slice''s tasks in id order); EXECUTION order is
+      computed from depends_on by tasks_lib.compute_ordering(), not from array position.'
+  carried_flags:
+    type: array
+    items: string
+    required: true
+    $comment: Required, may be an empty array. Flags carried over from planning that must survive into
+      execution unchanged — e.g. a T-trigger the user explicitly overruled, or a scope decision deferred
+      to a later slice. Rendered in the markdown view's footer so they stay visible while work proceeds.
+  decisions:
+    type: array
+    items: string
+    required: true
+    $comment: Required, may be an empty array. One-line records of decisions made during task breakdown
+      that a later reader (or a resumed session) needs without re-deriving them — e.g. why a contract
+      task was split out, or which of two designs was picked and what it was chosen over.
+task:
+  $comment: One entry in the feature's 'tasks' array. All fields are required except 'commit'.
+  id:
+    type: string
+    required: true
+    $comment: 'Required, unique across the file (validate_schema() flags duplicates). Dotted id encoding
+      position: ''1.0'' style ids for foundation/standalone tasks, ''N.0'' for a slice''s parent row,
+      ''N.1'', ''N.2'', ... for the tasks under slice N.'
+  type:
+    type: string
+    enum:
+    - slice
+    - foundation
+    - task
+    - composition
+    - refactor
+    required: true
+    $comment: 'Required. slice = a caller-nameable vertical behaviour (the parent row for a group of N.x
+      tasks — describes the behaviour, is not itself directly implemented). foundation = groundwork a
+      slice depends on (shared contracts, base infrastructure) that precedes slice work. task = a leaf
+      unit of implementation work (the common case). composition = wires already-built leaves together at
+      a composition root — e.g. a GraphQL resolver, or the integration closer that wires an already-built,
+      mock-tested interactor to its real storage/collaborators (engineering-canon.md: consumer-first — the
+      interactor itself is a regular early task, NOT a composition). refactor = restructures existing code
+      with no new externally-visible behaviour.'
+  status:
+    type: string
+    enum:
+    - todo
+    - in_progress
+    - done
+    required: true
+    $comment: 'Required. ''done'' is gated by tick-evidence: tasks_lib.check_tick_evidence() requires
+      at least one entry in this task''s ''artifacts'' to resolve to a real path or a symbol found via
+      grep in tracked/untracked *.py — docs don''t count. tasks.py tick refuses (fail-closed, file left
+      untouched) if the resulting file wouldn''t pass validate_all().'
+  outcome:
+    type: string
+    required: true
+    $comment: 'Required. **What becomes true when this task is done** — verb-first, ONE clause, ~120 chars,
+      no trailing elaboration. e.g. ''Block a move when the item''s fields fail validation''. Caller-nameable,
+      never a layer name (engineering-canon.md, Vertical Slicing/INVEST: ''can a caller name the behaviour a
+      task delivers?'' — enforced by check_slice_naming for slice/foundation rows). It is the headline in the
+      markdown view (render_markdown()), so it must read like a checklist item. The tell in every bloated one
+      is an em-dash followed by a second thought — that second thought belongs in `outline`. Plain words —
+      see ''outline''.'
+  user_stories:
+    type: array
+    items: string
+    required: true
+    $comment: Required, may be an empty array (typical for a 'foundation' or pure 'refactor' task with
+      no directly-traceable story). Story ids this task serves, e.g. ['US-3', 'US-4'] — traces the task
+      back to the epic story file (<owning_app>/docs/user_stories/<epic-slug>.md).
+  depends_on:
+    type: array
+    items: string
+    required: true
+    $comment: Required, may be an empty array. Ids of tasks that must reach status 'done' before THIS
+      task may be marked 'done'. Drives tasks_lib.check_ordering() (unknown-id detection, cycle detection
+      via DFS colouring, done-before-dependency detection) and compute_ordering() (Kahn's-algorithm topological
+      layers -> the parallel/'||' groups shown in the rendered view).
+  inputs:
+    type: array
+    items: string
+    required: true
+    $comment: 'Required, may be an empty array. **The TYPES this task''s code consumes** — a signature,
+      not a reading list: `inputs -> task -> output`. One type name per entry, e.g. [''TransitionContext'',
+      ''FieldCriteriaConfig'']. Generic forms are fine (''List[GuardResult]'', ''Optional[Transition]'').
+      NEVER a file path (that''s `artifacts`), a task id (`depends_on`), a story id (`user_stories`), an
+      ADR reference (the top-level `adr` + `outline`''s link), or a sentence. Warn-checked by
+      tasks_lib.check_readability(). *(Redefined 2026-07-16, user ruling. The field was NAMED like a
+      signature and USED like a bibliography: measured across REF-001''s 77 tasks, `inputs` restated a
+      `depends_on` id 49%, the ADR 75%, a `user_stories` id 25% — and the file paths it did carry were
+      groping at types anyway (''dtos/guard_dtos.py'' wanting to be ''GuardResult''). Reading it as a
+      signature deletes the duplication and loses nothing — every part of the old bibliography already
+      had a home. A plain string still validates; files predating this rule carry one.)*'
+  output:
+    type: string
+    required: true
+    $comment: 'Required. **The TYPE this task produces** — the other half of the signature: a class,
+      an interface, a test class. e.g. ''FieldCriteriaGuard''. NOT a path — paths live in `artifacts`,
+      which is the field the tick-evidence check actually reads. ~120 chars. *(Files predating
+      2026-07-16 hold paths here; warn-checked, never blocking.)*'
+  outline:
+    type: string
+    required: true
+    $comment: 'Required. **The approach — ONLY the part a competent developer would get wrong.** ~300 chars
+      (an ''L'' task''s planned-split statement may reach ~500). NOT what (that''s `outcome`), NOT where
+      (that''s `output`/`artifacts`), NOT why (that''s the ADR — LINK it, ''see ADR §N'', never paste it).
+      If the task is obvious from the other fields, this is one line or empty — that is a correct outline,
+      not a lazy one. *(Sharpened 2026-07-16: the contract previously read "`output` + `outline` = WHAT +
+      WHERE + the exact semantic" while `outcome` already owned WHAT and `output` owned WHERE — outline was
+      INSTRUCTED to duplicate two sibling fields, which is half of why it averaged 986 chars. Only the
+      "exact semantic" survives.)* Plain words: name things (''ExecuteTransitionInteractor''), never coin a
+      feature-local metaphor (''the door'') — see plain-language.md. Warn-checked by
+      tasks_lib.check_readability().'
+  cases:
+    type: array
+    items: string
+    required: true
+    $comment: 'Required, may be an empty array for ''slice'' (a parent row that describes behaviour but
+      is not itself directly implemented), ''composition'', or ''refactor'' tasks that add no new case
+      list. Otherwise this is the task''s red-green-refactor Cases: list per dev-loop.md — one entry per
+      cycle (happy path, failure paths, edges), each traced to an acceptance criterion or an Error-Scenarios
+      row.'
+  size:
+    type: string
+    enum:
+    - S
+    - M
+    - L
+    required: true
+    $comment: 'Required. Feeds tasks_lib.progress()''s size-weighted completion ratio: S=1, M=2, L=4 (Global
+      Constraints, tasks-json-implementation-plan.md).'
+  tier:
+    type: string
+    enum:
+    - mechanical
+    - judgment
+    required: true
+    $comment: 'Required. Per the tier contract in task-breakdown/SKILL.md: routes the worker model a
+      task-coordinator spawns for this task (''mechanical'' -> a cheaper model, ''judgment'' -> frontier).
+      A task touching tenancy scope, gating/guards, payments, or auth floors at the mechanical tier
+      regardless of how mechanical it looks (consequence-bearing floor) and always keeps its independent
+      review.'
+  artifacts:
+    type: array
+    items: string
+    required: true
+    $comment: Required, may be an empty array while status != 'done'. Hand-authored list of real repo
+      paths and/or symbol names (function/class names) that prove this task's work exists. See 'status'
+      above for how this gates 'done'. Docs (*.md) are never sufficient evidence on their own.
+  commit:
+    type:
+    - string
+    - 'null'
+    required: false
+    $comment: Optional; absent or null until the task's per-task local commit is made (dev-loop.md, 'Commit
+      Frequently, Gate Once'). Once set, holds the git short-SHA that closed this task. Consumed by tasks.py
+      series to build the push-gate's commit-series listing.

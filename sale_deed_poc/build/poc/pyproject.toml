@@ -1,0 +1,18 @@
+[project]
+name = "deed-chain-validator-poc"
+version = "0.1.0"
+description = "Solution 4 — Sale Deed Chain Validator prototype (upload deeds → analyze → chain verdict)"
+requires-python = ">=3.11"
+dependencies = [
+    "fastapi>=0.115",
+    "uvicorn[standard]>=0.30",
+    "python-multipart>=0.0.9",
+    "google-genai>=0.8",
+    "pypdfium2>=4.30",
+    "pillow>=10.4",
+    "rapidfuzz>=3.9",
+    "pydantic>=2.8",
+]
+
+[dependency-groups]
+dev = ["pytest>=8"]

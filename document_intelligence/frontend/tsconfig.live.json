@@ -1,0 +1,16 @@
+{
+  "//": "Only for the live verification script: tsx needs a tsconfig that actually carries the path alias, which the solution-style root file does not.",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2023", "DOM"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "types": ["node"],
+    "skipLibCheck": true,
+    "strict": true,
+    "noEmit": true,
+    "baseUrl": ".",
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src/test/liveRun.integration.ts", "src/api", "src/scrutiny"]
+}

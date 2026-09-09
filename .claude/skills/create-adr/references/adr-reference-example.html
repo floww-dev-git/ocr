@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anatomy of a Good ADR — Reference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --paper:#E6ECEA;        /* cool drafting vellum */
+    --paper-2:#DEE6E4;
+    --panel:#F5F8F7;        /* raised panels / cards */
+    --ink:#141E26;          /* primary text */
+    --ink-soft:#485A64;     /* secondary */
+    --muted:#8A99A0;        /* N/A, captions */
+    --rule:#C4D0CE;         /* hairlines */
+    --rule-strong:#A7B6B4;
+    --signal:#0E9C86;       /* verdigris — decision / lit */
+    --signal-deep:#0A6E5F;
+    --signal-glow:rgba(14,156,134,.28);
+    --alert:#C0730A;        /* amber — attention */
+    --alert-soft:#F0E2C6;
+    --shadow:22,30,38;
+    --mono:"IBM Plex Mono",ui-monospace,SFMono-Regular,Menlo,monospace;
+    --sans:"IBM Plex Sans",system-ui,sans-serif;
+    --disp:"Space Grotesk",var(--sans);
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    font-family:var(--sans);
+    color:var(--ink);
+    background:
+      radial-gradient(1200px 500px at 80% -10%, #EEF3F1 0%, transparent 60%),
+      var(--paper);
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+    padding-bottom:5rem;
+  }
+  a{color:inherit}
+
+  /* ---------- Masthead ---------- */
+  .masthead{
+    max-width:1180px;margin:0 auto;padding:3.2rem 1.5rem 1.6rem;
+  }
+  .eyebrow{
+    font-family:var(--mono);font-size:.72rem;letter-spacing:.34em;
+    text-transform:uppercase;color:var(--signal-deep);font-weight:600;
+    display:flex;align-items:center;gap:.7rem;
+  }
+  .eyebrow::before{content:"";width:26px;height:2px;background:var(--signal);display:inline-block}
+  .masthead h1{
+    font-family:var(--disp);font-weight:700;letter-spacing:-.02em;
+    font-size:clamp(2.1rem,5.4vw,3.5rem);line-height:1.02;margin:.7rem 0 .5rem;
+  }
+  .masthead h1 .thin{font-weight:400;color:var(--ink-soft)}
+  .lede{max-width:60ch;color:var(--ink-soft);font-size:1.02rem}
+  .lede b{color:var(--ink);font-weight:600}
+
+  /* ---------- Toolbar ---------- */
+  .toolbar{
+    max-width:1180px;margin:1.4rem auto 0;padding:0 1.5rem;
+    display:flex;flex-wrap:wrap;gap:.8rem 1.2rem;align-items:center;
+  }
+  .legend{
+    display:flex;gap:1.1rem;flex-wrap:wrap;font-family:var(--mono);
+    font-size:.72rem;color:var(--ink-soft);align-items:center;
+  }
+  .legend .k{display:inline-flex;align-items:center;gap:.4rem}
+  .seg{width:9px;height:13px;border-radius:1px;display:inline-block}
+  .seg.on{background:var(--signal)}
+  .seg.free{background:var(--rule)}
+  .seg.over{background:var(--alert)}
+  .toggle{
+    margin-left:auto;font-family:var(--mono);font-size:.76rem;font-weight:500;
+    border:1px solid var(--rule-strong);background:var(--panel);color:var(--ink);
+    padding:.5rem .9rem;border-radius:2px;cursor:pointer;letter-spacing:.02em;
+    display:inline-flex;align-items:center;gap:.5rem;transition:.18s;
+  }
+  .toggle:hover{border-color:var(--signal);color:var(--signal-deep)}
+  .toggle .dot{width:8px;height:8px;border-radius:50%;background:var(--muted);transition:.18s}
+  body.notes-on .toggle{border-color:var(--signal);color:var(--signal-deep);background:#EAF6F3}
+  body.notes-on .toggle .dot{background:var(--signal);box-shadow:0 0 0 3px var(--signal-glow)}
+
+  /* ---------- Layout ---------- */
+  .wrap{
+    max-width:1180px;margin:1.8rem auto 0;padding:0 1.5rem;
+    display:grid;grid-template-columns:230px 1fr;gap:2.4rem;align-items:start;
+  }
+  /* left rail */
+  .rail{position:sticky;top:1.4rem}
+  .rail .plate-label{
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:.7rem;
+  }
+  .navlink{
+    display:flex;align-items:center;gap:.55rem;text-decoration:none;
+    font-family:var(--mono);font-size:.8rem;color:var(--ink-soft);
+    padding:.34rem 0;border-left:2px solid transparent;padding-left:.7rem;
+    transition:.16s;
+  }
+  .navlink .no{color:var(--muted);font-weight:600;min-width:1.6rem}
+  .navlink:hover,.navlink.active{color:var(--signal-deep);border-left-color:var(--signal)}
+  .navlink:hover .no,.navlink.active .no{color:var(--signal)}
+
+  /* ---------- Document ---------- */
+  .doc{max-width:820px}
+
+  /* spec plate (ADR header) */
+  .plate{
+    background:linear-gradient(180deg,var(--panel),#EEF3F1);
+    border:1px solid var(--rule-strong);border-radius:3px;
+    padding:1.3rem 1.4rem;margin-bottom:2.4rem;position:relative;overflow:hidden;
+    box-shadow:0 1px 0 #fff inset, 0 12px 30px -22px rgba(var(--shadow),.9);
+  }
+  .plate::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--signal)}
+  .plate .id{font-family:var(--disp);font-weight:700;font-size:1.5rem;letter-spacing:-.01em}
+  .plate .id small{font-family:var(--mono);font-size:.7rem;font-weight:500;color:var(--muted);
+    letter-spacing:.2em;display:block;text-transform:uppercase;margin-bottom:.2rem}
+  .status-stamp{
+    position:absolute;top:1.2rem;right:1.3rem;font-family:var(--mono);font-weight:600;
+    font-size:.72rem;letter-spacing:.18em;text-transform:uppercase;color:var(--signal-deep);
+    border:1.5px solid var(--signal);padding:.28rem .6rem;border-radius:2px;
+    transform:rotate(-3deg);background:#EAF6F3;
+  }
+  .meta{display:flex;flex-wrap:wrap;gap:.5rem .4rem;margin-top:1rem}
+  .chip{
+    font-family:var(--mono);font-size:.72rem;color:var(--ink-soft);
+    background:#fff;border:1px solid var(--rule);border-radius:2px;padding:.25rem .55rem;
+    display:inline-flex;gap:.4rem;align-items:center;
+  }
+  .chip b{color:var(--ink);font-weight:600}
+  .chip .tick{color:var(--signal)}
+
+  /* section */
+  .sec{margin-bottom:2.4rem;scroll-margin-top:1.4rem}
+  .sec-head{
+    display:flex;align-items:baseline;gap:.8rem;margin-bottom:.9rem;
+    border-bottom:1px solid var(--rule);padding-bottom:.55rem;
+  }
+  .sec-no{font-family:var(--disp);font-weight:700;font-size:1.05rem;color:var(--signal-deep);
+    min-width:2.1rem}
+  .sec-title{font-family:var(--disp);font-weight:600;font-size:1.18rem;letter-spacing:-.01em;flex:1}
+  .gauge{display:flex;align-items:center;gap:.5rem;font-family:var(--mono);font-size:.66rem;color:var(--muted)}
+  .gauge .bars{display:flex;gap:2px}
+  .gauge .bars i{width:7px;height:12px;border-radius:1px;background:var(--rule);display:block}
+  .gauge .bars i.used{background:var(--signal)}
+  .gauge .bars i.over{background:var(--alert)}
+
+  .sec p{color:var(--ink-soft);margin-bottom:.7rem;max-width:66ch}
+  .sec p b, .sec p strong{color:var(--ink);font-weight:600}
+  .cite{color:var(--signal-deep);font-family:var(--mono);font-size:.82em}
+
+  /* forces & data tables (mono instruments) */
+  table.inst{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:.8rem;margin:.4rem 0 .3rem}
+  table.inst th{
+    text-align:left;font-weight:600;color:var(--muted);font-size:.68rem;letter-spacing:.1em;
+    text-transform:uppercase;padding:.4rem .6rem;border-bottom:1px solid var(--rule-strong);
+  }
+  table.inst td{padding:.46rem .6rem;border-bottom:1px solid var(--rule);color:var(--ink-soft);vertical-align:top}
+  table.inst td.fno{color:var(--signal-deep);font-weight:600;white-space:nowrap}
+  table.inst tr:last-child td{border-bottom:none}
+  table.inst td .src{color:var(--muted)}
+
+  /* decision card */
+  .card{
+    background:var(--panel);border:1px solid var(--rule-strong);border-radius:3px;
+    padding:.9rem 1rem .9rem 1.15rem;margin:.9rem 0;position:relative;
+    font-family:var(--mono);font-size:.82rem;transition:transform .16s, box-shadow .16s;
+    box-shadow:0 1px 0 #fff inset;
+  }
+  .card::before{content:"";position:absolute;left:0;top:.9rem;bottom:.9rem;width:3px;background:var(--signal);border-radius:2px}
+  .card:hover{transform:translateY(-2px);box-shadow:0 14px 28px -20px rgba(var(--shadow),.85)}
+  .card .led{
+    position:absolute;right:.85rem;top:.95rem;width:9px;height:9px;border-radius:50%;
+    background:var(--signal);box-shadow:0 0 0 3px var(--signal-glow);
+  }
+  .card .cid{font-family:var(--disp);font-weight:700;color:var(--ink);font-size:.92rem;letter-spacing:.02em}
+  .card .row{display:flex;gap:.55rem;margin-top:.35rem;line-height:1.5}
+  .card .lab{color:var(--muted);font-weight:600;min-width:4.6rem;text-transform:uppercase;font-size:.66rem;letter-spacing:.08em;padding-top:.12rem}
+  .card .val{color:var(--ink-soft);flex:1}
+  .card .val b{color:var(--ink);font-weight:600}
+  .card .val .cite{color:var(--signal-deep)}
+  .card.assumes .row.a .val{color:var(--alert)}
+
+  /* flow diagram */
+  .flow{
+    display:flex;flex-wrap:wrap;align-items:stretch;gap:.4rem;margin:.6rem 0 1rem;
+    font-family:var(--mono);font-size:.74rem;
+  }
+  .node{
+    background:var(--panel);border:1px solid var(--rule-strong);border-radius:2px;
+    padding:.5rem .7rem;display:flex;flex-direction:column;gap:.15rem;min-width:0;
+  }
+  .node .n{color:var(--ink);font-weight:600}
+  .node .t{color:var(--muted);font-size:.66rem}
+  .node.async{border-style:dashed;border-color:var(--signal);background:#EAF6F3}
+  .arrow{align-self:center;color:var(--signal);font-weight:700;padding:0 .1rem}
+
+  /* NFR ledger — the instrument panel (signature) */
+  .ledger{
+    border:1px solid var(--rule-strong);border-radius:3px;overflow:hidden;margin:.5rem 0 1rem;
+    background:linear-gradient(180deg,#fff,var(--panel));
+    box-shadow:0 1px 0 #fff inset, 0 16px 34px -26px rgba(var(--shadow),.8);
+  }
+  .ledger .lhead{
+    font-family:var(--mono);font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);padding:.55rem .9rem;border-bottom:1px solid var(--rule-strong);
+    display:flex;justify-content:space-between;background:var(--paper-2);
+  }
+  .lrow{
+    display:grid;grid-template-columns:16px 190px 1fr;gap:.7rem;align-items:start;
+    padding:.6rem .9rem;border-bottom:1px solid var(--rule);font-family:var(--mono);font-size:.8rem;
+  }
+  .lrow:last-child{border-bottom:none}
+  .lrow .status-led{width:9px;height:9px;border-radius:50%;margin-top:.4rem}
+  .lrow.active .status-led{background:var(--signal);box-shadow:0 0 0 3px var(--signal-glow)}
+  .lrow.na .status-led{background:var(--rule-strong)}
+  .lrow .dim{color:var(--ink);font-weight:600}
+  .lrow .verdict{color:var(--ink-soft)}
+  .lrow.na .verdict{color:var(--muted)}
+  .lrow .verdict .to{color:var(--signal-deep);font-weight:600}
+  .lrow .verdict .na-tag{color:var(--muted);font-weight:600}
+  .cost{color:var(--ink-soft)}
+  .cost b{color:var(--ink);font-weight:600}
+  .cost .eq{color:var(--signal-deep);font-weight:600}
+
+  /* decision index */
+  .index-tbl td.di{color:var(--signal-deep);font-weight:600}
+  .badge-origin{font-size:.66rem;color:var(--muted)}
+  .badge-origin.blue{color:var(--signal-deep)}
+
+  /* teaching notes */
+  .note{
+    display:none;
+    margin:.5rem 0 1rem;padding:.7rem .9rem .7rem 1rem;
+    border-left:3px solid var(--alert);background:var(--alert-soft);
+    font-family:var(--sans);font-size:.85rem;color:#5c3d08;border-radius:0 3px 3px 0;
+    position:relative;
+  }
+  .note::before{
+    content:"WHY THIS IS GOOD";font-family:var(--mono);font-size:.6rem;letter-spacing:.16em;
+    color:var(--alert);font-weight:600;display:block;margin-bottom:.25rem;
+  }
+  body.notes-on .note{display:block;animation:slideIn .28s ease both}
+  .note b{color:#3f2a05}
+  @keyframes slideIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+
+  /* footer */
+  .foot{max-width:1180px;margin:2.5rem auto 0;padding:1.4rem 1.5rem 0;border-top:1px solid var(--rule);
+    font-family:var(--mono);font-size:.72rem;color:var(--muted);display:flex;flex-wrap:wrap;gap:.6rem 1.4rem}
+  .foot b{color:var(--ink-soft);font-weight:600}
+
+  /* reveal on scroll */
+  .sec, .plate{opacity:0;transform:translateY(10px);transition:opacity .5s ease, transform .5s ease}
+  .sec.in, .plate.in{opacity:1;transform:none}
+
+  @media (max-width:860px){
+    .wrap{grid-template-columns:1fr}
+    .rail{position:static;display:none}
+    .lrow{grid-template-columns:16px 1fr;gap:.4rem}
+    .lrow .verdict{grid-column:2}
+  }
+  @media (prefers-reduced-motion:reduce){
+    *{animation:none!important;transition:none!important}
+    .sec,.plate{opacity:1;transform:none}
+    html{scroll-behavior:auto}
+  }
+</style>
+</head>
+<body>
+
+  <header class="masthead">
+    <div class="eyebrow">Reference · Gold Standard</div>
+    <h1>Anatomy of a <span class="thin">Good ADR</span></h1>
+    <p class="lede">A worked, deliberately <b>terse</b> Architectural Decision Record. Every section carries a <b>budget gauge</b> that stays in the green — the document measures its own restraint. Point your next ADR at this one.</p>
+  </header>
+
+  <div class="toolbar">
+    <div class="legend">
+      <span class="k"><span class="seg on"></span><span class="seg on"></span><span class="seg free"></span> within budget</span>
+      <span class="k"><span class="seg over"></span> over budget</span>
+      <span class="k"><span class="status-led" style="width:9px;height:9px;border-radius:50%;background:var(--signal);box-shadow:0 0 0 3px var(--signal-glow);display:inline-block"></span> decision made</span>
+      <span class="k"><span class="status-led" style="width:9px;height:9px;border-radius:50%;background:var(--rule-strong);display:inline-block"></span> N/A — checked</span>
+    </div>
+    <button class="toggle" id="notesToggle" aria-pressed="false"><span class="dot"></span> Teaching notes</button>
+  </div>
+
+  <div class="wrap">
+    <!-- left rail -->
+    <nav class="rail" aria-label="Sections">
+      <div class="plate-label">Record map</div>
+      <a class="navlink" href="#s1"><span class="no">§1</span> Context &amp; Forces</a>
+      <a class="navlink" href="#s2"><span class="no">§2</span> Design Overview</a>
+      <a class="navlink" href="#s3"><span class="no">§3</span> Modules</a>
+      <a class="navlink" href="#s4"><span class="no">§4</span> Entities &amp; Data</a>
+      <a class="navlink" href="#s5"><span class="no">§5</span> Interactors</a>
+      <a class="navlink" href="#s6"><span class="no">§6</span> NFR &amp; Cost</a>
+      <a class="navlink" href="#s7"><span class="no">§7</span> Failure</a>
+      <a class="navlink" href="#s8"><span class="no">§8</span> Extension</a>
+      <a class="navlink" href="#idx"><span class="no">◇</span> Decision Index</a>
+    </nav>
+
+    <!-- document -->
+    <main class="doc">
+
+      <!-- spec plate -->
+      <div class="plate" id="top">
+        <div class="status-stamp">Accepted</div>
+        <div class="id"><small>Architectural Decision Record</small>ADR-007 · Digital-Sign Dispatch</div>
+        <div class="meta">
+          <span class="chip">Date <b>2026-07-08</b></span>
+          <span class="chip">Declared modules <b>plugins/dms</b>, <b>plugins/adapters</b></span>
+          <span class="chip"><span class="tick">✓</span> Blueprint <b>s2-walkthrough.html</b></span>
+          <span class="chip">Plan <b>tasks-ADR-007.md</b></span>
+          <span class="chip">Stories <b>S1–S5</b></span>
+        </div>
+      </div>
+
+      <!-- §1 -->
+      <section class="sec" id="s1">
+        <div class="sec-head">
+          <span class="sec-no">§1</span><span class="sec-title">Context &amp; Problem</span>
+          <span class="gauge" data-used="2" data-max="3" data-unit="paras"></span>
+        </div>
+        <p>Applicants sign approval letters by hand today; officers chase paper. Stories <b>S1–S5</b> move signing to the DMS digital-sign provider. This record fixes how requests are <b>dispatched, throttled, and costed</b>.</p>
+        <div class="plate-label" style="margin:.6rem 0 .3rem">Forces &amp; Constraints</div>
+        <table class="inst">
+          <thead><tr><th>F#</th><th>Dimension</th><th>Constraint</th><th>Source</th></tr></thead>
+          <tbody>
+            <tr><td class="fno">F1</td><td>Volume / load</td><td>~2,000 sign req/mo; month-end peak</td><td class="src">PRD §Load · S2 AC</td></tr>
+            <tr><td class="fno">F2</td><td>Latency</td><td>signed-doc callback within 24h is fine (async)</td><td class="src">PRD §Constraints</td></tr>
+            <tr><td class="fno">F3</td><td>Consistency</td><td>one request per application — no duplicates</td><td class="src">S3 AC</td></tr>
+            <tr><td class="fno">F4</td><td>Rate limit</td><td>provider caps 5 req/s; 429 on burst</td><td class="src">provider API docs</td></tr>
+            <tr><td class="fno">F5</td><td>Cost</td><td>metered per signature; finance needs a monthly figure</td><td class="src">PRD §Dependencies</td></tr>
+          </tbody>
+        </table>
+        <aside class="note">Every Forces row <b>cites a real source</b> — a measured number, a PRD section, or a story AC. No invented latency, no "scales to millions". A row that can't cite is cut.</aside>
+      </section>
+
+      <!-- §2 -->
+      <section class="sec" id="s2">
+        <div class="sec-head">
+          <span class="sec-no">§2</span><span class="sec-title">Design Overview</span>
+          <span class="gauge" data-used="1" data-max="1" data-unit="para"></span>
+        </div>
+        <div class="flow">
+          <div class="node"><span class="n">Officer action</span><span class="t">"Send for signature"</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="n">CreateSignRequest</span><span class="t">door · validate · dedup</span></div>
+          <span class="arrow">→</span>
+          <div class="node async"><span class="n">SQS queue</span><span class="t">async · F2</span></div>
+          <span class="arrow">→</span>
+          <div class="node async"><span class="n">Batched worker</span><span class="t">≤5/s · F4</span></div>
+          <span class="arrow">→</span>
+          <div class="node"><span class="n">Provider</span><span class="t">→ callback → SIGNED</span></div>
+        </div>
+        <p>Dispatch is <b>async by F2</b> — the officer's request returns immediately; an SQS-fed worker drains the queue under the F4 rate cap; the provider's webhook closes the loop.</p>
+        <aside class="note">One control-flow picture + one paragraph. The <b>sync/async boundary</b> (dashed nodes) is the load-bearing thing to see — so it's drawn, not described in prose.</aside>
+      </section>
+
+      <!-- §3 -->
+      <section class="sec" id="s3">
+        <div class="sec-head">
+          <span class="sec-no">§3</span><span class="sec-title">Modules &amp; Ownership</span>
+          <span class="gauge" data-used="3" data-max="4" data-unit="lines"></span>
+        </div>
+        <p><b>plugins/dms</b> owns the request lifecycle; the provider adapter lives in <b>plugins/adapters</b>. No new app.</p>
+        <div class="card">
+          <span class="led"></span>
+          <span class="cid">▸ D1</span>
+          <div class="row"><span class="lab">Chosen</span><span class="val">DMS owns dispatch</span></div>
+          <div class="row"><span class="lab">Over</span><span class="val">a new signing app</span></div>
+          <div class="row"><span class="lab">Because</span><span class="val"><span class="cite">F3</span> dedup already lives on the DMS document → no new app edge</span></div>
+        </div>
+        <aside class="note">Only <b>deviations and ownership</b> earn ink here. "DMS owns its own documents" would be an obvious convention — so it's not restated. The card carries the one real choice.</aside>
+      </section>
+
+      <!-- §4 -->
+      <section class="sec" id="s4">
+        <div class="sec-head">
+          <span class="sec-no">§4</span><span class="sec-title">Entities &amp; Data Design</span>
+          <span class="gauge" data-used="4" data-max="4" data-unit="lines"></span>
+        </div>
+        <p><b>SignRequest</b> is born <span class="cite">PENDING</span> on officer action, moves <span class="cite">QUEUED → SENT → SIGNED | FAILED</span> via callback. A unique <span class="cite">(document_id)</span> column enforces F3. <b>provider_ref</b> is read-with-the-row metadata; <b>status</b> is a queried, indexed column.</p>
+        <div class="card">
+          <span class="led"></span>
+          <span class="cid">▸ D2</span>
+          <div class="row"><span class="lab">Chosen</span><span class="val"><b>status</b> as an indexed column</span></div>
+          <div class="row"><span class="lab">Over</span><span class="val">status inside JSON metadata</span></div>
+          <div class="row"><span class="lab">Because</span><span class="val"><span class="cite">F1</span> month-end polling filters on status — a queried field must be a column</span></div>
+        </div>
+        <aside class="note">A <b>lifecycle narrative</b> (born → transitions → ends), never a column dump. The queried-vs-metadata split is decided here, at design time — before a list interactor accidentally filters on JSON.</aside>
+      </section>
+
+      <!-- §5 -->
+      <section class="sec" id="s5">
+        <div class="sec-head">
+          <span class="sec-no">§5</span><span class="sec-title">Interactor Architecture</span>
+          <span class="gauge" data-used="5" data-max="6" data-unit="lines"></span>
+        </div>
+        <p style="font-family:var(--mono);font-size:.82rem;color:var(--ink)"><b>Door — <span class="cite">CreateSignRequestInteractor.dispatch(user_id, document_id)</span></b></p>
+        <p>trigger: officer "Send for signature" → <b>validate</b> (permission + document published) → <b>dedup</b> on document_id <span class="cite">(F3)</span> → <b>persist</b> SignRequest PENDING → <b>enqueue</b> dispatch event.<br><span class="cite">Seam:</span> SignQueuePort (asynq) · DocumentStorageInterface.</p>
+        <div class="card">
+          <span class="led"></span>
+          <span class="cid">▸ D3</span>
+          <div class="row"><span class="lab">Chosen</span><span class="val">SQS-batched dispatch</span></div>
+          <div class="row"><span class="lab">Over</span><span class="val">a synchronous per-request provider call</span></div>
+          <div class="row"><span class="lab">Because</span><span class="val"><span class="cite">F4</span> rate cap → sync would 429 under the <span class="cite">F1</span> month-end burst</span></div>
+        </div>
+        <aside class="note">The interactor door is <b>named and committed here</b> — the step narrative reads like a story at interactor altitude. This section is not deferred to <b>/task-breakdown</b>; a skipped §5 fails the pre-save gate.</aside>
+      </section>
+
+      <!-- §6 -->
+      <section class="sec" id="s6">
+        <div class="sec-head">
+          <span class="sec-no">§6</span><span class="sec-title">Infrastructure &amp; NFR Decisions</span>
+          <span class="gauge" data-used="5" data-max="6" data-unit="rows"></span>
+        </div>
+        <div class="ledger">
+          <div class="lhead"><span>NFR Ledger — always all rows</span><span>N/A proves the check ran · absent proves nothing</span></div>
+          <div class="lrow active"><span class="status-led"></span><span class="dim">Performance / Load</span><span class="verdict"><span class="to">→ D3</span> — SQS smooths the F1 month-end peak under F4</span></div>
+          <div class="lrow na"><span class="status-led"></span><span class="dim">Concurrency control</span><span class="verdict"><span class="na-tag">N/A</span> — single-writer per document (F3 unique column)</span></div>
+          <div class="lrow active"><span class="status-led"></span><span class="dim">External rate limits</span><span class="verdict"><span class="to">→ D4</span> — worker drains ≤5/s + exponential backoff on 429</span></div>
+          <div class="lrow active"><span class="status-led"></span><span class="dim">Cost / unit-economics</span><span class="verdict cost"><b>digital-sign</b> · ₹12/req × ~2,000 req/mo <span class="cite">[F5·S2]</span> <span class="eq">= ₹24,000/mo</span> &nbsp;·&nbsp; <b>S3</b> (signed PDFs) · $0.023/GB × ~6 GB/mo <span class="eq">= ~$0.14/mo</span></span></div>
+          <div class="lrow active"><span class="status-led"></span><span class="dim">Async · storage · caching</span><span class="verdict">SQS dispatch · signed PDFs → S3 · no cache (write-path)</span></div>
+        </div>
+        <div class="card">
+          <span class="led"></span>
+          <span class="cid">▸ D4</span>
+          <div class="row"><span class="lab">Chosen</span><span class="val">exponential backoff on 429</span></div>
+          <div class="row"><span class="lab">Over</span><span class="val">a fixed-interval retry</span></div>
+          <div class="row"><span class="lab">Because</span><span class="val"><span class="cite">F4</span> provider burst cap — fixed retry re-hits the wall</span></div>
+        </div>
+        <aside class="note">The ledger is the fix for the recurring gap: performance, concurrency, rate limits, and <b>cost</b> can't be silently dropped. Each is one line — <b>N/A + reason</b> or <b>→ a decision</b>. The cost line carries a <b>real monthly figure with cited volume</b>, so finance gets a number, not a shrug.</aside>
+      </section>
+
+      <!-- §7 -->
+      <section class="sec" id="s7">
+        <div class="sec-head">
+          <span class="sec-no">§7</span><span class="sec-title">Failure Handling</span>
+          <span class="gauge" data-used="4" data-max="5" data-unit="lines"></span>
+        </div>
+        <p><span class="cite">429</span> → backoff + requeue (max 5). <span class="cite">Provider timeout</span> → SignRequest FAILED, officer re-triggers. <span class="cite">Callback for unknown ref</span> → dropped, logged in the adapter. No partial state: PENDING rows are safe to replay.</p>
+      </section>
+
+      <!-- §8 -->
+      <section class="sec" id="s8">
+        <div class="sec-head">
+          <span class="sec-no">§8</span><span class="sec-title">Extension Cost</span>
+          <span class="gauge" data-used="2" data-max="3" data-unit="lines"></span>
+        </div>
+        <p><b>Confirmed axis — new provider (FlowwSign):</b> one adapter class + one registry entry, <span class="cite">zero core edits</span>.<br><b>NOT built:</b> multi-signer routing — no story demands it (YAGNI).</p>
+        <aside class="note">Extension points only on a <b>confirmed</b> axis, with the next-addition cost stated. The flexibility deliberately <b>refused</b> is named too — so a future reader knows it was a choice, not an oversight.</aside>
+      </section>
+
+      <!-- decision index -->
+      <section class="sec" id="idx">
+        <div class="sec-head">
+          <span class="sec-no">◇</span><span class="sec-title">Decision Index</span>
+        </div>
+        <table class="inst index-tbl">
+          <thead><tr><th>ID</th><th>§</th><th>Title</th><th>Chosen</th><th>Origin</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td class="di">D1</td><td>3</td><td>Dispatch ownership</td><td>DMS owns</td><td><span class="badge-origin">adr-new</span></td><td>Accepted</td></tr>
+            <tr><td class="di">D2</td><td>4</td><td>Status storage</td><td>indexed column</td><td><span class="badge-origin blue">blueprint-L2</span></td><td>Accepted</td></tr>
+            <tr><td class="di">D3</td><td>5/6</td><td>Dispatch model</td><td>SQS-batched</td><td><span class="badge-origin">adr-new</span></td><td>Accepted</td></tr>
+            <tr><td class="di">D4</td><td>6</td><td>Rate-limit handling</td><td>backoff</td><td><span class="badge-origin">adr-new</span></td><td>Accepted</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </main>
+  </div>
+
+  <footer class="foot">
+    <span><b>Reference artifact</b> — .claude/skills/create-adr/references/adr-reference-example.html</span>
+    <span>Fill via <b>/create-adr</b> · never hand-derive the shape</span>
+    <span>Brevity Budget &amp; NFR Ledger enforced at the step-6 pre-save gate</span>
+  </footer>
+
+<script>
+  // budget gauges
+  document.querySelectorAll('.gauge').forEach(g=>{
+    const used=+g.dataset.used, max=+g.dataset.max, unit=g.dataset.unit;
+    const total=Math.max(max,used);
+    const bars=document.createElement('span'); bars.className='bars';
+    for(let i=0;i<total;i++){
+      const b=document.createElement('i');
+      if(i<used) b.className = i<max ? 'used' : 'over';
+      bars.appendChild(b);
+    }
+    const label=document.createElement('span');
+    label.textContent=`${used}/${max} ${unit}`;
+    g.appendChild(bars); g.appendChild(label);
+  });
+
+  // teaching notes toggle
+  const t=document.getElementById('notesToggle');
+  t.addEventListener('click',()=>{
+    const on=document.body.classList.toggle('notes-on');
+    t.setAttribute('aria-pressed', on);
+  });
+
+  // scroll reveal + active nav
+  const io=new IntersectionObserver((es)=>{
+    es.forEach(e=>{ if(e.isIntersecting){ e.target.classList.add('in'); }});
+  },{threshold:.12});
+  document.querySelectorAll('.sec,.plate').forEach(el=>io.observe(el));
+
+  const links=[...document.querySelectorAll('.navlink')];
+  const navIo=new IntersectionObserver((es)=>{
+    es.forEach(e=>{
+      if(e.isIntersecting){
+        const id=e.target.id;
+        links.forEach(l=>l.classList.toggle('active', l.getAttribute('href')==='#'+id));
+      }
+    });
+  },{rootMargin:'-20% 0px -70% 0px'});
+  document.querySelectorAll('.sec').forEach(s=>navIo.observe(s));
+</script>
+</body>
+</html>

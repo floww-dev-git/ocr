@@ -1,0 +1,132 @@
+adr: workflow_engine/docs/features/workflow-engine-consolidation/ADR-003-s2-guard-battery.md
+module: workflow_engine
+what: Golden example task breakdown for the JSON tasks-schema — exercises every enum value, a foundation-then-slice
+  dependency chain with a shared contract task, a composition (door) task, the slice's integration closer,
+  and a standalone refactor task.
+tasks:
+- id: '1.0'
+  type: foundation
+  status: done
+  user_stories: []
+  depends_on: []
+  inputs: None — this is the foundation task for slice 2.0.
+  output: Confirmed BaseExceptionClass contract in common/exceptions/ that slice 2.0's guards raise against.
+  outline: Audit common/exceptions/__init__.py's BaseExceptionClass; confirm it stores context as attributes
+    per exception-handling.md and is the base every domain exception in this slice will inherit.
+  cases:
+  - BaseExceptionClass stores constructor kwargs as instance attributes
+  - A domain exception subclassing BaseExceptionClass is catchable as BaseExceptionClass
+  size: M
+  tier: judgment
+  artifacts:
+  - common/exceptions/__init__.py
+  - BaseExceptionClass
+  commit: 9f2a1c7
+- id: '2.0'
+  type: slice
+  status: todo
+  outcome: A guard battery evaluates every S2 gate condition against real transition facts and reports
+    pass/fail per gate.
+  user_stories:
+  - US-1
+  - US-2
+  - US-3
+  depends_on:
+  - '1.0'
+  inputs: BaseExceptionClass contract from task 1.0.
+  output: Parent row only — not directly implemented. Delivered by tasks 2.1-2.3.
+  outline: 'Vertical slice: define the guard-fact contract (2.1), compose the battery against real guards
+    (2.2), close with the slice''s story-driven integration suite (2.3).'
+  cases: []
+  size: L
+  tier: judgment
+  artifacts: []
+  commit: null
+- id: '2.1'
+  type: task
+  status: todo
+  outcome: GuardFactProvider defines the one contract every S2 guard reads transition facts through.
+  user_stories:
+  - US-1
+  depends_on:
+  - '1.0'
+  inputs: BaseExceptionClass contract from task 1.0.
+  output: 'GuardFactProvider frozen dataclass + build_stub_guard_fact_provider() test builder (fixture-doctrine.md
+    #11 — front-loaded since later tasks each add a field).'
+  outline: Define GuardFactProvider as a frozen dataclass of collaborator ports per rich-domain-models.md's
+    boundary-DTO rule; ship its stub builder in this same task so tasks 2.2/2.3 don't pay a cascade.
+  cases:
+  - GuardFactProvider is constructible with all required ports
+  - build_stub_guard_fact_provider() returns autospec defaults for every field
+  - A missing required port raises TypeError at construction
+  size: S
+  tier: judgment
+  artifacts: []
+  commit: null
+- id: '2.2'
+  type: composition
+  status: todo
+  outcome: The guard battery evaluates all registered S2 guards against a GuardFactProvider and returns
+    one pass/fail result per gate.
+  user_stories:
+  - US-2
+  depends_on:
+  - '2.1'
+  inputs: GuardFactProvider contract + stub builder from task 2.1.
+  output: GuardBattery.evaluate() wired against the real guard registry (no stubs at this seam — engineering-canon.md
+    consumer-first construction).
+  outline: Compose the already-built guards behind one GuardBattery.evaluate(provider) entry point; the
+    door wires real guard instances, not test doubles.
+  cases: []
+  size: M
+  tier: mechanical
+  artifacts: []
+  commit: null
+- id: '2.3'
+  type: task
+  status: todo
+  outcome: The slice's acceptance criteria (US-1 through US-3) pass end-to-end against a real GuardBattery.
+  user_stories:
+  - US-1
+  - US-2
+  - US-3
+  depends_on:
+  - '2.1'
+  - '2.2'
+  inputs: GuardFactProvider (2.1) and the composed GuardBattery (2.2).
+  output: Slice-closing integration suite — one test per acceptance criterion across US-1..US-3, per dev-loop.md's
+    'slice's final sub-task is its integration suite'.
+  outline: Write the story/AC-driven integration suite via /write-integration-testcase; no mocks across
+    the guard battery's own collaborators, only truly external ports.
+  cases:
+  - 'US-1 AC1: a passing transition evaluates all gates as pass'
+  - 'US-2 AC1: a single failing gate short-circuits with the failing gate named'
+  - 'US-3 AC1: an unregistered guard type raises a domain exception, not a silent skip'
+  size: S
+  tier: mechanical
+  artifacts: []
+  commit: null
+- id: '3.0'
+  type: refactor
+  status: in_progress
+  outcome: Duplicate guard-fact plumbing in the legacy S1 battery is removed with no behaviour change.
+  user_stories: []
+  depends_on: []
+  inputs: Existing S1 guard battery code (pre-dates this ADR).
+  output: S1 battery reads GuardFactProvider instead of its own ad-hoc fact dict; S1's test suite stays
+    green throughout.
+  outline: 'Standalone cleanup, independent of slice 2.0: swap S1''s inline fact dict for the GuardFactProvider
+    contract once 2.1 lands, deleting the now-dead duplicate plumbing.'
+  cases: []
+  size: S
+  tier: mechanical
+  artifacts: []
+  commit: null
+carried_flags:
+- T2 (rule of three) noted at Phase-B entry for GuardFactProvider vs. two prior ad-hoc fact shapes in
+  S1 — user confirmed consolidation is in-scope for this ADR, not deferred.
+decisions:
+- '2.1 owns build_stub_guard_fact_provider() up front (not task 2.2/2.3''s cleanup) per fixture-doctrine.md
+  #11 — GuardFactProvider is expected to grow a field per later task in this slice.'
+- 2.2 is typed 'composition' rather than 'task' because it is the door wiring already-built collaborators
+  (2.1's contract, the guard registry) — no new leaf logic of its own.

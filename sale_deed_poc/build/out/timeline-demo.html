@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Timeline — break visualisation (demo)</title>
+<style>
+  :root{
+    --ink:#1b211f; --paper:#f6f4ee; --line:#ddd8c9; --card:#fff;
+    --deed:#3b5bdb; --land:#2f9e6f; --warn:#e0913c; --gap:#c2410c; --broke:#d6336c;
+    --soft:#6a6f6a; --chip:#e9e6da; --mono:'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,sans-serif;line-height:1.5}
+  .wrap{max-width:780px;margin:0 auto;padding:30px 22px 70px}
+  h1{font-size:24px;margin:0 0 2px} h1 .em{color:var(--deed)}
+  .sub{color:var(--soft);font-size:14px;margin:0 0 22px}
+  .tag{display:inline-block;font-size:11px;font-weight:700;background:#fdeede;color:var(--gap);padding:2px 10px;border-radius:20px;margin-bottom:18px}
+
+  .breaknote{display:flex;gap:9px;align-items:center;border-radius:10px;padding:10px 14px;font-size:13.5px;font-weight:700;margin-bottom:12px}
+  .breaknote.broken{background:#fce4ee;border:1px solid #f1a8c4;color:var(--broke)}
+  .breaknote.gap{background:#fdebdd;border:1px solid #f2c39b;color:var(--gap)}
+  .tldeed{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:grid;grid-template-columns:36px 1fr;gap:13px;align-items:center}
+  .tldeed .dn{width:36px;height:36px;border-radius:50%;background:var(--deed);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px}
+  .tldeed .ttl{font-weight:700;font-size:14.5px}
+  .tldeed .flow{font-size:13.5px;margin-top:2px}
+  .tldeed .flow .arrow{color:var(--deed);font-weight:800;margin:0 7px}
+  .tldeed .meta{font-size:11.5px;color:var(--soft);font-family:var(--mono);margin-top:3px}
+  .orig{color:var(--soft)}
+  .tljoin{display:flex;align-items:center;gap:10px;margin:6px 0 6px 18px;padding:5px 0 5px 18px;border-left:3px solid var(--land)}
+  .tljoin.weak{border-left-color:var(--warn)}
+  .tljoin .jb{font-size:11.5px;font-weight:800;padding:2px 11px;border-radius:20px;white-space:nowrap}
+  .tljoin.ok .jb{background:#e3f3eb;color:var(--land)} .tljoin.weak .jb{background:#fdeede;color:var(--warn)}
+  .tljoin .jt{font-size:12.5px;color:var(--soft)}
+  .rupture{margin:8px 0;border-radius:12px;padding:14px 17px;display:flex;gap:13px;align-items:flex-start}
+  .rupture.broken{background:#fce4ee;border:1.5px solid #ee9cbb}
+  .rupture.gap{background:#fdebdd;border:1.5px solid #f1bd92}
+  .rupture .ic{font-size:26px;line-height:1}
+  .rupture .rh{font-weight:800;font-size:15.5px}
+  .rupture.broken .rh{color:var(--broke)} .rupture.gap .rh{color:var(--gap)}
+  .rupture .rd{font-size:13px;color:#3a403d;margin-top:3px}
+  .rupture .mm{font-family:var(--mono);font-size:12px;margin-top:8px;background:rgba(255,255,255,.7);border-radius:8px;padding:8px 11px;line-height:1.7}
+  .rupture .mm .x{color:var(--broke);font-weight:700}
+  h2{font-size:17px;margin:32px 0 4px;display:flex;align-items:center;gap:8px}
+  h2 .dot{width:10px;height:10px;border-radius:50%;background:var(--deed)}
+  table{width:100%;border-collapse:collapse;background:var(--card);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-top:6px}
+  th,td{text-align:left;padding:9px 12px;font-size:12.5px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--chip);font-size:10.5px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft)}
+  tr:last-child td{border-bottom:none}
+  td code{background:var(--chip);padding:1px 5px;border-radius:5px;font-size:11px;font-family:var(--mono)}
+  .muted{color:var(--soft)} .arrow{color:var(--deed);font-weight:800}
+  .vc{font-weight:700;padding:2px 9px;border-radius:20px;font-size:11px;white-space:nowrap}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Ownership <span class="em">timeline</span></h1>
+  <p class="sub">Redesigned so a break is impossible to miss — and it names exactly which two people should match but don't.</p>
+  <span class="tag">⚠ DEMO — synthetic data</span>
+
+  <!-- up-front plain-language break summary -->
+  <div class="breaknote gap">⛳ Deed missing between Deed B and Deed C</div>
+  <div class="breaknote broken">⛔ Chain breaks between Deed C and Deed D</div>
+
+  <!-- Deed A -->
+  <div class="tldeed"><div class="dn">A</div><div>
+    <div class="ttl">Sale Deed</div>
+    <div class="flow">Kondapur Developers<span class="arrow">→</span>Venkata Rao</div>
+    <div class="meta">1234/1998 · 1998-07-09 · ₹2,50,000</div></div></div>
+
+  <div class="tljoin ok"><span class="jb">✓ ownership carries over · 98/100</span></div>
+
+  <!-- Deed B -->
+  <div class="tldeed"><div class="dn">B</div><div>
+    <div class="ttl">Sale Deed</div>
+    <div class="flow">Venkata Rao<span class="arrow">→</span>Lakshmi Devi <span class="orig">(లక్ష్మి దేవి)</span></div>
+    <div class="meta">2451/2007 · 2007-03-14 · ₹18,00,000</div></div></div>
+
+  <!-- GAP rupture -->
+  <div class="rupture gap"><div class="ic">⛳</div><div>
+    <div class="rh">A deed is missing here</div>
+    <div class="rd">Deed C conveys 300 sq.yd but the vendor acquired only 200 sq.yd, and cites Doc 6620/2019 which is not in the bundle.</div></div></div>
+
+  <!-- Deed C -->
+  <div class="tldeed"><div class="dn">C</div><div>
+    <div class="ttl">Sale Deed</div>
+    <div class="flow">Lakshmi Devi<span class="arrow">→</span>Imran Khan</div>
+    <div class="meta">7789/2015 · 2015-09-02 · ₹42,00,000</div></div></div>
+
+  <!-- BROKEN rupture -->
+  <div class="rupture broken"><div class="ic">⛔</div><div>
+    <div class="rh">Chain breaks here <span style="font-weight:400;font-size:12.5px;color:var(--soft)">· name match 18/100</span></div>
+    <div class="rd">The person who bought in the previous deed is not the person who sold in the next deed.</div>
+    <div class="mm">Buyer in 7789/2015: Imran Khan<br>Seller in 3456/2023: Rajesh Gupta<br><span class="x">✕ these should be the same person — they do not match.</span></div></div></div>
+
+  <!-- Deed D -->
+  <div class="tldeed"><div class="dn">D</div><div>
+    <div class="ttl">Sale Deed</div>
+    <div class="flow">Rajesh Gupta<span class="arrow">→</span>Ananya Sharma</div>
+    <div class="meta">3456/2023 · 2023-06-21 · ₹95,00,000</div></div></div>
+
+  <h2><span class="dot"></span>Chronology of activity</h2>
+  <table>
+    <tr><th>#</th><th>Date</th><th>Activity</th><th>From → To</th><th>Property</th><th>Value</th><th>Continuity</th></tr>
+    <tr><td>1</td><td>1998-07-09</td><td>Sale Deed<br><code>1234/1998</code></td><td>Kondapur Developers <span class="arrow">→</span> Venkata Rao</td><td>Sy. 127/A<br><span class="muted">300 sq.yd</span></td><td>₹2,50,000</td><td><span class="vc" style="background:var(--chip);color:var(--soft)">origin</span></td></tr>
+    <tr><td>2</td><td>2007-03-14</td><td>Sale Deed<br><code>2451/2007</code></td><td>Venkata Rao <span class="arrow">→</span> Lakshmi Devi</td><td>Sy. 127/A<br><span class="muted">300 sq.yd</span></td><td>₹18,00,000</td><td><span class="vc" style="background:#e3f3eb;color:var(--land)">✓ linked</span></td></tr>
+    <tr><td>3</td><td>2015-09-02</td><td>Sale Deed<br><code>7789/2015</code></td><td>Lakshmi Devi <span class="arrow">→</span> Imran Khan</td><td>Sy. 127/A<br><span class="muted">200 sq.yd</span></td><td>₹42,00,000</td><td><span class="vc" style="background:#fde7da;color:var(--gap)">⛳ gap</span></td></tr>
+    <tr><td>4</td><td>2023-06-21</td><td>Sale Deed<br><code>3456/2023</code></td><td>Rajesh Gupta <span class="arrow">→</span> Ananya Sharma</td><td>Sy. 127/A<br><span class="muted">300 sq.yd</span></td><td>₹95,00,000</td><td><span class="vc" style="background:#fce4ee;color:var(--broke)">⛔ broken</span></td></tr>
+  </table>
+</div>
+</body>
+</html>

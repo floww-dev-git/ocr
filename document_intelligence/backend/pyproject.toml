@@ -1,0 +1,39 @@
+[project]
+name = "document-intelligence-backend"
+version = "0.1.0"
+description = "Document Intelligence POC — PAN verification under Clean Architecture"
+requires-python = ">=3.11"
+dependencies = [
+    "django>=5.0",
+    "uvicorn[standard]>=0.30",
+    "pydantic>=2.8",
+    "httpx>=0.27",
+    # Pinned: 2.22 sends an `AQ.`-prefixed AI Studio key as an OAuth bearer token,
+    # which the API rejects with ACCESS_TOKEN_TYPE_UNSUPPORTED. 2.10 sends it as an
+    # api key and authenticates. sale_deed_poc runs the same version.
+    "google-genai==2.10.0",
+    "pypdfium2>=4.30",
+    "pillow>=10.4",
+    # Chain-of-title identity matching. The 85/60/48 bands are calibrated to
+    # rapidfuzz's own ratios, so the library is part of the judgement, not a detail.
+    "rapidfuzz>=3.9",
+    "numpy>=1.26",
+    "segno>=1.6",
+    "opencv-python-headless>=4.9",
+]
+
+[dependency-groups]
+dev = [
+    "pytest>=8",
+    "pytest-django>=4.8",
+    "pytest-asyncio>=0.23",
+    "factory-boy>=3.3",
+    "freezegun>=1.5",
+]
+
+[tool.pytest.ini_options]
+DJANGO_SETTINGS_MODULE = "config.settings"
+python_files = ["test_*.py"]
+testpaths = ["."]
+asyncio_mode = "auto"
+filterwarnings = ["error::DeprecationWarning"]

@@ -1,0 +1,2259 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Document Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --font-ui: 'IBM Plex Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-id: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  --bg: #F4F5F8; --surface: #FFFFFF; --surface-2: #F8F9FB; --surface-3: #EEF0F4;
+  --line: #E3E6EC; --line-strong: #CBD0DA;
+  --ink: #171C2E; --ink-2: #4C5468; --ink-3: #7B8296;
+  --ai-a: #5B5BD6; --ai-b: #2AA8C4; --ai-c: #7C6CF0; --ai-grad: linear-gradient(135deg, #5B5BD6, #2AA8C4);
+  --ai-soft: #EDEDFB; --ai-text: #4A48C4;
+  --glow-a: rgba(91,91,214,.16); --glow-b: rgba(42,168,196,.12); --glass: rgba(255,255,255,.85);
+  --pass: #1B9E5A; --pass-soft: #E4F5EC; --warn: #B87400; --warn-soft: #FFF3DC;
+  --fail: #D9433B; --fail-soft: #FDE8E6; --info: #3B6FD9; --info-soft: #E6EEFC;
+  --pending: #7A8299; --pending-soft: #EEF0F4;
+  --user-bubble: #E9ECF3; --scrim: rgba(20,26,43,.35);
+  --r-s: 6px; --r-m: 10px; --r-l: 14px;
+  --shadow-float: 0 8px 24px rgba(20,26,43,.10);
+  --rail-w: 260px; --sidebar-w: 320px; --content-w: 860px;
+  --fs-xs: 12px; --fs-s: 13px; --fs-m: 14px; --fs-l: 16px; --fs-xl: 20px;
+  --dur: 220ms; --ease: cubic-bezier(.2,.7,.2,1);
+  color-scheme: light;
+}
+:root[data-theme="dark"] {
+  --bg: #0F1117; --surface: #171A22; --surface-2: #1C2029; --surface-3: #242935;
+  --line: #2A2F3A; --line-strong: #3A4050;
+  --ink: #E7E9EE; --ink-2: #A8AEBD; --ink-3: #7E8597;
+  --ai-a: #7D7DF0; --ai-b: #3DBBD6; --ai-c: #9A8CF5; --ai-grad: linear-gradient(135deg, #7D7DF0, #3DBBD6);
+  --ai-soft: #24263A; --ai-text: #B3B3FF;
+  --glow-a: rgba(125,125,240,.22); --glow-b: rgba(61,187,214,.16); --glass: rgba(23,26,34,.85);
+  --pass: #3CC77A; --pass-soft: #12291C; --warn: #F0A93B; --warn-soft: #2E2410;
+  --fail: #F0655D; --fail-soft: #331716; --info: #6C9BFF; --info-soft: #15203A;
+  --pending: #8A93A8; --pending-soft: #232A3A;
+  --user-bubble: #1F2637; --scrim: rgba(0,0,0,.5);
+  --shadow-float: 0 8px 24px rgba(0,0,0,.45);
+  color-scheme: dark;
+}
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body { font: 400 var(--fs-m)/1.5 var(--font-ui); color: var(--ink); background: var(--bg); -webkit-font-smoothing: antialiased; }
+h1, h2, h3, p, ul { margin: 0; }
+ul { padding: 0; list-style: none; }
+button { font: inherit; color: inherit; }
+input, textarea, select { font: inherit; color: inherit; }
+.id { font-family: var(--font-id); font-size: 0.93em; letter-spacing: .01em; }
+:focus-visible { outline: 2px solid var(--ai-a); outline-offset: 2px; }
+@media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } }
+[hidden] { display: none !important; }
+
+::selection { background: color-mix(in srgb, var(--ai-a) 30%, transparent); }
+* { scrollbar-width: thin; scrollbar-color: var(--line-strong) transparent; }
+
+/* ---------- AI orb (Direction C: ring, C3 palette) ---------- */
+:root { --orb-c0: #c9d0ff; --orb-c1: #8C6CF0; --orb-c2: #5B5BD6; --orb-c3: #2AA8C4; --orb-c4: #9fe3f0; --orb-glow: .3; --orb-edge: .6; }
+:root[data-theme="dark"] { --orb-c0: #e8fbff; --orb-c1: #B06CFF; --orb-c2: #4653E8; --orb-c3: #3FD8F5; --orb-c4: #dff5ff; --orb-glow: .38; --orb-edge: 1; }
+.orb { position: relative; width: 1em; height: 1em; display: inline-block; flex: none; line-height: 0;
+  --orb-sweep: conic-gradient(from 0deg, var(--orb-c0) 0deg, var(--orb-c1) 60deg, var(--orb-c1) 110deg, var(--orb-c4) 150deg, var(--orb-c2) 195deg, var(--orb-c3) 240deg, var(--orb-c3) 290deg, var(--orb-c4) 330deg, var(--orb-c0) 360deg);
+  --orb-hole: radial-gradient(ellipse 36.5% 40.5% at 50% 50%, transparent 96%, #000 100%); }
+.orb > i { position: absolute; inset: 0; border-radius: 50%; display: block; }
+.orb > i > b { position: absolute; inset: 0; border-radius: 50%; display: block; -webkit-mask: var(--orb-hole); mask: var(--orb-hole); }
+.orb .orb-glow { inset: -.12em; background: var(--orb-sweep); filter: blur(.035em); opacity: var(--orb-glow);
+  -webkit-mask: radial-gradient(circle closest-side, transparent 64%, #000 74%, #000 80%, transparent 95%);
+  mask: radial-gradient(circle closest-side, transparent 64%, #000 74%, #000 80%, transparent 95%); }
+.orb .orb-band {
+  -webkit-mask: radial-gradient(circle closest-side, #000 90%, rgba(0,0,0,.5) 95%, transparent 100%);
+  mask: radial-gradient(circle closest-side, #000 90%, rgba(0,0,0,.5) 95%, transparent 100%); }
+.orb .orb-band b { background: var(--orb-sweep); }
+.orb .orb-hot { opacity: var(--orb-edge); filter: blur(.01em);
+  -webkit-mask: radial-gradient(circle closest-side, #000 80%, transparent 86%);
+  mask: radial-gradient(circle closest-side, #000 80%, transparent 86%); }
+.orb .orb-hot b { background: conic-gradient(from 0deg, rgba(255,255,255,0) 0deg, rgba(255,255,255,.1) 90deg, #fff 135deg, rgba(255,255,255,.15) 185deg, rgba(255,255,255,0) 240deg, #fff 305deg, rgba(255,255,255,.4) 330deg, rgba(255,255,255,0) 360deg); }
+.orb.working .orb-glow, .orb.working .orb-band, .orb.working .orb-hot { animation: orbspin 6s linear infinite; }
+.orb.drift .orb-glow, .orb.drift .orb-band, .orb.drift .orb-hot { animation: orbspin 40s linear infinite; }
+@keyframes orbspin { to { transform: rotate(360deg); } }
+/* app.css — layout, rail, topbar, conversation, messages, activity, cards, sidebar, composer, dialogs */
+
+/* ---------- layout ---------- */
+.app { display: grid; grid-template-columns: var(--rail-w) 1fr var(--sidebar-w); grid-template-rows: 100vh; height: 100vh; overflow: hidden; }
+.app.rail-collapsed { grid-template-columns: 56px 1fr var(--sidebar-w); }
+.main { display: flex; flex-direction: column; min-width: 0; min-height: 0; height: 100vh; position: relative; overflow: hidden; }
+
+/* ---------- buttons ---------- */
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 34px; padding: 0 14px; border-radius: var(--r-m); border: 1px solid transparent; background: transparent; cursor: pointer; font-weight: 500; white-space: nowrap; transition: background var(--dur), border-color var(--dur), color var(--dur); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn-primary { background: var(--ink); color: var(--bg); }
+.btn-primary:hover:not(:disabled) { filter: brightness(1.15); }
+.btn-ghost { border-color: var(--line-strong); background: var(--surface); }
+.btn-ghost:hover { border-color: var(--ink-3); }
+.btn-text { height: 28px; padding: 0 8px; color: var(--ai-text); font-size: var(--fs-s); }
+.btn-text:hover { background: var(--ai-soft); }
+.btn-text.danger { color: var(--fail); }
+.btn-text.danger:hover { background: var(--fail-soft); }
+.icon-btn { width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; border: 0; border-radius: var(--r-s); background: transparent; color: var(--ink-2); cursor: pointer; flex: none; }
+.icon-btn:hover { background: var(--surface-3); color: var(--ink); }
+.icon-btn svg, .btn svg { width: 16px; height: 16px; }
+svg.ico { width: 16px; height: 16px; flex: none; }
+
+/* ---------- rail ---------- */
+.rail { background: var(--surface); border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; height: 100vh; padding: 12px 10px; gap: 10px; }
+.rail-brand { display: flex; align-items: center; gap: 10px; padding: 4px 4px 8px; }
+.brand-mark { width: 22px; height: 22px; border-radius: 6px 6px 6px 2px; background: var(--ai-grad); flex: none; }
+.brand-text { display: flex; flex-direction: column; line-height: 1.15; min-width: 0; }
+.brand-name { font-weight: 600; font-size: var(--fs-m); white-space: nowrap; }
+.brand-sub { font-size: var(--fs-xs); color: var(--ink-3); }
+.rail-collapse { margin-left: auto; }
+.rail-new { width: 100%; }
+.rail-search { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 10px; border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface-2); color: var(--ink-3); }
+.rail-search input { border: 0; background: transparent; width: 100%; outline: none; font-size: var(--fs-s); }
+.rail-search:focus-within { border-color: var(--ai-a); }
+.search-ico svg { width: 14px; height: 14px; }
+.thread-list { overflow-y: auto; min-height: 0; display: flex; flex-direction: column; gap: 2px; margin: 0 -4px; padding: 0 4px; }
+.thread-item { position: relative; display: grid; grid-template-columns: 14px 1fr auto; column-gap: 8px; align-items: start; padding: 8px 10px 8px 8px; border-radius: var(--r-m); cursor: pointer; border: 0; background: transparent; text-align: left; width: 100%; }
+.thread-item:hover { background: var(--surface-2); }
+.thread-item.active { background: var(--surface-3); }
+.thread-item.active::before { content: ''; position: absolute; left: 0; top: 10px; bottom: 10px; width: 3px; border-radius: 2px; background: var(--ai-a); }
+.thread-dot { width: 8px; height: 8px; border-radius: 50%; margin-top: 7px; background: var(--pending); }
+.thread-dot.attention { background: var(--warn); }
+.thread-dot.clear { background: var(--pass); }
+.thread-dot.running { background: var(--ai-grad); animation: pulse 1.4s ease-in-out infinite; }
+.thread-main { min-width: 0; display: flex; flex-direction: column; }
+.thread-id { font-family: var(--font-id); font-size: var(--fs-s); }
+.thread-name { font-size: var(--fs-s); color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.thread-time { font-size: 11px; color: var(--ink-3); margin-top: 2px; }
+.thread-side { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.count-pill { font-size: 11px; font-weight: 600; padding: 1px 7px; border-radius: 999px; background: var(--warn-soft); color: var(--warn); }
+.thread-more { opacity: 0; width: 24px; height: 24px; }
+.thread-item:hover .thread-more, .thread-item:focus-within .thread-more { opacity: 1; }
+.thread-menu { position: absolute; right: 8px; top: 34px; z-index: 5; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--shadow-float); padding: 4px; display: flex; flex-direction: column; min-width: 130px; }
+.thread-menu button { text-align: left; border: 0; background: transparent; padding: 7px 10px; border-radius: var(--r-s); cursor: pointer; font-size: var(--fs-s); }
+.thread-menu button:hover { background: var(--surface-3); }
+.rail-collapsed .rail { padding: 12px 8px; align-items: center; }
+.rail-collapsed .brand-text, .rail-collapsed .rail-search, .rail-collapsed .btn-label, .rail-collapsed .thread-main, .rail-collapsed .thread-side, .rail-collapsed .thread-time { display: none; }
+.rail-collapsed .rail-brand { flex-direction: column; gap: 8px; padding: 0 0 4px; }
+.rail-collapsed .rail-collapse { margin: 0; }
+.rail-collapsed .rail-new { width: 36px; padding: 0; }
+.rail-collapsed .thread-item { grid-template-columns: 1fr; justify-items: center; padding: 8px 0; width: 40px; }
+.rail-collapsed .thread-item::before { display: none; }
+.rail-collapsed .thread-item.active { background: var(--ai-soft); }
+.rail-collapsed .thread-list { width: 100%; align-items: center; }
+
+/* ---------- topbar ---------- */
+.topbar { height: 56px; display: flex; align-items: center; gap: 12px; padding: 0 16px; border-bottom: 1px solid var(--line); background: var(--surface); flex: none; }
+.rail-open { display: none; }
+.app-chip { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.app-chip .id { font-weight: 500; }
+.app-chip .name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar-actions { margin-left: auto; display: flex; align-items: center; gap: 6px; }
+.sidebar-open { display: none; }
+.menu { position: relative; }
+.menu-panel { position: absolute; right: 0; top: 40px; width: 280px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m); box-shadow: var(--shadow-float); padding: 6px; z-index: 20; }
+.menu-item { display: flex; align-items: center; gap: 10px; width: 100%; height: 34px; padding: 0 10px; border: 0; border-radius: var(--r-s); background: transparent; cursor: pointer; text-align: left; font-size: var(--fs-s); }
+.menu-item:hover { background: var(--surface-3); }
+.menu-sep { height: 1px; background: var(--line); margin: 6px 4px; }
+.menu-title { font-size: var(--fs-xs); color: var(--ink-3); padding: 6px 10px 2px; }
+.svc-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 10px; font-size: var(--fs-xs); }
+.svc-row .svc-name { color: var(--ink-2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.seg { display: inline-flex; border: 1px solid var(--line-strong); border-radius: 999px; overflow: hidden; flex: none; }
+.seg button { border: 0; background: transparent; padding: 2px 8px; font-size: 11px; cursor: pointer; color: var(--ink-2); }
+.seg button.on { background: var(--ink); color: var(--bg); }
+
+/* ---------- conversation ---------- */
+.conversation { flex: 1; overflow-y: auto; min-height: 0; }
+.messages { max-width: var(--content-w); margin: 0 auto; padding: 24px 24px 8px; display: flex; flex-direction: column; gap: 18px; }
+.msg { animation: rise var(--dur) var(--ease); }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.msg-user { align-self: flex-end; max-width: 78%; background: var(--user-bubble); border-radius: 14px 14px 4px 14px; padding: 10px 14px; }
+.msg-user .text { white-space: pre-wrap; }
+.file-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 6px; }
+.file-chip { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 8px 0 6px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); font-size: var(--fs-xs); max-width: 260px; }
+.file-chip .fmt { font-family: var(--font-id); font-size: 10px; font-weight: 500; padding: 1px 5px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); }
+.file-chip .fname { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.file-chip .fsize { color: var(--ink-3); }
+.file-chip .rm { border: 0; background: transparent; cursor: pointer; padding: 0; display: inline-flex; color: var(--ink-3); }
+.file-chip .rm svg { width: 12px; height: 12px; }
+.msg-ai { display: grid; grid-template-columns: 28px 1fr; gap: 12px; align-items: start; }
+.avatar { width: 28px; height: 28px; border-radius: 50%; position: relative; background: var(--surface); display: flex; align-items: center; justify-content: center; color: var(--ai-text); }
+.avatar::before { content: ''; position: absolute; inset: -2px; border-radius: 50%; background: var(--ai-grad); z-index: -1; }
+.avatar::after { content: ''; position: absolute; inset: 0; border-radius: 50%; background: var(--surface); z-index: -1; }
+.avatar.working::before { background: conic-gradient(from 0deg, var(--ai-a), var(--ai-b), transparent 60%, var(--ai-a)); animation: spin 2.4s linear infinite; }
+.avatar svg { width: 14px; height: 14px; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.ai-body { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.ai-body .text p { margin: 0; }
+.ai-body .text p + p { margin-top: 6px; }
+.typing { display: inline-flex; gap: 4px; align-items: center; height: 22px; }
+.typing i { width: 6px; height: 6px; border-radius: 50%; background: var(--ink-3); animation: blink 1.2s infinite; }
+.typing i:nth-child(2) { animation-delay: .2s; } .typing i:nth-child(3) { animation-delay: .4s; }
+@keyframes blink { 0%, 80%, 100% { opacity: .25; } 40% { opacity: 1; } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .45; } }
+
+/* ---------- activity block ---------- */
+.activity { border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface-2); padding: 4px; }
+.step { border-radius: var(--r-s); }
+.step-row { display: flex; align-items: center; gap: 10px; height: 32px; padding: 0 8px; cursor: pointer; border: 0; background: transparent; width: 100%; text-align: left; font-size: var(--fs-s); position: relative; overflow: hidden; }
+.step-row .glyph { width: 16px; height: 16px; display: inline-flex; align-items: center; justify-content: center; color: var(--pass); flex: none; }
+.step.running .step-row .glyph { color: var(--ai-text); }
+.step.running .step-row::after { content: ''; position: absolute; inset: 0; background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ai-a) 12%, transparent), transparent); background-size: 200% 100%; animation: shimmer 1.6s linear infinite; pointer-events: none; }
+@keyframes shimmer { from { background-position: 200% 0; } to { background-position: -200% 0; } }
+.step-row .count { margin-left: auto; color: var(--ink-3); font-size: var(--fs-xs); font-variant-numeric: tabular-nums; }
+.step-row .chev { color: var(--ink-3); transition: transform var(--dur); }
+.step.open .step-row .chev { transform: rotate(90deg); }
+.step-items { display: none; padding: 2px 8px 8px 34px; flex-direction: column; gap: 3px; }
+.step.open .step-items { display: flex; }
+.step-item { display: flex; align-items: center; gap: 8px; font-size: var(--fs-s); color: var(--ink-2); min-height: 22px; }
+.step-item .fname { color: var(--ink); }
+.step-item .muted { color: var(--ink-3); }
+.spinner { width: 14px; height: 14px; border-radius: 50%; border: 2px solid var(--line-strong); border-top-color: var(--ai-a); animation: spin .8s linear infinite; flex: none; }
+.svc-chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 2px 8px 8px 34px; }
+.svc { display: inline-flex; align-items: center; gap: 6px; height: 26px; padding: 0 10px 0 8px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); font-size: var(--fs-xs); }
+.svc .dot { width: 8px; height: 8px; border-radius: 50%; background: var(--pending); }
+.svc.pass .dot { background: var(--pass); } .svc.fail .dot { background: var(--fail); } .svc.unavailable .dot { background: var(--info); } .svc.info .dot { background: var(--info); }
+.svc .spinner { width: 10px; height: 10px; border-width: 1.5px; }
+.badge { font-family: var(--font-id); font-size: 10px; font-weight: 500; padding: 1px 5px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); }
+
+/* ---------- pills & status ---------- */
+.pill { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 9px; border-radius: 999px; font-size: var(--fs-xs); font-weight: 500; white-space: nowrap; }
+.pill.pass { background: var(--pass-soft); color: var(--pass); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.fail { background: var(--fail-soft); color: var(--fail); }
+.pill.info, .pill.unavailable { background: var(--info-soft); color: var(--info); }
+.pill.pending { background: var(--pending-soft); color: var(--pending); }
+.pill.confirmed { background: var(--ai-soft); color: var(--ai-text); }
+.st { display: inline-flex; width: 16px; height: 16px; align-items: center; justify-content: center; flex: none; }
+.st.pass { color: var(--pass); } .st.warn { color: var(--warn); } .st.fail { color: var(--fail); } .st.info { color: var(--info); } .st.pending { color: var(--pending); } .st.unavailable { color: var(--info); }
+
+/* ---------- document card ---------- */
+.card { border: 1px solid var(--line); border-radius: var(--r-m); background: var(--surface); overflow: hidden; }
+.card.expanded { border-left: 3px solid var(--line-strong); }
+.card.expanded.pass { border-left-color: var(--pass); } .card.expanded.warn { border-left-color: var(--warn); } .card.expanded.fail { border-left-color: var(--fail); } .card.expanded.unavailable, .card.expanded.info { border-left-color: var(--info); } .card.expanded.pending { border-left-color: var(--ai-a); }
+.card-head { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 6px 12px; cursor: pointer; }
+.card-head:hover { background: var(--surface-2); }
+.card-head .tico { color: var(--ink-2); display: inline-flex; }
+.card-head .tico svg { width: 20px; height: 20px; }
+.card-type { position: relative; display: inline-flex; align-items: center; }
+.card-type select { appearance: none; -webkit-appearance: none; border: 0; background: transparent; font-weight: 500; padding: 4px 18px 4px 4px; border-radius: var(--r-s); cursor: pointer; }
+.card-type select:hover { background: var(--surface-3); }
+.card-type svg { position: absolute; right: 4px; pointer-events: none; width: 12px; height: 12px; color: var(--ink-3); }
+.card-file { color: var(--ink-3); font-size: var(--fs-s); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0; }
+.conf { font-size: var(--fs-xs); color: var(--ink-3); white-space: nowrap; }
+.conf-meter { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-xs); color: var(--ink-2); white-space: nowrap; }
+.conf-meter .conf-bar { width: 48px; }
+.conf-meter b { font-weight: 500; font-variant-numeric: tabular-nums; }
+.fields thead td { font-size: 11px; color: var(--ink-3); padding-top: 0; padding-bottom: 4px; }
+.card-head .pill { margin-left: auto; }
+.card-head .chev { color: var(--ink-3); transition: transform var(--dur); }
+.card.expanded .card-head .chev { transform: rotate(180deg); }
+.card-summary { padding: 0 12px 10px 42px; font-size: var(--fs-s); color: var(--ink-2); }
+.card-body { border-top: 1px solid var(--line); }
+.tabs { display: flex; gap: 4px; padding: 0 12px; border-bottom: 1px solid var(--line); }
+.tab { border: 0; background: transparent; padding: 10px 8px; font-size: var(--fs-s); color: var(--ink-2); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -1px; }
+.tab.active { color: var(--ink); border-bottom-color: var(--ink); font-weight: 500; }
+.tab-body { padding: 12px; }
+.fields { width: 100%; border-collapse: collapse; }
+.fields td { padding: 6px 8px; vertical-align: middle; border-bottom: 1px solid var(--line); font-size: var(--fs-s); }
+.fields tr:last-child td { border-bottom: 0; }
+.fields td.lbl { width: 180px; color: var(--ink-2); }
+.fields td.cf { width: 120px; }
+.fields tr.row-flash td { background: color-mix(in srgb, var(--ai-b) 18%, transparent); transition: background 1.2s; }
+.val { position: relative; display: inline-block; padding: 2px 8px; cursor: text; border-radius: 3px; max-width: 100%; }
+.val::before, .val::after { content: ''; position: absolute; width: 7px; height: 7px; border-color: color-mix(in srgb, var(--ai-a) 70%, transparent); border-style: solid; pointer-events: none; }
+.val::before { left: 0; top: 0; border-width: 1.5px 0 0 1.5px; }
+.val::after { right: 0; bottom: 0; border-width: 0 1.5px 1.5px 0; }
+.val:hover { background: var(--surface-2); }
+.val.edited::before, .val.edited::after { border-color: var(--ink); }
+.val.confirmed::before, .val.confirmed::after { display: none; }
+.val.confirmed { border-bottom: 1px solid var(--pass); border-radius: 0; }
+.val .tag { font-size: 10px; color: var(--ink-3); margin-left: 6px; }
+.val .ok { color: var(--pass); margin-left: 6px; display: inline-flex; vertical-align: middle; }
+.val .ok svg { width: 12px; height: 12px; }
+.val-input { width: 100%; border: 1px solid var(--ai-a); border-radius: 4px; padding: 2px 6px; background: var(--surface); font-size: var(--fs-s); }
+.conf-cell { display: inline-flex; align-items: center; gap: 8px; }
+.conf-bar { width: 64px; height: 4px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.conf-bar i { display: block; height: 100%; background: var(--ai-grad); }
+.conf-pct { font-family: var(--font-id); font-size: 11px; color: var(--ink-3); }
+.fields-foot { display: flex; justify-content: flex-end; align-items: center; gap: 8px; padding-top: 10px; }
+.checks-group { margin-bottom: 12px; }
+.checks-group h4 { font-size: var(--fs-xs); font-weight: 500; color: var(--ink-3); margin: 0 0 4px; }
+.check { display: grid; grid-template-columns: 16px 1fr; gap: 10px; padding: 8px 6px; border-radius: var(--r-s); }
+.check + .check { border-top: 1px solid var(--line); }
+.check.acknowledged { opacity: .6; }
+.check-title { font-weight: 500; font-size: var(--fs-s); display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+.check-title .tag { font-size: 10px; font-weight: 500; padding: 1px 6px; border-radius: 4px; background: var(--surface-3); color: var(--ink-2); }
+.check-detail { font-size: var(--fs-s); color: var(--ink-2); margin-top: 2px; }
+.check-meta { font-size: var(--fs-xs); color: var(--ink-3); margin-top: 4px; display: flex; gap: 12px; flex-wrap: wrap; align-items: center; }
+.check-actions { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 6px; }
+.check pre { margin: 6px 0 0; padding: 8px 10px; background: var(--surface-2); border-radius: var(--r-s); font-size: 11px; overflow-x: auto; }
+.check pre + pre { margin-top: 4px; }
+.disclosure { border: 0; background: transparent; color: var(--ai-text); cursor: pointer; padding: 0; font-size: var(--fs-xs); }
+.attention { display: flex; flex-direction: column; gap: 2px; }
+.att-row { display: flex; align-items: center; gap: 10px; padding: 6px 8px; border-radius: var(--r-s); font-size: var(--fs-s); }
+.att-row:hover { background: var(--surface-2); }
+.att-row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; }
+.att-row .dot.warn { background: var(--warn); } .att-row .dot.fail { background: var(--fail); } .att-row .dot.unavailable { background: var(--info); }
+.att-row .txt { flex: 1; min-width: 0; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chip { display: inline-flex; align-items: center; gap: 6px; height: 30px; padding: 0 12px; border-radius: 999px; border: 1px solid var(--line-strong); background: var(--surface); font-size: var(--fs-s); cursor: pointer; color: var(--ink); }
+.chip:hover { border-color: var(--ai-a); color: var(--ai-text); }
+.cite { display: inline-flex; align-items: center; gap: 4px; height: 24px; padding: 0 8px; border-radius: 999px; font-size: var(--fs-xs); border: 1px solid color-mix(in srgb, var(--ai-a) 40%, var(--line)); background: var(--ai-soft); color: var(--ai-text); cursor: pointer; }
+.cite:hover { border-color: var(--ai-a); }
+.cites { display: flex; flex-wrap: wrap; gap: 6px; }
+.note { position: relative; border: 1px solid var(--line); border-left: 3px solid var(--ai-a); background: var(--surface-2); padding: 12px 14px; white-space: pre-wrap; font-size: var(--fs-s); border-radius: 0 var(--r-m) var(--r-m) 0; }
+.note .copy { position: absolute; right: 8px; top: 8px; height: 28px; padding: 0 10px; font-size: var(--fs-xs); }
+
+/* ---------- composer ---------- */
+.composer-wrap { padding: 8px 24px 16px; max-width: var(--content-w); margin: 0 auto; width: 100%; display: flex; flex-direction: column; gap: 10px; flex: none; }
+.composer { display: flex; align-items: flex-end; gap: 6px; padding: 6px 6px 6px 8px; background: var(--surface); border: 1px solid var(--line-strong); border-radius: var(--r-l); box-shadow: var(--shadow-float); }
+.composer:focus-within { border-color: var(--ai-a); }
+.composer-body { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.composer textarea { width: 100%; border: 0; background: transparent; resize: none; outline: none; padding: 7px 4px; line-height: 1.45; max-height: 160px; }
+.attach-tray { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 4px 0; }
+.send-btn { background: var(--ink); color: var(--bg); }
+.send-btn:hover { background: var(--ink); color: var(--bg); filter: brightness(1.15); }
+.drop-overlay { position: absolute; inset: 0; z-index: 30; display: flex; align-items: center; justify-content: center; background: color-mix(in srgb, var(--ai-a) 8%, transparent); }
+.drop-overlay::before { content: ''; position: absolute; inset: 12px; border: 2px dashed var(--ai-a); border-radius: var(--r-l); }
+.drop-card { background: var(--surface); padding: 14px 20px; border-radius: var(--r-m); box-shadow: var(--shadow-float); font-weight: 500; }
+.toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 8px 14px; border-radius: 999px; font-size: var(--fs-s); z-index: 50; animation: rise var(--dur) var(--ease); }
+
+/* ---------- sidebar ---------- */
+.sidebar { background: var(--surface); border-left: 1px solid var(--line); overflow: hidden; min-height: 0; height: 100vh; display: flex; flex-direction: column; }
+.sb-section { display: flex; flex-direction: column; min-height: 0; flex: 1 1 50%; border-bottom: 1px solid var(--line); }
+.sb-section:last-child { border-bottom: 0; }
+.sb-section.collapsed { flex: 0 0 auto; }
+#sbDocuments { flex: 0 1 auto; max-height: 62%; }
+#sbApplication { flex: 1 1 0; }
+.sb-section.collapsed .sb-body { display: none; }
+.sb-bar { display: flex; align-items: center; gap: 8px; padding: 12px 14px; border-bottom: 1px solid var(--line); background: var(--surface); cursor: pointer; user-select: none; flex: none; }
+.sb-bar h3 { font-size: var(--fs-s); font-weight: 600; flex: 1; }
+.sb-bar .muted { font-size: var(--fs-xs); color: var(--ink-3); font-weight: 400; }
+.sb-bar .chev { color: var(--ink-3); transition: transform var(--dur); display: inline-flex; }
+.sb-section.collapsed .sb-bar .chev { transform: rotate(-90deg); }
+.sb-body { overflow-y: auto; min-height: 0; padding: 8px 10px 14px; }
+.sb-title { display: flex; align-items: center; justify-content: space-between; font-size: var(--fs-s); font-weight: 600; margin-bottom: 8px; }
+.sb-title .muted { font-weight: 400; color: var(--ink-3); font-size: var(--fs-xs); }
+.sb-head { display: flex; align-items: center; gap: 8px; margin: 4px 6px 6px; }
+.sb-head .id { font-weight: 500; }
+.group-name { font-size: 11px; font-weight: 500; color: var(--ink-3); margin: 8px 6px 2px; }
+.app-row { display: grid; grid-template-columns: 108px 1fr; column-gap: 8px; align-items: start; padding: 4px 22px 4px 6px; border-radius: var(--r-s); cursor: pointer; position: relative; }
+.app-row:hover { background: var(--surface-2); }
+.app-row .lbl { font-size: var(--fs-xs); color: var(--ink-3); padding-top: 1px; }
+.app-row .v { font-size: var(--fs-s); min-height: 20px; word-break: break-word; }
+.app-row .v.empty { color: var(--ink-3); font-style: italic; }
+.app-row .pen { position: absolute; right: 6px; top: 6px; color: var(--ink-3); opacity: 0; }
+.app-row:hover .pen { opacity: 1; }
+.app-row .pen svg { width: 12px; height: 12px; }
+.app-row input, .app-row select { width: 100%; border: 1px solid var(--ai-a); border-radius: 4px; padding: 3px 6px; background: var(--surface); font-size: var(--fs-s); }
+.req-list { display: flex; flex-direction: column; }
+.req-row { display: flex; align-items: center; gap: 10px; padding: 7px 6px; border-radius: var(--r-s); font-size: var(--fs-s); cursor: default; border: 0; background: transparent; width: 100%; text-align: left; }
+.req-row.link { cursor: pointer; }
+.req-row.link:hover { background: var(--surface-2); }
+.req-row .dot { width: 8px; height: 8px; border-radius: 50%; flex: none; background: var(--pending); }
+.req-row .dot.pass { background: var(--pass); } .req-row .dot.warn { background: var(--warn); } .req-row .dot.fail { background: var(--fail); }
+.req-row .lbl { flex: 1; }
+.req-row .stat { font-size: var(--fs-xs); color: var(--ink-3); }
+.req-row .stat.fail { color: var(--fail); } .req-row .stat.warn { color: var(--warn); }
+.summary-tiles { display: grid; grid-template-columns: 1fr 1fr; border: 1px solid var(--line); border-radius: var(--r-m); overflow: hidden; }
+.tile { padding: 10px 12px; }
+.tile .n { font-size: 22px; font-weight: 600; line-height: 1.1; font-variant-numeric: tabular-nums; }
+.tile .l { font-size: var(--fs-xs); color: var(--ink-3); }
+.tile.warn .n { color: var(--warn); } .tile.fail .n { color: var(--fail); } .tile.pass .n { color: var(--pass); }
+.shortfall { margin: 10px 0; display: flex; flex-direction: column; gap: 4px; }
+.shortfall li { font-size: var(--fs-s); color: var(--ink-2); padding-left: 14px; position: relative; }
+.shortfall li::before { content: ''; position: absolute; left: 0; top: 8px; width: 6px; height: 6px; border-radius: 50%; background: var(--warn); }
+.sb-summary-btn { width: 100%; margin-top: 10px; }
+
+/* ---------- dialog ---------- */
+.scrim { position: fixed; inset: 0; background: var(--scrim); z-index: 40; }
+.dialog { position: fixed; left: 50%; top: 50%; transform: translate(-50%, -50%); width: 440px; max-width: calc(100vw - 32px); background: var(--surface); border-radius: var(--r-l); box-shadow: var(--shadow-float); padding: 20px; z-index: 45; display: flex; flex-direction: column; gap: 12px; animation: rise var(--dur) var(--ease); }
+.dialog h3 { font-size: var(--fs-l); font-weight: 600; }
+.dialog .sub { color: var(--ink-2); font-size: var(--fs-s); }
+.opt { display: grid; grid-template-columns: 18px 1fr; gap: 10px; align-items: start; padding: 10px; border: 1px solid var(--line); border-radius: var(--r-m); cursor: pointer; }
+.opt:hover { border-color: var(--line-strong); }
+.opt.on { border-color: var(--ai-a); background: var(--ai-soft); }
+.opt .radio { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--line-strong); margin-top: 2px; }
+.opt.on .radio { border-color: var(--ai-a); background: radial-gradient(circle, var(--ai-a) 40%, transparent 45%); }
+.opt .t { font-weight: 500; font-size: var(--fs-s); }
+.opt .d { font-size: var(--fs-xs); color: var(--ink-2); }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+.unknown-prompt { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* ---------- responsive ---------- */
+@media (max-width: 1280px) {
+  .app { grid-template-columns: 56px 1fr var(--sidebar-w); }
+  .rail { padding: 12px 8px; align-items: center; }
+  .brand-text, .rail-search, .btn-label, .thread-main, .thread-side, .thread-time, .rail-collapse { display: none; }
+  .rail-brand { flex-direction: column; gap: 8px; padding: 0 0 4px; }
+  .rail-new { width: 36px; padding: 0; }
+  .thread-item { grid-template-columns: 1fr; justify-items: center; padding: 8px 0; width: 40px; }
+  .thread-item::before { display: none; }
+  .thread-item.active { background: var(--ai-soft); }
+  .thread-list { width: 100%; align-items: center; }
+  .app.rail-expanded { grid-template-columns: var(--rail-w) 1fr var(--sidebar-w); }
+  .app.rail-expanded .rail { padding: 12px 10px; align-items: stretch; }
+  .app.rail-expanded .brand-text, .app.rail-expanded .rail-search, .app.rail-expanded .btn-label, .app.rail-expanded .thread-main, .app.rail-expanded .thread-side, .app.rail-expanded .thread-time, .app.rail-expanded .rail-collapse { display: flex; }
+  .app.rail-expanded .rail-brand { flex-direction: row; gap: 10px; padding: 4px 4px 8px; }
+  .app.rail-expanded .rail-new { width: 100%; padding: 0 14px; }
+  .app.rail-expanded .thread-item { grid-template-columns: 14px 1fr auto; justify-items: stretch; padding: 8px 10px 8px 8px; width: 100%; }
+  .app.rail-expanded .thread-item::before { display: block; }
+  .app.rail-expanded .thread-item.active { background: var(--surface-3); }
+  .app.rail-expanded .thread-list { align-items: stretch; }
+}
+@media (max-width: 1100px) {
+  .app, .app.rail-expanded { grid-template-columns: 56px 1fr; }
+  .sidebar { position: fixed; top: 0; right: 0; bottom: 0; width: var(--sidebar-w); z-index: 42; transform: translateX(100%); transition: transform var(--dur) var(--ease); box-shadow: var(--shadow-float); }
+  .app.sidebar-open .sidebar { transform: none; }
+  .sidebar-open { display: inline-flex; }
+}
+@media (max-width: 720px) {
+  .app, .app.rail-expanded { grid-template-columns: 1fr; }
+  .rail { position: fixed; top: 0; left: 0; bottom: 0; width: var(--rail-w); z-index: 42; transform: translateX(-100%); transition: transform var(--dur) var(--ease); box-shadow: var(--shadow-float); padding: 12px 10px; align-items: stretch; }
+  .app.rail-expanded .rail { transform: none; }
+  .rail .brand-text, .rail .rail-search, .rail .btn-label, .rail .thread-main, .rail .thread-side, .rail .thread-time { display: flex; }
+  .rail .rail-brand { flex-direction: row; }
+  .rail .rail-new { width: 100%; padding: 0 14px; }
+  .rail .thread-item { grid-template-columns: 14px 1fr auto; justify-items: stretch; padding: 8px 10px 8px 8px; width: 100%; }
+  .rail-open { display: inline-flex; }
+  .messages, .composer-wrap { padding-left: 12px; padding-right: 12px; }
+  .msg-user { max-width: 92%; }
+  .fields td.lbl { width: 120px; }
+}
+
+/* ================= AI-centric polish ================= */
+.main { background: transparent; }
+.topbar, .conversation, .composer-wrap, .drop-overlay { position: relative; z-index: 1; }
+.topbar { background: var(--surface); }
+.composer { background: var(--surface); border-color: var(--line-strong); transition: box-shadow var(--dur), border-color var(--dur); }
+.composer:focus-within { border-color: var(--ai-a); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai-a) 10%, transparent), var(--shadow-float); }
+.brand-mark { background: none; border-radius: 0; }
+.thread-item { transition: background var(--dur); }
+.chip { transition: transform .15s var(--ease), border-color .15s, box-shadow .15s, color .15s; }
+.chip:hover { transform: translateY(-1px); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai-a) 12%, transparent); }
+.chips .chip { animation: rise .4s var(--ease) both; }
+.chips .chip:nth-child(2) { animation-delay: 50ms; } .chips .chip:nth-child(3) { animation-delay: 100ms; } .chips .chip:nth-child(4) { animation-delay: 150ms; } .chips .chip:nth-child(5) { animation-delay: 200ms; }
+@keyframes rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+.msg { animation: none; }
+.msg.fresh { animation: rise .32s var(--ease) both; }
+.messages.fade { animation: fadeIn .28s var(--ease); }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } }
+.msg-ai { grid-template-columns: 32px 1fr; gap: 14px; }
+.msg-ai .avatar { display: none; }
+.msg-greeting { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 18px; padding: 40px 0 8px; }
+.msg-greeting .text { max-width: 520px; font-size: var(--fs-l); color: var(--ink-2); }
+.msg-greeting .text p:first-child { color: var(--ink); font-weight: 500; font-size: var(--fs-xl); text-wrap: balance; }
+.typing { gap: 6px; }
+.typing i { background: var(--ai-grad); width: 7px; height: 7px; }
+.typing .lbl { font-size: var(--fs-s); color: var(--ink-3); margin-left: 4px; }
+.activity { background: color-mix(in srgb, var(--surface) 80%, transparent); backdrop-filter: blur(8px); border-color: color-mix(in srgb, var(--ai-a) 16%, var(--line)); }
+.fresh .step { animation: rise .3s var(--ease) both; }
+.step.done .step-row .glyph { animation: pop .35s var(--ease); color: var(--ai-text); }
+@keyframes pop { 0% { transform: scale(.4); opacity: 0; } 70% { transform: scale(1.25); } 100% { transform: scale(1); opacity: 1; } }
+.step.running .step-row::after { background: linear-gradient(90deg, transparent, color-mix(in srgb, var(--ai-a) 18%, transparent), color-mix(in srgb, var(--ai-b) 14%, transparent), transparent); }
+.fresh .svc { animation: rise .3s var(--ease) both; }
+.svc.pass .dot, .svc.fail .dot, .svc.unavailable .dot { animation: pop .3s var(--ease); box-shadow: 0 0 8px currentColor; }
+.svc.pass .dot { color: var(--pass); } .svc.fail .dot { color: var(--fail); } .svc.unavailable .dot { color: var(--info); }
+.card { position: relative; transition: border-color var(--dur), box-shadow var(--dur), transform var(--dur); }
+.card.enter { animation: rise .45s var(--ease) both; }
+.card:hover { border-color: color-mix(in srgb, var(--ai-a) 30%, var(--line)); }
+.card.pending::after { content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; background: var(--ai-grad); animation: scan 1.8s ease-in-out infinite; opacity: .6; pointer-events: none; }
+@keyframes scan { 0% { top: 0; opacity: 0; } 15% { opacity: .8; } 85% { opacity: .8; } 100% { top: calc(100% - 2px); opacity: 0; } }
+.card-body { animation: expand .22s var(--ease); }
+@keyframes expand { from { opacity: 0; transform: translateY(-6px); } }
+.fresh .pill, .card.enter .pill { animation: pop .3s var(--ease); }
+.pill.pass { box-shadow: 0 0 0 1px color-mix(in srgb, var(--pass) 25%, transparent) inset; }
+.val::before, .val::after { transition: border-color .2s, transform .2s; }
+.val:hover::before, .val:hover::after { border-color: var(--ai-b); }
+.val:hover::before { transform: translate(-1px, -1px); } .val:hover::after { transform: translate(1px, 1px); }
+.fields tr.row-flash td { animation: flash 1.2s var(--ease); }
+@keyframes flash { 0% { background: color-mix(in srgb, var(--ai-b) 28%, transparent); } 100% { background: transparent; } }
+.cite { transition: transform .15s var(--ease), box-shadow .15s; }
+.cite:hover { transform: translateY(-1px); box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai-a) 14%, transparent); }
+.app-row { transition: background var(--dur); }
+.app-row.changed .v { animation: flash 1.4s var(--ease); border-radius: 4px; }
+.dialog { border: 1px solid color-mix(in srgb, var(--ai-a) 18%, var(--line)); }
+.opt.on { box-shadow: 0 0 0 3px color-mix(in srgb, var(--ai-a) 14%, transparent); }
+.menu-panel { backdrop-filter: blur(14px); background: var(--glass); }
+.thread-dot.running { box-shadow: 0 0 10px var(--glow-a); }
+.icon-btn:hover { color: var(--ai-text); }
+.brand-mark { width: 26px; height: 26px; filter: drop-shadow(0 0 8px var(--glow-a)); }
+.messages.empty { min-height: 100%; justify-content: center; }
+.messages.empty .msg-greeting { padding: 0 0 12vh; }
+.conf-bar i { transition: width .6s var(--ease); }
+.brand-svg { width: 26px; height: 26px; display: block; }
+.brand-mark { filter: none; }
+.caret { display: inline-block; width: 2px; height: 1em; background: var(--ai-a); margin-left: 2px; vertical-align: -2px; animation: blinkCaret 1s steps(2) infinite; }
+@keyframes blinkCaret { 50% { opacity: 0; } }
+.cites.fresh { animation: rise .3s var(--ease) both; }
+.msg.fresh .text { animation: none; }
+/* preview.css — mock document renders shown in the Preview tab */
+.preview { display: flex; justify-content: center; padding: 12px 0 4px; overflow-x: auto; }
+.preview .pv-label { font-size: 11px; color: var(--ink-3); line-height: 1.3; }
+.preview .pv-value { font-size: 13px; color: var(--ink); line-height: 1.35; overflow-wrap: anywhere; }
+.preview .id { font-family: var(--font-id); font-size: 0.93em; letter-spacing: .02em; }
+
+/* Highlight boxes on AI-read values */
+.preview .hl { outline: 1.5px solid color-mix(in srgb, var(--ai-a) 65%, transparent); outline-offset: 2px; border-radius: 3px; }
+.preview .hl.active { background: color-mix(in srgb, var(--ai-b) 22%, transparent); outline-color: var(--ai-b); }
+.preview .hl.ok { outline-color: var(--pass); }
+
+/* Shared bits */
+.preview .pv-emblem { width: 24px; height: 24px; border-radius: 50%; border: 2px solid var(--ink-2); flex: none; position: relative; }
+.preview .pv-emblem::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; border: 1.5px solid var(--ink-3); }
+.preview .pv-emblem-sm { width: 20px; height: 20px; }
+.preview .pv-qr { width: 34px; height: 34px; border: 1.5px dashed var(--ink-3); border-radius: 3px; flex: none;
+  background: repeating-linear-gradient(90deg, transparent 0 3px, color-mix(in srgb, var(--ink) 18%, transparent) 3px 5px); }
+.preview .pv-footer { margin-top: 14px; font-size: 11px; color: var(--ink-3); text-align: center; }
+
+/* Card layout: Aadhaar, PAN, DL */
+.preview .pv-card { width: 360px; min-height: 227px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-m);
+  overflow: hidden; display: flex; flex-direction: column; font-family: var(--font-ui); box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 8%, transparent); }
+.preview .pv-band { height: 4px; background: var(--ink-3); }
+.preview .pv-card-aadhaar .pv-band { background: linear-gradient(90deg, #E8892B 0 33%, var(--surface) 33% 66%, #1E9E4A 66%); }
+.preview .pv-card-pan .pv-band { background: #3D5A99; height: 6px; }
+.preview .pv-card-dl .pv-band { background: #5B6473; height: 6px; }
+.preview .pv-card-head { display: flex; align-items: center; gap: 10px; padding: 10px 14px 6px; }
+.preview .pv-card-issuer { font-size: 10px; color: var(--ink-3); letter-spacing: .01em; }
+.preview .pv-card-title { font-size: 12px; font-weight: 600; color: var(--ink); }
+.preview .pv-card-body { display: flex; gap: 12px; padding: 4px 14px 8px; }
+.preview .pv-photo { width: 62px; height: 76px; flex: none; border-radius: 4px; background: var(--surface-2); border: 1px solid var(--line); position: relative; }
+.preview .pv-photo::before { content: ''; position: absolute; left: 50%; top: 16px; width: 22px; height: 22px; margin-left: -11px; border-radius: 50%; background: var(--line); }
+.preview .pv-photo::after { content: ''; position: absolute; left: 50%; bottom: 8px; width: 40px; height: 24px; margin-left: -20px; border-radius: 20px 20px 4px 4px; background: var(--line); }
+.preview .pv-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; flex: 1; min-width: 0; align-content: start; }
+.preview .pv-row-wide { grid-column: 1 / -1; }
+.preview .pv-bigid { font-size: 15px; letter-spacing: .06em; }
+.preview .pv-card-address { padding: 4px 14px 8px; display: flex; flex-direction: column; gap: 2px; font-size: 12px; color: var(--ink-2); line-height: 1.35; }
+.preview .pv-card-foot { display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 0 14px 12px; margin-top: auto; }
+.preview .pv-signature-line { font-size: 10px; color: var(--ink-3); border-top: 1px solid var(--ink-3); padding-top: 2px; min-width: 90px; text-align: center; }
+.preview .pv-hologram { width: 26px; height: 26px; border-radius: 50%; flex: none;
+  background: conic-gradient(from 90deg, #cbd5e1, #e9d5ff, #a5f3fc, #fde68a, #cbd5e1); opacity: .7; }
+
+/* Page layouts: deed and letter */
+.preview .pv-page { width: 420px; max-width: 100%; background: var(--surface); border: 1px solid var(--line); border-radius: var(--r-s);
+  padding: 22px 26px 18px; color: var(--ink); font-family: var(--font-ui); font-size: 12.5px; line-height: 22px; position: relative;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--ink) 8%, transparent); }
+.preview .pv-deed { background-image: repeating-linear-gradient(to bottom, transparent 0 21px, color-mix(in srgb, var(--ink) 4%, transparent) 21px 22px); background-origin: content-box; }
+.preview .pv-para { margin: 0 0 10px; text-align: left; }
+.preview .pv-para-tight { margin: 0 0 4px; }
+.preview .pv-stamp-strip { font-size: 10px; color: var(--ink-3); border: 1px solid var(--line); border-radius: 3px; padding: 2px 8px; display: inline-block; margin-bottom: 8px; }
+.preview .pv-title { margin: 0 0 10px; text-align: center; font-size: 15px; font-weight: 600; letter-spacing: .06em; }
+.preview .pv-ref-row { display: flex; flex-wrap: wrap; gap: 4px 24px; margin-bottom: 12px; }
+.preview .pv-ref { display: flex; flex-direction: column; gap: 1px; }
+.preview .pv-schedule { border: 1px solid var(--line); border-radius: var(--r-s); padding: 8px 12px; margin: 10px 0; background: color-mix(in srgb, var(--surface-2) 70%, transparent); }
+.preview .pv-schedule-title { font-weight: 600; font-size: 12px; margin-bottom: 4px; }
+.preview .pv-witnesses { display: flex; flex-direction: column; gap: 2px; margin: 12px 0 8px; font-size: 11px; color: var(--ink-2); }
+.preview .pv-endorsement { border: 1.5px solid var(--ink-2); border-radius: 3px; padding: 6px 10px; margin-top: 10px; transform: rotate(-1deg); width: fit-content; max-width: 100%; }
+.preview .pv-endorsement-title { font-weight: 600; letter-spacing: .12em; font-size: 11px; color: var(--ink-2); }
+.preview .pv-endorsement-note { font-size: 11px; color: var(--ink-3); }
+
+.preview .pv-letterhead { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid var(--line); padding-bottom: 8px; margin-bottom: 10px; }
+.preview .pv-letterhead-name { font-weight: 600; font-size: 13px; }
+.preview .pv-to { margin-bottom: 8px; }
+.preview .pv-to-name { font-size: 13px; }
+.preview .pv-subject { font-weight: 600; margin-bottom: 8px; }
+.preview .pv-conditions { color: var(--ink-2); }
+.preview .pv-sign-row { display: flex; align-items: flex-end; justify-content: space-between; gap: 16px; margin-top: 18px; }
+.preview .pv-seal-wrap { display: flex; flex-direction: column; align-items: center; gap: 2px; }
+.preview .pv-seal { width: 56px; height: 56px; border-radius: 50%; border: 2px solid color-mix(in srgb, var(--ink-2) 70%, transparent);
+  display: flex; align-items: center; justify-content: center; transform: rotate(-12deg); position: relative; }
+.preview .pv-seal::after { content: ''; position: absolute; inset: 5px; border-radius: 50%; border: 1px solid color-mix(in srgb, var(--ink-2) 50%, transparent); }
+.preview .pv-seal-text { font-size: 8px; letter-spacing: .08em; color: var(--ink-2); text-align: center; line-height: 1.1; padding: 0 6px; }
+.preview .pv-seal.missing { border-style: dashed; border-color: var(--warn); transform: none; }
+.preview .pv-seal.missing::after { display: none; }
+.preview .pv-seal-caption { font-size: 11px; color: var(--warn); }
+.preview .pv-sign-block { display: flex; flex-direction: column; align-items: flex-end; gap: 3px; min-width: 150px; }
+.preview .pv-sign-line { width: 150px; border-top: 1px solid var(--ink-2); }
+.preview .pv-sign-caption { font-size: 11px; color: var(--ink-3); }
+.preview .pv-qr-row { display: flex; align-items: center; gap: 8px; margin-top: 12px; }
+
+/* Generic / upload */
+.preview .pv-generic { display: flex; justify-content: center; }
+.preview .pv-img { max-width: 420px; width: 100%; border-radius: var(--r-s); border: 1px solid var(--line); }
+.preview .pv-placeholder { min-height: 300px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; text-align: center; }
+.preview .pv-placeholder-icon { width: 40px; height: 50px; border: 2px solid var(--ink-3); border-radius: 4px; position: relative; margin-bottom: 6px; }
+.preview .pv-placeholder-icon::after { content: ''; position: absolute; right: -2px; top: -2px; width: 12px; height: 12px; background: var(--surface); border-left: 2px solid var(--ink-3); border-bottom: 2px solid var(--ink-3); }
+.preview .pv-placeholder-name { font-weight: 600; overflow-wrap: anywhere; }
+.preview .pv-placeholder-meta { font-size: 12px; color: var(--ink-3); }
+.preview .pv-placeholder-note { font-size: 12px; color: var(--ink-2); max-width: 300px; }
+
+@media (max-width: 520px) {
+  .preview .pv-card { width: 100%; }
+  .preview .pv-page { padding: 16px 14px 14px; }
+}
+</style></head><body>
+<div class="app" id="app">
+  <aside class="rail" id="rail" aria-label="Scrutiny threads">
+    <div class="rail-brand">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <div class="brand-text"><span class="brand-name">Document Intelligence</span><span class="brand-sub">UrbanFloww AI</span></div>
+      <button class="icon-btn rail-collapse" id="railToggle" title="Collapse threads" aria-label="Collapse threads"></button>
+    </div>
+    <button class="btn btn-primary rail-new" id="newThreadBtn"><span class="btn-ico"></span><span class="btn-label">New scrutiny</span></button>
+    <label class="rail-search"><span class="search-ico"></span><input id="threadSearch" type="search" placeholder="Search applications" aria-label="Search applications"></label>
+    <ul class="thread-list" id="threadList" role="list"></ul>
+  </aside>
+
+  <main class="main" id="main">
+    <header class="topbar">
+      <button class="icon-btn rail-open" id="railOpen" title="Show threads" aria-label="Show threads"></button>
+      <div class="app-chip" id="appChip"></div>
+      <div class="topbar-actions">
+        <button class="icon-btn" id="themeBtn" title="Switch theme" aria-label="Switch theme"></button>
+        <div class="menu" id="demoMenu">
+          <button class="btn btn-ghost" id="demoBtn" aria-haspopup="true" aria-expanded="false">Demo</button>
+          <div class="menu-panel" id="demoPanel" hidden></div>
+        </div>
+        <button class="icon-btn sidebar-open" id="sidebarToggle" title="Application details" aria-label="Application details"></button>
+      </div>
+    </header>
+    <section class="conversation" id="conversation">
+      <div class="messages" id="messages"></div>
+    </section>
+    <footer class="composer-wrap">
+      <div class="chips" id="chips"></div>
+      <form class="composer" id="composer">
+        <button type="button" class="icon-btn" id="attachBtn" title="Attach documents" aria-label="Attach documents"></button>
+        <input type="file" id="fileInput" multiple hidden accept=".pdf,.jpg,.jpeg,.png,.docx,.ods,.xlsx">
+        <div class="composer-body">
+          <div class="attach-tray" id="attachTray" hidden></div>
+          <textarea id="composerInput" rows="1" placeholder="Ask about the documents, or attach files" aria-label="Message"></textarea>
+        </div>
+        <button type="submit" class="icon-btn send-btn" id="sendBtn" title="Send" aria-label="Send"></button>
+      </form>
+    </footer>
+    <div class="drop-overlay" id="dropOverlay" hidden><div class="drop-card">Drop documents to add them to this scrutiny</div></div>
+  </main>
+
+  <aside class="sidebar" id="sidebar" aria-label="Application details and documents">
+    <section class="sb-section" id="sbDocuments"></section>
+    <section class="sb-section" id="sbApplication"></section>
+  </aside>
+  <div class="scrim" id="scrim" hidden></div>
+  <div id="dialogRoot"></div>
+</div>
+<script>
+var DI = globalThis.DI || (globalThis.DI = {});
+(() => {
+DI.TODAY = '2026-09-07';
+
+DI.SERVICES = {
+  uidai:        { id: 'uidai',        name: 'UIDAI Aadhaar verification',      latencyMs: 1400, endpoint: 'POST /authserver/2.5/demoauth' },
+  itd_pan:      { id: 'itd_pan',      name: 'Income Tax PAN verification',     latencyMs: 900,  endpoint: 'POST /pan/verify' },
+  sarathi:      { id: 'sarathi',      name: 'Sarathi driving licence check',   latencyMs: 1200, endpoint: 'GET /dl/{dlNo}' },
+  igrs:         { id: 'igrs',         name: 'IGRS registered deed lookup',     latencyMs: 1800, endpoint: 'GET /igrs/deeds/{docNo}' },
+  fire_registry:{ id: 'fire_registry',name: 'Fire Services NOC registry',      latencyMs: 1100, endpoint: 'GET /fire/noc/{nocNo}' },
+  aai_nocas:    { id: 'aai_nocas',    name: 'AAI NOCAS height clearance',      latencyMs: 1500, endpoint: 'GET /nocas/noc/{nocId}' },
+  ulb_registry: { id: 'ulb_registry', name: 'ULB building permit registry',    latencyMs: 700,  endpoint: 'GET /permits/{permitNo}' }
+};
+
+// kind: text | date | id | number | select | money
+DI.DOC_TYPES = {
+  aadhaar: { id: 'aadhaar', label: 'Aadhaar', icon: 'id', preview: 'card', service: 'uidai',
+    fields: [
+      { key: 'name', label: 'Name', kind: 'text', appKey: 'applicantName' },
+      { key: 'dob', label: 'Date of birth', kind: 'date', appKey: 'dob' },
+      { key: 'gender', label: 'Gender', kind: 'text', appKey: 'gender' },
+      { key: 'aadhaarNo', label: 'Aadhaar number', kind: 'id', appKey: 'aadhaarNo', mask: true },
+      { key: 'address', label: 'Address', kind: 'text', appKey: 'address', addressCheck: true }
+    ],
+    structure: [ { key: 'photo', label: 'Photograph' }, { key: 'qr', label: 'QR code' }, { key: 'emblem', label: 'National emblem' } ] },
+  pan: { id: 'pan', label: 'PAN', icon: 'id', preview: 'card', service: 'itd_pan',
+    fields: [
+      { key: 'name', label: 'Name', kind: 'text', appKey: 'applicantName' },
+      { key: 'parentName', label: "Father's name", kind: 'text', appKey: 'parentName' },
+      { key: 'dob', label: 'Date of birth', kind: 'date', appKey: 'dob' },
+      { key: 'pan', label: 'PAN', kind: 'id', appKey: 'pan' }
+    ],
+    structure: [ { key: 'photo', label: 'Photograph' }, { key: 'signature', label: 'Signature' }, { key: 'hologram', label: 'Hologram' } ] },
+  dl: { id: 'dl', label: 'Driving licence', icon: 'id', preview: 'card', service: 'sarathi',
+    fields: [
+      { key: 'name', label: 'Name', kind: 'text', appKey: 'applicantName' },
+      { key: 'dob', label: 'Date of birth', kind: 'date', appKey: 'dob' },
+      { key: 'dlNo', label: 'Licence number', kind: 'id' },
+      { key: 'validUpto', label: 'Valid until', kind: 'date', validity: true },
+      { key: 'address', label: 'Address', kind: 'text', appKey: 'address', addressCheck: true },
+      { key: 'bloodGroup', label: 'Blood group', kind: 'text' }
+    ],
+    structure: [ { key: 'photo', label: 'Photograph' }, { key: 'hologram', label: 'Hologram' } ] },
+  sale_deed: { id: 'sale_deed', label: 'Sale deed', icon: 'deed', preview: 'deed', service: 'igrs',
+    fields: [
+      { key: 'docNo', label: 'Document number', kind: 'id' },
+      { key: 'regDate', label: 'Registration date', kind: 'date' },
+      { key: 'sro', label: 'Sub-registrar office', kind: 'text' },
+      { key: 'vendor', label: 'Vendor', kind: 'text' },
+      { key: 'purchaser', label: 'Purchaser', kind: 'text', appKey: 'applicantName' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'plotNo', label: 'Plot number', kind: 'id', appKey: 'plotNo' },
+      { key: 'extent', label: 'Extent', kind: 'text', appKey: 'extentSqYd', extentCheck: true },
+      { key: 'village', label: 'Village', kind: 'text', appKey: 'village' },
+      { key: 'consideration', label: 'Consideration', kind: 'money' },
+      { key: 'boundaries', label: 'Boundaries', kind: 'text' }
+    ],
+    structure: [ { key: 'schedule', label: 'Schedule of property' }, { key: 'stamp', label: 'Stamp duty endorsement' }, { key: 'registration', label: 'Registration endorsement' }, { key: 'witnesses', label: 'Witness signatures' } ] },
+  link_doc: { id: 'link_doc', label: 'Link document', icon: 'deed', preview: 'deed', service: 'igrs',
+    fields: [
+      { key: 'docNo', label: 'Document number', kind: 'id' },
+      { key: 'regDate', label: 'Registration date', kind: 'date' },
+      { key: 'sro', label: 'Sub-registrar office', kind: 'text' },
+      { key: 'vendor', label: 'Vendor', kind: 'text' },
+      { key: 'purchaser', label: 'Purchaser', kind: 'text' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'plotNo', label: 'Plot number', kind: 'id', appKey: 'plotNo' },
+      { key: 'extent', label: 'Extent', kind: 'text', appKey: 'extentSqYd', extentCheck: true },
+      { key: 'village', label: 'Village', kind: 'text', appKey: 'village' }
+    ],
+    structure: [ { key: 'schedule', label: 'Schedule of property' }, { key: 'stamp', label: 'Stamp duty endorsement' }, { key: 'registration', label: 'Registration endorsement' } ] },
+  building_permit: { id: 'building_permit', label: 'Earlier building permission', icon: 'letter', preview: 'letter', service: 'ulb_registry', lapseIsInfo: true,
+    fields: [
+      { key: 'permitNo', label: 'Permit number', kind: 'id' },
+      { key: 'issuedBy', label: 'Issued by', kind: 'text' },
+      { key: 'issueDate', label: 'Issue date', kind: 'date' },
+      { key: 'validUpto', label: 'Valid until', kind: 'date', validity: true },
+      { key: 'applicant', label: 'Applicant', kind: 'text', appKey: 'applicantName' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'permittedUse', label: 'Permitted use', kind: 'text' },
+      { key: 'permittedFloors', label: 'Permitted floors', kind: 'text' }
+    ],
+    structure: [ { key: 'seal', label: 'Office seal' }, { key: 'signature', label: 'Signature of authority' }, { key: 'conditions', label: 'Conditions annexure' } ] },
+  fire_noc: { id: 'fire_noc', label: 'Fire NOC', icon: 'letter', preview: 'letter', service: 'fire_registry',
+    fields: [
+      { key: 'nocNo', label: 'NOC number', kind: 'id' },
+      { key: 'issuedBy', label: 'Issued by', kind: 'text' },
+      { key: 'issueDate', label: 'Issue date', kind: 'date' },
+      { key: 'validUpto', label: 'Valid until', kind: 'date', validity: true },
+      { key: 'applicant', label: 'Applicant', kind: 'text', appKey: 'applicantName' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'heightApprovedM', label: 'Height approved (m)', kind: 'number', heightAtLeast: true },
+      { key: 'floorsApproved', label: 'Floors approved', kind: 'text', appKey: 'floors' }
+    ],
+    structure: [ { key: 'seal', label: 'Department seal' }, { key: 'signature', label: 'Signature of authority' }, { key: 'conditions', label: 'Conditions annexure' } ] },
+  aai_noc: { id: 'aai_noc', label: 'AAI NOC', icon: 'letter', preview: 'letter', service: 'aai_nocas',
+    fields: [
+      { key: 'nocId', label: 'NOC id', kind: 'id' },
+      { key: 'issueDate', label: 'Issue date', kind: 'date' },
+      { key: 'validUpto', label: 'Valid until', kind: 'date', validity: true },
+      { key: 'applicant', label: 'Applicant', kind: 'text', appKey: 'applicantName' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'siteCoordinates', label: 'Site coordinates', kind: 'text' },
+      { key: 'permissibleHeightM', label: 'Permissible height (m)', kind: 'number', heightAtLeast: true }
+    ],
+    structure: [ { key: 'qr', label: 'Verification QR' }, { key: 'signature', label: 'Digital signature' } ] },
+  irrigation_noc: { id: 'irrigation_noc', label: 'Irrigation NOC', icon: 'letter', preview: 'letter', service: null, manualOnly: true,
+    fields: [
+      { key: 'nocNo', label: 'NOC number', kind: 'id' },
+      { key: 'issuedBy', label: 'Issued by', kind: 'text' },
+      { key: 'issueDate', label: 'Issue date', kind: 'date' },
+      { key: 'validUpto', label: 'Valid until', kind: 'date', validity: true },
+      { key: 'applicant', label: 'Applicant', kind: 'text', appKey: 'applicantName' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'bufferCondition', label: 'Buffer condition', kind: 'text' }
+    ],
+    structure: [ { key: 'seal', label: 'Department seal' }, { key: 'signature', label: 'Signature of authority' } ] },
+  ec: { id: 'ec', label: 'Encumbrance certificate', icon: 'deed', preview: 'letter', service: 'igrs',
+    fields: [
+      { key: 'ecNo', label: 'EC number', kind: 'id' },
+      { key: 'period', label: 'Period searched', kind: 'text' },
+      { key: 'surveyNo', label: 'Survey number', kind: 'id', appKey: 'surveyNo' },
+      { key: 'owner', label: 'Owner on record', kind: 'text', appKey: 'applicantName' },
+      { key: 'encumbrances', label: 'Encumbrances found', kind: 'text' }
+    ],
+    structure: [ { key: 'seal', label: 'SRO seal' }, { key: 'signature', label: 'Signature' } ] },
+  tax_receipt: { id: 'tax_receipt', label: 'Property tax receipt', icon: 'letter', preview: 'letter', service: 'ulb_registry',
+    fields: [
+      { key: 'receiptNo', label: 'Receipt number', kind: 'id' },
+      { key: 'assessmentNo', label: 'Assessment number', kind: 'id' },
+      { key: 'owner', label: 'Owner', kind: 'text', appKey: 'applicantName' },
+      { key: 'period', label: 'Period', kind: 'text' },
+      { key: 'amount', label: 'Amount paid', kind: 'money' }
+    ],
+    structure: [ { key: 'seal', label: 'ULB seal' } ] },
+  unknown: { id: 'unknown', label: 'Unknown document', icon: 'file', preview: 'generic', service: null,
+    fields: [ { key: 'title', label: 'Title', kind: 'text' } ], structure: [] }
+};
+DI.DOC_TYPE_ORDER = ['aadhaar', 'pan', 'dl', 'sale_deed', 'link_doc', 'ec', 'tax_receipt', 'building_permit', 'fire_noc', 'aai_noc', 'irrigation_noc'];
+
+// filename keyword → type (first match wins, checked in this order)
+DI.NAME_KEYWORDS = [
+  ['aadhaar', 'aadhaar'], ['aadhar', 'aadhaar'], ['uid', 'aadhaar'],
+  ['pan', 'pan'],
+  ['licence', 'dl'], ['license', 'dl'], ['_dl', 'dl'], ['dl_', 'dl'], ['driving', 'dl'],
+  ['link', 'link_doc'], ['sale', 'sale_deed'], ['deed', 'sale_deed'],
+  ['permit', 'building_permit'], ['permission', 'building_permit'], ['sanction', 'building_permit'],
+  ['fire', 'fire_noc'], ['aai', 'aai_noc'], ['airport', 'aai_noc'], ['nocas', 'aai_noc'],
+  ['irrigation', 'irrigation_noc'], ['ftl', 'irrigation_noc'],
+  ['encumbrance', 'ec'], ['_ec', 'ec'], ['ec_', 'ec'],
+  ['tax', 'tax_receipt'], ['receipt', 'tax_receipt']
+];
+
+DI.APPLICATION_FIELDS = [
+  { key: 'applicantName', label: 'Applicant', kind: 'text', group: 'Applicant' },
+  { key: 'parentName', label: 'Father or husband', kind: 'text', group: 'Applicant' },
+  { key: 'dob', label: 'Date of birth', kind: 'date', group: 'Applicant' },
+  { key: 'gender', label: 'Gender', kind: 'select', options: ['Male', 'Female', 'Other'], group: 'Applicant' },
+  { key: 'aadhaarNo', label: 'Aadhaar', kind: 'id', mask: true, group: 'Applicant' },
+  { key: 'pan', label: 'PAN', kind: 'id', group: 'Applicant' },
+  { key: 'mobile', label: 'Mobile', kind: 'id', group: 'Applicant' },
+  { key: 'address', label: 'Address', kind: 'text', group: 'Applicant' },
+  { key: 'plotNo', label: 'Plot number', kind: 'id', group: 'Plot' },
+  { key: 'surveyNo', label: 'Survey number', kind: 'id', group: 'Plot' },
+  { key: 'village', label: 'Village', kind: 'text', group: 'Plot' },
+  { key: 'mandal', label: 'Mandal', kind: 'text', group: 'Plot' },
+  { key: 'district', label: 'District', kind: 'text', group: 'Plot' },
+  { key: 'ulb', label: 'Urban local body', kind: 'text', group: 'Plot' },
+  { key: 'extentSqYd', label: 'Extent (sq. yd)', kind: 'number', group: 'Plot' },
+  { key: 'proposedUse', label: 'Proposed use', kind: 'text', group: 'Proposal' },
+  { key: 'floors', label: 'Floors', kind: 'text', group: 'Proposal' },
+  { key: 'heightM', label: 'Height (m)', kind: 'number', group: 'Proposal' },
+  { key: 'nearWaterBody', label: 'Near water body', kind: 'select', options: ['Yes', 'No'], group: 'Proposal' },
+  { key: 'roadWidthM', label: 'Road width (m)', kind: 'number', group: 'Proposal' }
+];
+
+DI.APPLICATIONS = [
+  { id: 'BN/2026/0421', status: 'Under scrutiny', fields: {
+      applicantName: 'Srinivas Rao Kandula', parentName: 'Venkateswara Rao Kandula', dob: '1979-08-14', gender: 'Male',
+      aadhaarNo: '731655204821', pan: 'DQRPK4831L', mobile: '9849012345',
+      address: 'Plot 42, Sri Sai Nagar Colony, Bachupally, Medchal-Malkajgiri 500090',
+      plotNo: '42', surveyNo: '118/2', village: 'Bachupally', mandal: 'Quthbullapur', district: 'Medchal-Malkajgiri',
+      ulb: 'Nizampet Municipal Corporation', extentSqYd: 267, proposedUse: 'Residential apartment', floors: 'Stilt + 4',
+      heightM: 16.5, nearWaterBody: 'Yes', roadWidthM: 12 } },
+  { id: 'BN/2026/0398', status: 'Under scrutiny', fields: {
+      applicantName: 'Lakshmi Prasanna Devarakonda', parentName: 'Ramesh Babu Devarakonda', dob: '1986-02-03', gender: 'Female',
+      aadhaarNo: '409322107754', pan: 'AKLPD2291Q', mobile: '9908123456',
+      address: 'H.No 3-45, Ameenpur, Sangareddy 502032',
+      plotNo: '18', surveyNo: '232/1', village: 'Ameenpur', mandal: 'Ameenpur', district: 'Sangareddy',
+      ulb: 'Ameenpur Municipality', extentSqYd: 183, proposedUse: 'Individual residential', floors: 'Ground + 1',
+      heightM: 7.2, nearWaterBody: 'No', roadWidthM: 9 } },
+  { id: 'BN/2026/0377', status: 'Under scrutiny', fields: {
+      applicantName: 'Mohammed Irfan Siddiqui', parentName: 'Mohammed Yousuf Siddiqui', dob: '1982-11-27', gender: 'Male',
+      aadhaarNo: '551809326604', pan: 'BNMPS7720K', mobile: '9705456789',
+      address: 'H.No 12-2-831/4, Mehdipatnam, Hyderabad 500028',
+      plotNo: '9', surveyNo: '77/2', village: 'Kokapet', mandal: 'Gandipet', district: 'Ranga Reddy',
+      ulb: 'Narsingi Municipality', extentSqYd: 420, proposedUse: 'Commercial', floors: 'Ground + 3',
+      heightM: 14.8, nearWaterBody: 'Yes', roadWidthM: 18 } }
+];
+
+DI.BLANK_APPLICATION = () => ({ id: 'BN/2026/NEW', status: 'Not started', fields: Object.fromEntries(DI.APPLICATION_FIELDS.map(f => [f.key, f.kind === 'number' ? '' : (f.kind === 'select' ? f.options[0] : '')])) });
+
+// Helper to write sample field maps tersely: F(value, confidence)
+const F = (value, confidence) => ({ value, confidence });
+
+DI.SAMPLE_SETS = {
+  'BN/2026/0421': [
+    { file: { name: 'aadhaar_front.jpg', size: 412000, format: 'JPEG' }, typeId: 'aadhaar', confidence: 0.98, alternatives: [{ typeId: 'dl', confidence: 0.01 }], pages: 1,
+      fields: { name: F('Srinivas Rao Kandula', 0.97), dob: F('1979-08-14', 0.99), gender: F('Male', 0.99), aadhaarNo: F('731655204821', 0.99), address: F('H.No 8-2-293/82, Road No 12, Banjara Hills, Hyderabad 500034', 0.93) },
+      structure: { photo: true, qr: true, emblem: true }, service: { outcome: 'pass', response: { status: 'Y', txn: 'UID-2026-0907-1183', matched: ['name', 'dob', 'gender'] } } },
+    { file: { name: 'pan_card.pdf', size: 188000, format: 'PDF' }, typeId: 'pan', confidence: 0.99, alternatives: [], pages: 1,
+      fields: { name: F('SRINIVAS RAO KANDULA', 0.98), parentName: F('VENKATESWARA RAO KANDULA', 0.96), dob: F('1979-08-14', 0.99), pan: F('DQRPK4831L', 0.99) },
+      structure: { photo: true, signature: true, hologram: true }, service: { outcome: 'pass', response: { status: 'VALID', nameMatch: true, dobMatch: true, aadhaarSeeded: true } } },
+    { file: { name: 'driving_licence.pdf', size: 240000, format: 'PDF' }, typeId: 'dl', confidence: 0.96, alternatives: [{ typeId: 'aadhaar', confidence: 0.02 }], pages: 2,
+      fields: { name: F('Srinivas Rao Kandula', 0.95), dob: F('1978-08-14', 0.91), dlNo: F('TS0920150012345', 0.97), validUpto: F('2035-06-30', 0.96), address: F('Plot 42, Sri Sai Nagar Colony, Bachupally 500090', 0.9), bloodGroup: F('B+', 0.88) },
+      structure: { photo: true, hologram: true }, service: { outcome: 'pass', response: { status: 'ACTIVE', holder: 'SRINIVAS RAO KANDULA', dob: '14-08-1978', validUpto: '30-06-2035', cov: ['LMV', 'MCWG'] } } },
+    { file: { name: 'sale_deed_2019.pdf', size: 3100000, format: 'PDF' }, typeId: 'sale_deed', confidence: 0.98, alternatives: [{ typeId: 'link_doc', confidence: 0.02 }], pages: 14,
+      fields: { docNo: F('4821/2019', 0.99), regDate: F('2019-03-12', 0.99), sro: F('SRO Quthbullapur', 0.97), vendor: F('Padmavathi Rentala', 0.95), purchaser: F('Srinivas Rao Kandula', 0.97), surveyNo: F('118/2', 0.99), plotNo: F('42', 0.98), extent: F('267 sq. yds', 0.94), village: F('Bachupally', 0.98), consideration: F('Rs 48,06,000', 0.92), boundaries: F('North: Plot 41. South: 30 ft road. East: Plot 43. West: Plot 35.', 0.9) },
+      structure: { schedule: true, stamp: true, registration: true, witnesses: true }, service: { outcome: 'pass', response: { status: 'REGISTERED', docNo: '4821/2019', sro: 'Quthbullapur', executant: 'PADMAVATHI RENTALA', claimant: 'SRINIVAS RAO KANDULA', extent: '267 SQ.YDS' } } },
+    { file: { name: 'link_deed_2009.pdf', size: 2400000, format: 'PDF' }, typeId: 'link_doc', confidence: 0.95, alternatives: [{ typeId: 'sale_deed', confidence: 0.05 }], pages: 11,
+      fields: { docNo: F('2210/2009', 0.99), regDate: F('2009-07-21', 0.98), sro: F('SRO Quthbullapur', 0.96), vendor: F('Bhaskar Reddy Mudireddy', 0.94), purchaser: F('Padmavathi Rentala', 0.96), surveyNo: F('118/2', 0.98), plotNo: F('42', 0.97), extent: F('267 sq. yds', 0.93), village: F('Bachupally', 0.97) },
+      structure: { schedule: true, stamp: true, registration: true }, service: { outcome: 'pass', response: { status: 'REGISTERED', docNo: '2210/2009', sro: 'Quthbullapur', executant: 'BHASKAR REDDY MUDIREDDY', claimant: 'PADMAVATHI RENTALA', extent: '267 SQ.YDS' } } },
+    { file: { name: 'building_permit_2016.pdf', size: 620000, format: 'PDF' }, typeId: 'building_permit', confidence: 0.94, alternatives: [{ typeId: 'fire_noc', confidence: 0.03 }], pages: 3,
+      fields: { permitNo: F('BP/BGP/2016/1187', 0.98), issuedBy: F('Bachupally Gram Panchayat', 0.95), issueDate: F('2016-11-02', 0.98), validUpto: F('2021-11-01', 0.97), applicant: F('Srinivas Rao Kandula', 0.96), surveyNo: F('118/2', 0.98), permittedUse: F('Residential', 0.97), permittedFloors: F('Ground + 1', 0.95) },
+      structure: { seal: true, signature: true, conditions: true }, service: { outcome: 'pass', response: { status: 'LAPSED', permitNo: 'BP/BGP/2016/1187', validUpto: '01-11-2021', commencementRecorded: false } } },
+    { file: { name: 'fire_noc.pdf', size: 350000, format: 'PDF' }, typeId: 'fire_noc', confidence: 0.97, alternatives: [{ typeId: 'aai_noc', confidence: 0.02 }], pages: 2,
+      fields: { nocNo: F('FS/NOC/2026/0418', 0.98), issuedBy: F('State Fire Services Department', 0.96), issueDate: F('2026-06-18', 0.98), validUpto: F('2028-06-17', 0.97), applicant: F('Srinivas Rao Kandula', 0.96), surveyNo: F('118/2', 0.97), heightApprovedM: F('16.5', 0.95), floorsApproved: F('Stilt + 4', 0.94) },
+      structure: { seal: false, signature: true, conditions: true }, service: { outcome: 'pass', response: { status: 'VALID', nocNo: 'FS/NOC/2026/0418', issuedOn: '18-06-2026', validUpto: '17-06-2028', heightApproved: '16.5 m' } } },
+    { file: { name: 'aai_noc.pdf', size: 410000, format: 'PDF' }, typeId: 'aai_noc', confidence: 0.96, alternatives: [{ typeId: 'fire_noc', confidence: 0.03 }], pages: 2,
+      fields: { nocId: F('HYD/NOC/2018/2231', 0.98), issueDate: F('2018-12-05', 0.97), validUpto: F('2026-12-05', 0.97), applicant: F('Srinivas Rao Kandula', 0.95), surveyNo: F('118/2', 0.96), siteCoordinates: F('17.5312 N, 78.3884 E', 0.93), permissibleHeightM: F('21.4', 0.96) },
+      structure: { qr: true, signature: true }, service: { outcome: 'pass', response: { status: 'VALID', nocId: 'HYD/NOC/2018/2231', permissibleTopElevation: '21.4 m AGL', validUpto: '05-12-2026' } } }
+  ],
+  'BN/2026/0398': [
+    { file: { name: 'aadhaar.pdf', size: 310000, format: 'PDF' }, typeId: 'aadhaar', confidence: 0.98, alternatives: [], pages: 1,
+      fields: { name: F('Lakshmi Prasanna Devarakonda', 0.97), dob: F('1986-02-03', 0.99), gender: F('Female', 0.99), aadhaarNo: F('409322107754', 0.99), address: F('H.No 3-45, Ameenpur, Sangareddy 502032', 0.95) },
+      structure: { photo: true, qr: true, emblem: true }, service: { outcome: 'pass', response: { status: 'Y', txn: 'UID-2026-0902-0466', matched: ['name', 'dob', 'gender'] } } },
+    { file: { name: 'pan.jpg', size: 260000, format: 'JPEG' }, typeId: 'pan', confidence: 0.97, alternatives: [], pages: 1,
+      fields: { name: F('LAKSHMI PRASANNA DEVARAKONDA', 0.97), parentName: F('RAMESH BABU DEVARAKONDA', 0.95), dob: F('1986-02-03', 0.98), pan: F('AKLPD2291Q', 0.99) },
+      structure: { photo: true, signature: true, hologram: true }, service: { outcome: 'pass', response: { status: 'VALID', nameMatch: true, dobMatch: true, aadhaarSeeded: true } } },
+    { file: { name: 'sale_deed_2021.pdf', size: 2800000, format: 'PDF' }, typeId: 'sale_deed', confidence: 0.98, alternatives: [{ typeId: 'link_doc', confidence: 0.02 }], pages: 12,
+      fields: { docNo: F('6612/2021', 0.99), regDate: F('2021-10-05', 0.99), sro: F('SRO Patancheru', 0.97), vendor: F('Nagaraju Bathula', 0.95), purchaser: F('Lakshmi Prasanna Devarakonda', 0.97), surveyNo: F('232/1', 0.99), plotNo: F('18', 0.98), extent: F('183 sq. yds', 0.95), village: F('Ameenpur', 0.98), consideration: F('Rs 36,60,000', 0.92), boundaries: F('North: Plot 17. South: Plot 19. East: 40 ft road. West: Plot 6.', 0.9) },
+      structure: { schedule: true, stamp: true, registration: true, witnesses: true }, service: { outcome: 'pass', response: { status: 'REGISTERED', docNo: '6612/2021', sro: 'Patancheru', executant: 'NAGARAJU BATHULA', claimant: 'LAKSHMI PRASANNA DEVARAKONDA', extent: '183 SQ.YDS' } } },
+    { file: { name: 'link_deed_2012.pdf', size: 2100000, format: 'PDF' }, typeId: 'link_doc', confidence: 0.96, alternatives: [{ typeId: 'sale_deed', confidence: 0.04 }], pages: 10,
+      fields: { docNo: F('1105/2012', 0.99), regDate: F('2012-04-18', 0.98), sro: F('SRO Patancheru', 0.96), vendor: F('Suresh Kumar Goud', 0.94), purchaser: F('Nagaraju Bathula', 0.96), surveyNo: F('232/1', 0.98), plotNo: F('18', 0.97), extent: F('183 sq. yds', 0.94), village: F('Ameenpur', 0.97) },
+      structure: { schedule: true, stamp: true, registration: true }, service: { outcome: 'pass', response: { status: 'REGISTERED', docNo: '1105/2012', sro: 'Patancheru', executant: 'SURESH KUMAR GOUD', claimant: 'NAGARAJU BATHULA', extent: '183 SQ.YDS' } } }
+  ],
+  'BN/2026/0377': [
+    { file: { name: 'aadhaar_irfan.jpg', size: 398000, format: 'JPEG' }, typeId: 'aadhaar', confidence: 0.97, alternatives: [], pages: 1,
+      fields: { name: F('Mohammed Irfan Siddiqui', 0.96), dob: F('1982-11-27', 0.99), gender: F('Male', 0.99), aadhaarNo: F('551809326604', 0.99), address: F('H.No 12-2-831/4, Mehdipatnam, Hyderabad 500028', 0.94) },
+      structure: { photo: true, qr: true, emblem: true }, service: { outcome: 'pass', response: { status: 'Y', txn: 'UID-2026-0905-2210', matched: ['name', 'dob', 'gender'] } } },
+    { file: { name: 'pan_irfan.pdf', size: 176000, format: 'PDF' }, typeId: 'pan', confidence: 0.98, alternatives: [], pages: 1,
+      fields: { name: F('MOHAMMED IRFAN SIDDIQI', 0.95), parentName: F('MOHAMMED YOUSUF SIDDIQUI', 0.95), dob: F('1982-11-27', 0.98), pan: F('BNMPS7720K', 0.99) },
+      structure: { photo: true, signature: true, hologram: true }, service: { outcome: 'pass', response: { status: 'VALID', nameMatch: false, dobMatch: true, aadhaarSeeded: true } } },
+    { file: { name: 'sale_deed_2020.pdf', size: 3300000, format: 'PDF' }, typeId: 'sale_deed', confidence: 0.98, alternatives: [{ typeId: 'link_doc', confidence: 0.02 }], pages: 16,
+      fields: { docNo: F('3390/2020', 0.99), regDate: F('2020-02-14', 0.99), sro: F('SRO Gandipet', 0.97), vendor: F('Kavitha Reddy Pulla', 0.95), purchaser: F('Mohammed Irfan Siddiqui', 0.97), surveyNo: F('77/2', 0.99), plotNo: F('9', 0.98), extent: F('420 sq. yds', 0.95), village: F('Kokapet', 0.98), consideration: F('Rs 1,26,00,000', 0.92), boundaries: F('North: 60 ft road. South: Plot 10. East: Plot 8. West: Open land.', 0.9) },
+      structure: { schedule: true, stamp: true, registration: true, witnesses: true }, service: { outcome: 'pass', response: { status: 'REGISTERED', docNo: '3390/2020', sro: 'Gandipet', executant: 'KAVITHA REDDY PULLA', claimant: 'MOHAMMED IRFAN SIDDIQUI', extent: '420 SQ.YDS' } } },
+    { file: { name: 'link_deed_2011.pdf', size: 2600000, format: 'PDF' }, typeId: 'link_doc', confidence: 0.95, alternatives: [{ typeId: 'sale_deed', confidence: 0.05 }], pages: 12,
+      fields: { docNo: F('4471/2011', 0.99), regDate: F('2011-09-09', 0.98), sro: F('SRO Gandipet', 0.96), vendor: F('Sattaiah Gurram', 0.94), purchaser: F('Kavitha Reddy Pulla', 0.96), surveyNo: F('77/2', 0.98), plotNo: F('9', 0.97), extent: F('420 sq. yds', 0.94), village: F('Kokapet', 0.97) },
+      structure: { schedule: true, stamp: true, registration: true }, service: { outcome: 'pass', response: { status: 'REGISTERED', docNo: '4471/2011', sro: 'Gandipet', executant: 'SATTAIAH GURRAM', claimant: 'KAVITHA REDDY PULLA', extent: '420 SQ.YDS' } } },
+    { file: { name: 'irrigation_noc.pdf', size: 290000, format: 'PDF' }, typeId: 'irrigation_noc', confidence: 0.96, alternatives: [{ typeId: 'fire_noc', confidence: 0.02 }], pages: 2,
+      fields: { nocNo: F('IRR/NOC/2026/0093', 0.98), issuedBy: F('Irrigation and CAD Department', 0.96), issueDate: F('2026-04-10', 0.98), validUpto: F('2028-04-09', 0.97), applicant: F('Mohammed Irfan Siddiqui', 0.95), surveyNo: F('77/2', 0.97), bufferCondition: F('Site lies outside the FTL buffer. No construction within 9 m of the tank bund.', 0.9) },
+      structure: { seal: true, signature: true }, service: null }
+  ]
+};
+
+// Generic values used when an uploaded file is assigned a type by the officer.
+DI.GENERIC_FIELDS = (typeId, application) => {
+  const set = DI.SAMPLE_SETS['BN/2026/0421'].find(d => d.typeId === typeId) || DI.SAMPLE_SETS['BN/2026/0377'].find(d => d.typeId === typeId);
+  if (set) return set;
+  const t = DI.DOC_TYPES[typeId];
+  return { typeId, confidence: 0.6, alternatives: [], pages: 1, fields: Object.fromEntries(t.fields.map(f => [f.key, F(f.kind === 'date' ? DI.TODAY : (f.appKey ? String(application.fields[f.appKey] || '') : 'Not read'), 0.6)])), structure: Object.fromEntries(t.structure.map(s => [s.key, true])), service: t.service ? { outcome: 'pass', response: { status: 'VALID' } } : null };
+};
+})();
+var DI = globalThis.DI || (globalThis.DI = {});
+DI.engine = (() => {
+  const E = {};
+  let seq = 0;
+  const nextId = p => `${p}_${++seq}`;
+
+  // ---------- formatting and small helpers ----------
+  E.fmtDate = iso => { if (!iso || !/^\d{4}-\d{2}-\d{2}$/.test(iso)) return iso || ''; const [y, m, d] = iso.split('-'); return `${d}-${m}-${y}`; };
+  E.maskId = s => { const d = String(s || '').replace(/\s/g, ''); return d.length === 12 ? `XXXX XXXX ${d.slice(-4)}` : d; };
+  E.fileFormat = name => { const ext = (String(name || '').split('.').pop() || '').toLowerCase(); return ({ pdf: 'PDF', jpg: 'JPEG', jpeg: 'JPEG', png: 'PNG', docx: 'DOCX', ods: 'ODS', xlsx: 'XLSX' })[ext] || 'FILE'; };
+  E.daysUntil = iso => Math.round((Date.parse(iso) - Date.parse(DI.TODAY)) / 86400000);
+  E.parseExtent = s => { const m = String(s ?? '').replace(/,/g, '').match(/(\d+(?:\.\d+)?)/); return m ? Number(m[1]) : null; };
+
+  const norm = s => String(s || '').toLowerCase().replace(/[^a-z0-9 ]/g, ' ').replace(/\s+/g, ' ').trim();
+  const lev = (a, b) => { const m = a.length, n = b.length; const dp = Array.from({ length: m + 1 }, (_, i) => [i, ...Array(n).fill(0)]); for (let j = 1; j <= n; j++) dp[0][j] = j; for (let i = 1; i <= m; i++) for (let j = 1; j <= n; j++) dp[i][j] = Math.min(dp[i - 1][j] + 1, dp[i][j - 1] + 1, dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)); return dp[m][n]; };
+  const tokenSim = (x, y) => { if (x === y) return 1; if (x.length === 1 && y[0] === x) return 1; if (y.length === 1 && x[0] === y) return 1; const s = 1 - lev(x, y) / Math.max(x.length, y.length); return s >= 0.75 ? s : 0; };
+  E.nameSimilarity = (a, b) => {
+    const ta = norm(a).split(' ').filter(Boolean), tb = norm(b).split(' ').filter(Boolean);
+    if (!ta.length || !tb.length) return 0;
+    const used = new Set(); let total = 0;
+    for (const x of ta) { let best = 0, bi = -1; tb.forEach((y, i) => { if (used.has(i)) return; const s = tokenSim(x, y); if (s > best) { best = s; bi = i; } }); if (bi >= 0 && best > 0) { used.add(bi); total += best; } }
+    return Math.round((2 * total / (ta.length + tb.length)) * 1000) / 1000;
+  };
+  E.addressOverlap = (a, b) => { const A = new Set(norm(a).split(' ').filter(w => w.length > 1)), B = new Set(norm(b).split(' ').filter(w => w.length > 1)); if (!A.size || !B.size) return 0; let inter = 0; for (const w of A) if (B.has(w)) inter++; return inter / Math.min(A.size, B.size); };
+  E.classifyByName = name => { const n = String(name || '').toLowerCase(); for (const [kw, typeId] of DI.NAME_KEYWORDS) if (n.includes(kw)) return typeId; return null; };
+
+  const typeLabel = doc => (DI.DOC_TYPES[doc.typeId] || DI.DOC_TYPES.unknown).label;
+  const fieldLabel = (typeId, key) => { const f = (DI.DOC_TYPES[typeId] || DI.DOC_TYPES.unknown).fields.find(x => x.key === key); return f ? f.label : key; };
+  const val = (doc, key) => doc && doc.fields && doc.fields[key] ? doc.fields[key].value : undefined;
+  const cite = (doc, key) => ({ docId: doc.id, fieldKey: key, label: `${typeLabel(doc)}: ${fieldLabel(doc.typeId, key)}` });
+  const statusWord = s => ({ pass: 'passing', warn: 'a warning', fail: 'failing', info: 'informational', pending: 'pending', unavailable: 'unavailable' })[s] || s;
+  const cap = s => s ? s.charAt(0).toUpperCase() + s.slice(1) : s;
+  const doneDocs = thread => thread.docs.filter(d => d.stage === 'done');
+  const findDoc = (thread, typeId) => doneDocs(thread).find(d => d.typeId === typeId);
+
+  // ---------- thread and document factories ----------
+  E.newThread = ({ application, title }) => ({
+    id: nextId('t'), title: title || application.id, application,
+    docs: [], messages: [], chips: [], scrollTop: 0, seq: 0, status: 'new', shortfall: [],
+    serviceOverrides: Object.fromEntries(Object.keys(DI.SERVICES).map(k => [k, 'auto']))
+  });
+  const baseDoc = (file, source) => ({
+    id: nextId('doc'), file: { name: file.name, size: file.size || 0, format: file.format || E.fileFormat(file.name) },
+    source, objectUrl: null, typeId: null, confidence: 0, alternatives: [], stage: 'queued',
+    fields: {}, structure: {}, checks: [], confirmed: false, sample: null, pages: 1, ui: { expanded: false, tab: 'fields' }
+  });
+  E.docFromSample = (thread, sample) => { const d = baseDoc(sample.file, 'sample'); d.sample = sample; return d; };
+  E.docFromUpload = (thread, file, objectUrl) => { const d = baseDoc(file, 'upload'); d.objectUrl = objectUrl || null; return d; };
+
+  E.identify = doc => {
+    if (doc.sample) { doc.typeId = doc.sample.typeId; doc.confidence = doc.sample.confidence; doc.alternatives = (doc.sample.alternatives || []).map(a => ({ ...a })); }
+    else {
+      const t = E.classifyByName(doc.file.name);
+      if (t) { const idx = DI.DOC_TYPE_ORDER.indexOf(t); const alts = [DI.DOC_TYPE_ORDER[(idx + 1) % DI.DOC_TYPE_ORDER.length], DI.DOC_TYPE_ORDER[(idx + 2) % DI.DOC_TYPE_ORDER.length]]; doc.typeId = t; doc.confidence = 0.87; doc.alternatives = [{ typeId: alts[0], confidence: 0.05 }, { typeId: alts[1], confidence: 0.03 }]; }
+      else { doc.typeId = 'unknown'; doc.confidence = 0.41; doc.alternatives = []; }
+    }
+    doc.stage = 'identifying';
+    return doc;
+  };
+
+  E.extract = (doc, application) => {
+    const t = DI.DOC_TYPES[doc.typeId] || DI.DOC_TYPES.unknown;
+    let src = null;
+    if (doc.typeId === 'unknown') src = { fields: { title: { value: doc.file.name, confidence: 0.5 } }, structure: {}, pages: 1 };
+    else if (doc.sample && doc.sample.typeId === doc.typeId) src = doc.sample;
+    else src = DI.GENERIC_FIELDS(doc.typeId, application);
+    const upload = doc.source === 'upload';
+    doc.fields = {};
+    for (const f of t.fields) {
+      const s = src.fields[f.key] || { value: '', confidence: 0.5 };
+      doc.fields[f.key] = { value: s.value, confidence: Math.round((upload ? s.confidence * 0.85 : s.confidence) * 100) / 100, edited: false, confirmed: false };
+    }
+    doc.structure = { ...(src.structure || {}) };
+    doc.pages = src.pages || 1;
+    doc.stage = 'extracting';
+    return doc;
+  };
+
+  E.assignType = (doc, typeId, application) => {
+    doc.typeId = typeId;
+    doc.confidence = (doc.sample && doc.sample.typeId === typeId) ? doc.sample.confidence : 0.75;
+    doc.alternatives = [];
+    doc.confirmed = false;
+    return E.extract(doc, application);
+  };
+
+  // ---------- checks ----------
+  const mkCheck = (doc, group, key, title, status, detail, fieldKey) => ({ id: `${doc.id}:${key}`, docId: doc.id, group, title, status, detail, fieldKey: fieldKey || null, acknowledged: false, requested: false, manual: false, service: null });
+
+  E.ruleChecks = (doc, thread) => {
+    const t = DI.DOC_TYPES[doc.typeId] || DI.DOC_TYPES.unknown, app = thread.application.fields, out = [];
+    if (doc.typeId === 'unknown') return out;
+    const mk = (key, title, status, detail, fieldKey) => out.push(mkCheck(doc, 'rule', key, title, status, detail, fieldKey));
+    for (const f of t.fields) {
+      const v = doc.fields[f.key]?.value; if (v == null || v === '') continue;
+      if (f.appKey === 'applicantName') { const s = E.nameSimilarity(v, app.applicantName); mk('name', 'Name matches application', s === 1 ? 'pass' : s >= 0.7 ? 'warn' : 'fail', s === 1 ? `${t.label} reads ${v}. Application reads ${app.applicantName}.` : `${t.label} reads ${v}. Application reads ${app.applicantName || 'nothing'}. Similarity ${Math.round(s * 100)}%.`, f.key); }
+      else if (f.appKey === 'parentName') { const s = E.nameSimilarity(v, app.parentName); mk('parent', "Father's name matches application", s === 1 ? 'pass' : s >= 0.7 ? 'warn' : 'fail', `${t.label} reads ${v}. Application reads ${app.parentName || 'nothing'}.`, f.key); }
+      else if (f.appKey === 'dob') { const ok = v === app.dob; mk('dob', 'Date of birth matches application', ok ? 'pass' : 'fail', ok ? `Both read ${E.fmtDate(v)}.` : `${t.label} reads ${E.fmtDate(v)}. Application reads ${E.fmtDate(app.dob) || 'nothing'}.`, f.key); }
+      else if (f.appKey === 'gender') { const ok = norm(v) === norm(app.gender); mk('gender', 'Gender matches application', ok ? 'pass' : 'fail', ok ? `Both read ${v}.` : `${t.label} reads ${v}. Application reads ${app.gender || 'nothing'}.`, f.key); }
+      else if (f.appKey === 'aadhaarNo' || f.appKey === 'pan') { const a = String(v).replace(/\s/g, '').toUpperCase(), b = String(app[f.appKey] || '').replace(/\s/g, '').toUpperCase(); const ok = a === b; mk('id', `${f.label} matches application`, ok ? 'pass' : 'fail', ok ? `Both read ${f.mask ? E.maskId(a) : a}.` : `${t.label} reads ${f.mask ? E.maskId(a) : a}. Application reads ${f.mask ? E.maskId(b) : b || 'nothing'}.`, f.key); }
+      else if (f.addressCheck) { const o = E.addressOverlap(v, app.address); mk('address', 'Address matches application', o >= 0.5 ? 'pass' : 'warn', o >= 0.5 ? 'Address on the document matches the application.' : `Address on the document differs from the application. Document: ${v}. Application: ${app.address || 'nothing'}. Addresses change often, so this is advisory.`, f.key); }
+      else if (f.appKey === 'surveyNo') { const ok = norm(v) === norm(app.surveyNo); mk('survey', 'Survey number matches application', ok ? 'pass' : 'fail', ok ? `Both read ${v}.` : `${t.label} reads ${v}. Application reads ${app.surveyNo || 'nothing'}.`, f.key); }
+      else if (f.appKey === 'plotNo') { const ok = norm(v) === norm(app.plotNo); mk('plot', 'Plot number matches application', ok ? 'pass' : 'warn', ok ? `Both read ${v}.` : `${t.label} reads ${v}. Application reads ${app.plotNo || 'nothing'}.`, f.key); }
+      else if (f.appKey === 'village') { const ok = norm(v) === norm(app.village); mk('village', 'Village matches application', ok ? 'pass' : 'warn', ok ? `Both read ${v}.` : `${t.label} reads ${v}. Application reads ${app.village || 'nothing'}.`, f.key); }
+      else if (f.appKey === 'floors') { const ok = norm(v) === norm(app.floors); mk('floors', 'Floors match proposal', ok ? 'pass' : 'warn', ok ? `Both read ${v}.` : `${t.label} approves ${v}. Proposal is ${app.floors || 'not set'}.`, f.key); }
+      else if (f.extentCheck) { const d = E.parseExtent(v), a = Number(app.extentSqYd); const ok = d != null && a && Math.abs(d - a) < 0.5; mk('extent', 'Extent matches application', ok ? 'pass' : 'warn', ok ? `Both read ${a} sq. yd.` : `${t.label} reads ${v}. Application reads ${a || 'nothing'} sq. yd.`, f.key); }
+      if (f.validity) { const days = E.daysUntil(v); const lapsed = days < 0; const status = lapsed ? (t.lapseIsInfo ? 'info' : 'fail') : days <= 180 ? 'warn' : 'pass'; mk('validity', lapsed ? (t.lapseIsInfo ? 'Permit has lapsed' : 'Document has expired') : days <= 180 ? 'Expires soon' : 'Valid', status, lapsed ? (t.lapseIsInfo ? `Lapsed on ${E.fmtDate(v)}. Treat this as a fresh application; no commencement was recorded under it.` : `Expired on ${E.fmtDate(v)}.`) : days <= 180 ? `Valid until ${E.fmtDate(v)}, ${days} days from today. Ask for a renewal if sanction is expected after that.` : `Valid until ${E.fmtDate(v)}.`, f.key); }
+      if (f.heightAtLeast) { const h = Number(v), p = Number(app.heightM); const ok = h >= p; mk('height', 'Proposed height within clearance', ok ? 'pass' : 'fail', ok ? `Clearance ${h} m. Proposed ${p} m.` : `Clearance ${h} m is below the proposed ${p} m.`, f.key); }
+    }
+    for (const s of t.structure) { const present = doc.structure[s.key] !== false; mk(`structure:${s.key}`, `${s.label} ${present ? 'present' : 'not detected'}`, present ? 'pass' : 'warn', present ? `${s.label} found where the standard template expects it.` : `${s.label} was not detected where the standard template expects it. Check the original before relying on this copy.`, null); }
+    return out;
+  };
+
+  E.crossChecks = thread => {
+    for (const d of thread.docs) d.checks = d.checks.filter(c => c.group !== 'cross');
+    const mk = (doc, key, title, status, detail, fieldKey) => doc.checks.push(mkCheck(doc, 'cross', key, title, status, detail, fieldKey));
+    const deed = thread.docs.find(d => d.typeId === 'sale_deed' && d.stage !== 'queued'), link = thread.docs.find(d => d.typeId === 'link_doc' && d.stage !== 'queued');
+    if (deed && link) {
+      const s = E.nameSimilarity(val(deed, 'vendor'), val(link, 'purchaser'));
+      mk(deed, 'chain', 'Chain of title links to the link document', s === 1 ? 'pass' : s >= 0.7 ? 'warn' : 'fail', `Sale deed vendor ${val(deed, 'vendor')} ${s === 1 ? 'is' : 'does not clearly match'} the purchaser in link document ${val(link, 'docNo')} (${val(link, 'purchaser')}).`, 'vendor');
+      const a = E.parseExtent(val(deed, 'extent')), b = E.parseExtent(val(link, 'extent'));
+      mk(deed, 'extent-cross', 'Extent consistent with link document', a != null && a === b ? 'pass' : 'warn', a === b ? `Both deeds read ${a} sq. yd.` : `Sale deed reads ${val(deed, 'extent')}; link document reads ${val(link, 'extent')}.`, 'extent');
+      const sv = norm(val(deed, 'surveyNo')) === norm(val(link, 'surveyNo'));
+      mk(deed, 'survey-cross', 'Survey number consistent with link document', sv ? 'pass' : 'fail', sv ? `Both deeds read ${val(deed, 'surveyNo')}.` : `Sale deed reads ${val(deed, 'surveyNo')}; link document reads ${val(link, 'surveyNo')}.`, 'surveyNo');
+    }
+  };
+
+  E.serviceRequest = doc => {
+    const t = DI.DOC_TYPES[doc.typeId]; const idField = t.fields.find(f => f.kind === 'id');
+    const req = { endpoint: DI.SERVICES[t.service].endpoint };
+    if (idField) req[idField.key] = idField.mask ? E.maskId(val(doc, idField.key)) : val(doc, idField.key);
+    const name = val(doc, 'name') || val(doc, 'applicant') || val(doc, 'purchaser') || val(doc, 'owner');
+    if (name) req.name = name;
+    return req;
+  };
+  E.serviceResult = (doc, thread) => {
+    const t = DI.DOC_TYPES[doc.typeId] || DI.DOC_TYPES.unknown, svc = t.service ? DI.SERVICES[t.service] : null;
+    const base = { id: `${doc.id}:service`, docId: doc.id, group: 'external', fieldKey: null, acknowledged: false, requested: false, manual: false };
+    if (!svc) return { ...base, title: 'No machine interface for this issuer', status: 'info', detail: 'This department does not expose a verification interface. Verify against the original and mark it manually.', service: null };
+    const override = thread.serviceOverrides[svc.id] || 'auto';
+    const outcome = override === 'auto' ? (doc.sample?.service?.outcome || 'pass') : override;
+    const service = { id: svc.id, name: svc.name, latencyMs: svc.latencyMs, request: E.serviceRequest(doc), response: null };
+    if (outcome === 'timeout') return { ...base, title: `${svc.name} did not respond`, status: 'unavailable', detail: `No response after ${Math.round(svc.latencyMs * 2.5)} ms. Retry, or verify against the original and mark it manually.`, service: { ...service, response: { error: 'ETIMEDOUT' } } };
+    if (outcome === 'fail') return { ...base, title: `${svc.name} did not match`, status: 'fail', detail: "The issuer's record does not match the details read from this document.", service: { ...service, response: { status: 'N', reason: 'DEMOGRAPHIC_MISMATCH' } } };
+    return { ...base, title: `${svc.name} confirmed`, status: 'pass', detail: "The issuer's record matches the details read from this document.", service: { ...service, response: doc.sample?.service?.response || { status: 'VALID' } } };
+  };
+
+  // ---------- required documents, summary, status ----------
+  E.requiredDocs = application => {
+    const f = application.fields; const h = Number(f.heightM) || 0;
+    const rows = [
+      ['aadhaar', true, 'Identity of the applicant'], ['pan', true, 'Identity of the applicant'],
+      ['sale_deed', true, 'Title to the plot'], ['link_doc', true, 'Chain of title'],
+      ['fire_noc', h > 15, h > 15 ? 'Building height above 15 m' : 'Only for buildings above 15 m'],
+      ['aai_noc', h > 15, h > 15 ? 'Building height above 15 m' : 'Only for buildings above 15 m'],
+      ['irrigation_noc', f.nearWaterBody === 'Yes', f.nearWaterBody === 'Yes' ? 'Plot is near a water body' : 'Only for plots near a water body'],
+      ['building_permit', false, 'If an earlier permission exists'], ['dl', false, 'Additional identity'], ['ec', false, 'Optional'], ['tax_receipt', false, 'Optional']
+    ];
+    return rows.map(([typeId, required, reason]) => ({ typeId, required, reason }));
+  };
+
+  const isOpen = c => (c.status === 'fail' || c.status === 'warn' || c.status === 'unavailable') && !c.acknowledged && !c.manual;
+
+  E.summary = thread => {
+    const req = E.requiredDocs(thread.application);
+    const done = doneDocs(thread);
+    const has = typeId => done.some(d => d.typeId === typeId);
+    const required = req.filter(r => r.required);
+    const missing = required.filter(r => !has(r.typeId)).map(r => r.typeId);
+    const s = { provided: required.length - missing.length, required: required.length, missing, pass: 0, warn: 0, fail: 0, info: 0, unavailable: 0, open: [], confirmedDocs: done.filter(d => d.confirmed).length };
+    for (const d of done) for (const c of d.checks) {
+      if (c.status === 'pass') s.pass++; else if (c.status === 'warn') s.warn++; else if (c.status === 'fail') s.fail++; else if (c.status === 'info') s.info++; else if (c.status === 'unavailable') s.unavailable++;
+      if (isOpen(c)) s.open.push({ docId: d.id, checkId: c.id, text: `${typeLabel(d)}: ${c.title}` });
+    }
+    return s;
+  };
+  E.docOpenCount = doc => doc.checks.filter(isOpen).length;
+  E.docStatus = doc => {
+    if (doc.stage !== 'done') return 'checking';
+    const open = doc.checks.filter(isOpen);
+    if (open.some(c => c.status === 'fail')) return 'failed';
+    if (open.some(c => c.status === 'unavailable')) return 'unavailable';
+    if (open.length) return 'attention';
+    return 'verified';
+  };
+
+  E.threadStatus = thread => {
+    if (!thread.docs.length) return 'new';
+    if (thread.docs.some(d => d.stage !== 'done')) return 'running';
+    const s = E.summary(thread);
+    return (s.open.length || s.missing.length) ? 'attention' : 'clear';
+  };
+
+  E.rerunChecks = thread => {
+    const before = new Map();
+    for (const d of thread.docs) for (const c of d.checks) before.set(c.id, c);
+    for (const d of doneDocs(thread)) {
+      const keep = d.checks.filter(c => c.group === 'external');
+      d.checks = [...E.ruleChecks(d, thread), ...keep];
+    }
+    E.crossChecks(thread);
+    const changes = [];
+    for (const d of doneDocs(thread)) for (const c of d.checks) {
+      const old = before.get(c.id);
+      if (old) { c.acknowledged = old.acknowledged; c.requested = old.requested; c.manual = old.manual; if (old.manual && c.group === 'external') { c.status = old.status; c.title = old.title; } }
+      if (old && old.status !== c.status) changes.push({ docId: d.id, checkId: c.id, title: c.title, from: old.status, to: c.status });
+    }
+    return changes;
+  };
+
+  const ensureInThread = (thread, docs) => { for (const d of docs) if (!thread.docs.includes(d)) thread.docs.push(d); };
+
+  E.analyzeSync = (thread, docs) => {
+    ensureInThread(thread, docs);
+    for (const d of docs) { E.identify(d); E.extract(d, thread.application); d.checks = E.ruleChecks(d, thread); d.stage = 'checking'; }
+    E.crossChecks(thread);
+    for (const d of docs) { if (d.typeId !== 'unknown') d.checks.push(E.serviceResult(d, thread)); d.stage = 'done'; }
+    thread.status = E.threadStatus(thread);
+  };
+
+  E.analyze = (thread, docs, hooks = {}) => new Promise(resolve => {
+    const speed = hooks.speed == null ? 1 : hooks.speed;
+    const onStep = hooks.onStep || (() => {}), onDoc = hooks.onDoc || (() => {}), onDone = hooks.onDone || (() => {});
+    const wait = (ms, fn) => setTimeout(fn, Math.round(ms * speed));
+    ensureInThread(thread, docs);
+    thread.status = 'running';
+    let identified = 0, extracted = 0;
+    onStep('identify', 'running');
+    docs.forEach((d, i) => {
+      wait(600 + 220 * i, () => {
+        E.identify(d); onDoc(d); onStep('identify', 'done', { doc: d });
+        if (++identified === docs.length) onStep('identify', 'done');
+        wait(900, () => {
+          E.extract(d, thread.application); onDoc(d);
+          if (extracted === 0) onStep('extract', 'running');
+          onStep('extract', 'done', { doc: d });
+          if (++extracted === docs.length) {
+            onStep('extract', 'done');
+            wait(350, () => {
+              onStep('checks', 'running');
+              for (const x of docs) { x.checks = E.ruleChecks(x, thread); x.stage = 'checking'; onDoc(x); }
+              E.crossChecks(thread);
+              onStep('checks', 'done', { count: docs.reduce((n, x) => n + x.checks.length, 0) });
+              const verifiable = docs.filter(x => x.typeId !== 'unknown');
+              for (const x of docs.filter(x => x.typeId === 'unknown')) { x.stage = 'done'; onDoc(x); }
+              if (!verifiable.length) { thread.status = E.threadStatus(thread); onStep('verify', 'done'); onDone(); resolve(); return; }
+              onStep('verify', 'running');
+              let verified = 0;
+              verifiable.forEach((x, j) => {
+                x.stage = 'verifying'; onDoc(x); onStep('verify', 'running', { doc: x });
+                const svc = DI.DOC_TYPES[x.typeId].service ? DI.SERVICES[DI.DOC_TYPES[x.typeId].service] : null;
+                const latency = svc ? svc.latencyMs * (0.9 + 0.2 * j) : 300;
+                const override = svc ? (thread.serviceOverrides[svc.id] || 'auto') : 'auto';
+                const eff = override === 'timeout' ? latency * 2.5 : latency;
+                wait(eff, () => {
+                  const check = E.serviceResult(x, thread);
+                  x.checks = x.checks.filter(c => c.group !== 'external');
+                  x.checks.push(check);
+                  x.stage = 'done'; onDoc(x); onStep('verify', 'done', { doc: x, check });
+                  if (++verified === verifiable.length) { thread.status = E.threadStatus(thread); onStep('verify', 'done'); onDone(); resolve(); }
+                });
+              });
+            });
+          }
+        });
+      });
+    });
+  });
+
+  // ---------- Q&A ----------
+  const listOrNone = (arr, none) => arr.length ? arr : [none];
+  const fieldAcross = (thread, keys, label) => {
+    const out = [], cites = [];
+    for (const d of doneDocs(thread)) for (const k of keys) if (d.fields[k] && d.fields[k].value !== '' && d.fields[k].value != null) {
+      const v = d.fields[k].value; const f = DI.DOC_TYPES[d.typeId].fields.find(x => x.key === k);
+      out.push(`${typeLabel(d)} reads ${f && f.kind === 'date' ? E.fmtDate(v) : (f && f.mask ? E.maskId(v) : v)}.`); cites.push(cite(d, k));
+    }
+    return { out, cites, label };
+  };
+
+  const INTENTS = [
+    { re: /deed.*(name|owner|purchaser)|who (owns|is the purchaser|bought|is the owner)/, fn: thread => {
+      const deed = findDoc(thread, 'sale_deed'); const app = thread.application.fields.applicantName;
+      if (!deed) return { text: 'No sale deed has been read in this thread yet, so I cannot say whose name it is in.', citations: [] };
+      const p = val(deed, 'purchaser'); const s = E.nameSimilarity(p, app);
+      const text = s === 1 ? `Yes. The sale deed names ${p} as purchaser, which matches the applicant ${app}. It was registered on ${E.fmtDate(val(deed, 'regDate'))} at ${val(deed, 'sro')} as document ${val(deed, 'docNo')}.`
+        : s >= 0.7 ? `Nearly. The purchaser reads ${p} and the application reads ${app}. They are ${Math.round(s * 100)}% similar, so I flagged it for you to confirm.`
+        : `No. The purchaser on the sale deed is ${p}, but the application is in the name of ${app}.`;
+      return { text, citations: [cite(deed, 'purchaser'), cite(deed, 'docNo')] };
+    } },
+    { re: /(issue|problem|attention|flag|mismatch|wrong|concern)/, fn: thread => {
+      const s = E.summary(thread); const cites = []; const lines = [];
+      for (const o of s.open) { const d = thread.docs.find(x => x.id === o.docId); const c = d.checks.find(x => x.id === o.checkId); lines.push(`${typeLabel(d)}: ${c.title}. ${c.detail}`); if (c.fieldKey) cites.push(cite(d, c.fieldKey)); }
+      for (const m of s.missing) lines.push(`${DI.DOC_TYPES[m].label} is required and was not provided.`);
+      if (!lines.length) return { text: 'Nothing needs attention. Every check passed and all required documents are here.', citations: [] };
+      return { text: `${lines.length === 1 ? 'One item needs' : lines.length + ' items need'} your attention.\n` + lines.map(l => `• ${l}`).join('\n'), citations: cites };
+    } },
+    { re: /(expire|expiry|valid)/, fn: (thread, q) => {
+      const mentions = [['aai', 'aai_noc'], ['airport', 'aai_noc'], ['fire', 'fire_noc'], ['irrigation', 'irrigation_noc'], ['licence', 'dl'], ['license', 'dl'], ['permit', 'building_permit'], ['permission', 'building_permit']].filter(([k]) => q.includes(k)).map(([, t]) => t);
+      const out = [], cites = [];
+      for (const d of doneDocs(thread)) { if (mentions.length && !mentions.includes(d.typeId)) continue; for (const c of d.checks) if (c.id.endsWith(':validity')) { out.push(`${typeLabel(d)}: ${c.detail}`); cites.push(cite(d, c.fieldKey)); } }
+      if (!out.length) return { text: mentions.length ? `I have not read a ${mentions.map(t => DI.DOC_TYPES[t].label).join(' or ')} in this thread yet.` : 'None of the documents read so far carries a validity date.', citations: [] };
+      return { text: out.length === 1 ? out[0] : out.map(l => `• ${l}`).join('\n'), citations: cites };
+    } },
+    { re: /(missing|required|need|checklist)/, fn: thread => {
+      const req = E.requiredDocs(thread.application); const done = doneDocs(thread);
+      const lines = req.filter(r => r.required).map(r => `${DI.DOC_TYPES[r.typeId].label}: ${done.some(d => d.typeId === r.typeId) ? 'provided' : 'missing'} (${r.reason.toLowerCase()})`);
+      const missing = req.filter(r => r.required && !done.some(d => d.typeId === r.typeId));
+      const head = missing.length ? `${missing.length === 1 ? 'One required document is' : missing.length + ' required documents are'} missing: ${missing.map(m => DI.DOC_TYPES[m.typeId].label).join(', ')}.` : 'All required documents are provided.';
+      return { text: head + '\n' + lines.map(l => `• ${l}`).join('\n'), citations: [] };
+    } },
+    { re: /(chain|link doc|link document|title|vendor)/, fn: thread => {
+      const deed = findDoc(thread, 'sale_deed'), link = findDoc(thread, 'link_doc');
+      if (!deed || !link) return { text: `I need both the sale deed and the link document to trace the chain of title. ${deed ? 'The link document' : link ? 'The sale deed' : 'Both'} ${deed || link ? 'is' : 'are'} not here yet.`, citations: [] };
+      const c = deed.checks.find(x => x.id.endsWith(':chain'));
+      return { text: `${c && c.status === 'pass' ? 'The chain of title holds.' : 'The chain of title needs a look.'} ${c ? c.detail : ''} The link document ${val(link, 'docNo')} was registered on ${E.fmtDate(val(link, 'regDate'))}, from ${val(link, 'vendor')} to ${val(link, 'purchaser')}.`, citations: [cite(deed, 'vendor'), cite(link, 'purchaser')] };
+    } },
+    { re: /(extent|area|sq\b|sq\.|square)/, fn: thread => {
+      const app = thread.application.fields.extentSqYd; const { out, cites } = fieldAcross(thread, ['extent'], 'extent');
+      if (!out.length) return { text: `The application states ${app} sq. yd. No document with an extent has been read yet.`, citations: [] };
+      const allMatch = doneDocs(thread).filter(d => d.fields.extent).every(d => E.parseExtent(val(d, 'extent')) === Number(app));
+      return { text: `${allMatch ? 'Yes, the extents agree.' : 'Not everywhere.'} The application states ${app} sq. yd. ` + out.join(' '), citations: cites };
+    } },
+    { re: /(summary|summarise|summarize|overview|status|where are we)/, fn: thread => {
+      const s = E.summary(thread); const docs = doneDocs(thread);
+      if (!docs.length) return { text: `Nothing has been analyzed yet for ${thread.application.id}. Attach the applicant's documents to start.`, citations: [] };
+      return { text: `${docs.length} document${docs.length === 1 ? '' : 's'} read for ${thread.application.id}. ${s.provided} of ${s.required} required documents provided. ${s.pass} checks passed, ${s.warn} warnings, ${s.fail} failed${s.unavailable ? `, ${s.unavailable} unavailable` : ''}.` + (s.open.length || s.missing.length ? `\nOpen items:\n` + [...s.open.map(o => `• ${o.text}`), ...s.missing.map(m => `• ${DI.DOC_TYPES[m].label} not provided`)].join('\n') : '\nNothing is open.'), citations: [] };
+    } },
+    { re: /(uidai|verif|external|service|igrs|sarathi|nocas|registry)/, fn: thread => {
+      const lines = [], cites = [];
+      for (const d of doneDocs(thread)) { const c = d.checks.find(x => x.group === 'external'); if (c) { lines.push(`${typeLabel(d)}: ${c.title}${c.service ? ` (${(c.service.latencyMs / 1000).toFixed(1)} s)` : ''}. ${c.manual ? 'Marked as verified manually.' : c.status === 'pass' ? '' : c.detail}`); } }
+      if (!lines.length) return { text: 'No external verification has run yet.', citations: [] };
+      return { text: lines.map(l => `• ${l.trim()}`).join('\n'), citations: cites };
+    } },
+    { re: /(dob|date of birth|born)/, fn: thread => { const r = fieldAcross(thread, ['dob'], 'date of birth'); return { text: `The application reads ${E.fmtDate(thread.application.fields.dob) || 'no date of birth'}. ` + listOrNone(r.out, 'No document with a date of birth has been read yet.').join(' '), citations: r.cites }; } },
+    { re: /aadhaar|aadhar/, fn: thread => { const r = fieldAcross(thread, ['aadhaarNo'], 'Aadhaar'); const a = findDoc(thread, 'aadhaar'); return { text: `The application reads ${E.maskId(thread.application.fields.aadhaarNo) || 'no Aadhaar number'}. ` + listOrNone(r.out, 'No Aadhaar has been read yet.').join(' ') + (a ? ` ${a.checks.find(c => c.group === 'external')?.title || ''}.` : ''), citations: r.cites }; } },
+    { re: /\bpan\b/, fn: thread => { const r = fieldAcross(thread, ['pan'], 'PAN'); return { text: `The application reads ${thread.application.fields.pan || 'no PAN'}. ` + listOrNone(r.out, 'No PAN has been read yet.').join(' '), citations: r.cites }; } },
+    { re: /survey/, fn: thread => { const r = fieldAcross(thread, ['surveyNo'], 'survey number'); return { text: `The application reads survey number ${thread.application.fields.surveyNo || 'none'}. ` + listOrNone(r.out, 'No document with a survey number has been read yet.').join(' '), citations: r.cites }; } },
+    { re: /address/, fn: thread => { const r = fieldAcross(thread, ['address'], 'address'); return { text: `The application address is ${thread.application.fields.address || 'not set'}. ` + listOrNone(r.out, 'No document with an address has been read yet.').join(' '), citations: r.cites }; } },
+    { re: /height|floor|storey|story/, fn: thread => { const r = fieldAcross(thread, ['heightApprovedM', 'permissibleHeightM', 'floorsApproved', 'permittedFloors'], 'height'); const f = thread.application.fields; return { text: `The proposal is ${f.floors || 'floors not set'}, ${f.heightM || '?'} m high. ` + listOrNone(r.out, 'No clearance document has been read yet.').join(' '), citations: r.cites }; } },
+    { re: /\bnoc/, fn: thread => { const nocs = doneDocs(thread).filter(d => /noc/.test(d.typeId)); if (!nocs.length) return { text: 'No NOC has been read yet.', citations: [] }; const lines = [], cites = []; for (const d of nocs) { const v = d.checks.find(c => c.id.endsWith(':validity')); lines.push(`${typeLabel(d)} ${val(d, 'nocNo') || val(d, 'nocId')} from ${val(d, 'issuedBy') || 'Airports Authority of India'}: ${v ? v.detail : ''}`); cites.push(cite(d, 'validUpto')); } return { text: lines.map(l => `• ${l}`).join('\n'), citations: cites }; } },
+  ];
+
+  E.answer = (thread, question) => {
+    const q = String(question || '').toLowerCase();
+    for (const it of INTENTS) if (it.re.test(q)) return it.fn(thread, q);
+    return { text: 'I can answer questions about the documents in this thread. Try: which documents are missing, what needs attention, or is the sale deed in the applicant\'s name.', citations: [] };
+  };
+
+  // ---------- scrutiny note and chips ----------
+  E.scrutinyNote = thread => {
+    const f = thread.application.fields, s = E.summary(thread);
+    const lines = [`Scrutiny note for ${thread.application.id}`, `Applicant ${f.applicantName || 'not set'}, ${f.proposedUse || 'use not set'}, ${f.floors || 'floors not set'}, ${f.heightM || '?'} m, survey ${f.surveyNo || '?'} plot ${f.plotNo || '?'}, ${f.village || ''}.`, `Documents: ${s.provided} of ${s.required} required provided`];
+    for (const m of s.missing) lines.push(`Missing: ${DI.DOC_TYPES[m].label}`);
+    lines.push(`Checks: ${s.pass} passed, ${s.warn} warnings, ${s.fail} failed, ${s.unavailable} unavailable`);
+    for (const o of s.open) { const d = thread.docs.find(x => x.id === o.docId); const c = d.checks.find(x => x.id === o.checkId); lines.push(`Open: ${typeLabel(d)}: ${c.title}. ${c.detail}`); }
+    for (const sf of thread.shortfall) lines.push(`Requested from applicant: ${sf}`);
+    lines.push(`Recommendation: ${s.open.length || s.missing.length ? 'Raise shortfall for the items above before sanction' : 'Fit to proceed'}`);
+    return lines.join('\n');
+  };
+
+  E.suggestedChips = thread => {
+    const blank = !thread.application.fields.applicantName;
+    if (blank) return [{ label: 'Attach documents', action: 'attach' }];
+    if (!thread.docs.length) return [{ label: 'Load sample set', action: 'load-sample' }, { label: 'What documents are required?', action: 'ask' }];
+    const s = E.summary(thread); const done = doneDocs(thread);
+    const chips = [{ label: 'What needs attention?', action: 'ask' }];
+    if (done.some(d => d.typeId === 'sale_deed')) chips.push({ label: "Is the sale deed in the applicant's name?", action: 'ask' });
+    if (s.missing.length) chips.push({ label: 'Which documents are missing?', action: 'ask' });
+    if (done.some(d => /noc/.test(d.typeId))) chips.push({ label: 'When do the NOCs expire?', action: 'ask' });
+    chips.push({ label: 'Summarize this application', action: 'ask' });
+    return chips.slice(0, 4);
+  };
+
+  E.statusWord = statusWord;
+  E.typeLabel = typeLabel;
+  E.fieldLabel = fieldLabel;
+  return E;
+})();
+var DI = globalThis.DI || (globalThis.DI = {});
+DI.preview = (() => {
+  const P = {};
+
+  // Helpers -----------------------------------------------------------------
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  const fmtDate = iso => (DI.engine && DI.engine.fmtDate) ? DI.engine.fmtDate(iso) : String(iso ?? '');
+  const maskId = s => (DI.engine && DI.engine.maskId) ? DI.engine.maskId(s) : String(s ?? '');
+  const fmtSize = n => { n = Number(n) || 0; return n >= 1e6 ? (n / 1e6).toFixed(1) + ' MB' : n >= 1e3 ? Math.round(n / 1e3) + ' KB' : n + ' B'; };
+
+  const el = (tag, cls, text) => {
+    const e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text != null) e.textContent = String(text);
+    return e;
+  };
+  const add = (parent, ...kids) => { for (const k of kids) if (k) parent.appendChild(k); return parent; };
+
+  // Field value wrapped in a highlight span keyed by field.
+  const val = (doc, key, opts = {}) => {
+    const f = doc.fields && doc.fields[key];
+    let text = f ? f.value : '';
+    if (opts.date) text = fmtDate(text);
+    if (opts.mask) text = maskId(text);
+    if (text === '' || text == null) text = opts.blank || '—';
+    const s = el('span', 'hl' + (f && f.confirmed ? ' ok' : '') + (opts.id ? ' id' : ''), text);
+    s.dataset.hl = key;
+    return s;
+  };
+  const has = (doc, key) => doc.fields && doc.fields[key] && doc.fields[key].value != null && doc.fields[key].value !== '';
+  const schema = doc => (DI.DOC_TYPES && DI.DOC_TYPES[doc.typeId]) || { label: 'Document', preview: 'generic', fields: [], structure: [] };
+  const fieldLabel = (doc, key) => { const f = schema(doc).fields.find(x => x.key === key); return f ? f.label : key; };
+  const isDate = (doc, key) => { const f = schema(doc).fields.find(x => x.key === key); return !!(f && f.kind === 'date'); };
+  const isId = (doc, key) => { const f = schema(doc).fields.find(x => x.key === key); return !!(f && f.kind === 'id'); };
+  const isMask = (doc, key) => { const f = schema(doc).fields.find(x => x.key === key); return !!(f && f.mask); };
+  const detected = (doc, key) => !(doc.structure && doc.structure[key] === false);
+
+  // A label/value row for card grids.
+  const row = (doc, key, labelOverride) => {
+    const r = el('div', 'pv-row');
+    add(r, el('div', 'pv-label', labelOverride || fieldLabel(doc, key)));
+    add(r, add(el('div', 'pv-value'), val(doc, key, { date: isDate(doc, key), id: isId(doc, key), mask: isMask(doc, key) })));
+    return r;
+  };
+
+  // Paragraph mixing static text with highlighted values.
+  // parts: strings or [key, opts]
+  const para = (doc, parts, cls) => {
+    const p = el('p', cls || 'pv-para');
+    for (const part of parts) {
+      if (typeof part === 'string') p.appendChild(document.createTextNode(part));
+      else p.appendChild(val(doc, part[0], part[1] || {}));
+    }
+    return p;
+  };
+
+  const seal = (doc, label) => {
+    const ok = detected(doc, 'seal');
+    const wrap = el('div', 'pv-seal-wrap');
+    const s = el('div', 'pv-seal' + (ok ? '' : ' missing'));
+    if (ok) add(s, el('span', 'pv-seal-text', label || 'Seal'));
+    add(wrap, s);
+    if (!ok) add(wrap, el('div', 'pv-seal-caption', 'seal not detected'));
+    return wrap;
+  };
+
+  const qr = doc => detected(doc, 'qr') ? el('div', 'pv-qr') : null;
+
+  const footer = (doc, pageLabel) => el('div', 'pv-footer', pageLabel || `Page 1 of ${doc.pages || 1}`);
+
+  // Card layout (Aadhaar, PAN, DL) ------------------------------------------
+  const renderCard = doc => {
+    const t = schema(doc);
+    const root = el('div', `pv-card pv-card-${doc.typeId}`);
+    add(root, el('div', 'pv-band'));
+
+    const head = el('div', 'pv-card-head');
+    add(head, el('div', 'pv-emblem'));
+    const titles = { aadhaar: ['Unique Identification Authority', 'Aadhaar'], pan: ['Income Tax Department', 'Permanent Account Number'], dl: ['Transport Department', 'Driving licence'] };
+    const [issuer, title] = titles[doc.typeId] || ['Issuing authority', t.label];
+    add(head, add(el('div', 'pv-card-titles'), el('div', 'pv-card-issuer', issuer), el('div', 'pv-card-title', title)));
+    add(root, head);
+
+    const body = el('div', 'pv-card-body');
+    add(body, el('div', 'pv-photo'));
+    const grid = el('div', 'pv-grid');
+    if (doc.typeId === 'aadhaar') {
+      add(grid, row(doc, 'name'), row(doc, 'dob'), row(doc, 'gender'));
+      const idRow = el('div', 'pv-row pv-row-wide');
+      add(idRow, el('div', 'pv-label', 'Aadhaar number'));
+      add(idRow, add(el('div', 'pv-value pv-bigid'), val(doc, 'aadhaarNo', { mask: true, id: true })));
+      add(grid, idRow);
+    } else if (doc.typeId === 'pan') {
+      add(grid, row(doc, 'name'), row(doc, 'parentName'), row(doc, 'dob'));
+      const idRow = el('div', 'pv-row pv-row-wide');
+      add(idRow, el('div', 'pv-label', 'Permanent Account Number'));
+      add(idRow, add(el('div', 'pv-value pv-bigid'), val(doc, 'pan', { id: true })));
+      add(grid, idRow);
+    } else if (doc.typeId === 'dl') {
+      add(grid, row(doc, 'name'), row(doc, 'dob'), row(doc, 'validUpto'), row(doc, 'bloodGroup'));
+      const idRow = el('div', 'pv-row pv-row-wide');
+      add(idRow, el('div', 'pv-label', 'Licence number'));
+      add(idRow, add(el('div', 'pv-value pv-bigid'), val(doc, 'dlNo', { id: true })));
+      add(grid, idRow);
+    } else {
+      for (const f of t.fields) add(grid, row(doc, f.key));
+    }
+    add(body, grid);
+    add(root, body);
+
+    if (has(doc, 'address')) {
+      add(root, add(el('div', 'pv-card-address'), el('span', 'pv-label', 'Address'), val(doc, 'address')));
+    }
+    const foot = el('div', 'pv-card-foot');
+    add(foot, qr(doc));
+    if (doc.typeId === 'pan' && detected(doc, 'signature')) add(foot, el('div', 'pv-signature-line', 'Signature'));
+    if (detected(doc, 'hologram') && (doc.typeId === 'pan' || doc.typeId === 'dl')) add(foot, el('div', 'pv-hologram'));
+    add(root, foot);
+    return root;
+  };
+
+  // Deed layout (sale deed, link document) ----------------------------------
+  const renderDeed = doc => {
+    const root = el('div', 'pv-page pv-deed');
+    add(root, el('div', 'pv-stamp-strip', 'Non-judicial stamp paper'));
+    add(root, el('h3', 'pv-title', doc.typeId === 'link_doc' ? 'LINK DOCUMENT' : 'SALE DEED'));
+
+    const hdr = el('div', 'pv-ref-row');
+    add(hdr, add(el('div', 'pv-ref'), el('span', 'pv-label', 'Document no.'), val(doc, 'docNo', { id: true })));
+    add(hdr, add(el('div', 'pv-ref'), el('span', 'pv-label', 'Registered at'), val(doc, 'sro')));
+    add(root, hdr);
+
+    add(root, para(doc, [
+      'This deed of sale is executed on ', ['regDate', { date: true }], ' at ', ['sro'], ' by ', ['vendor'],
+      ' (hereinafter the Vendor) in favour of ', ['purchaser'], ' (hereinafter the Purchaser).'
+    ]));
+    if (has(doc, 'consideration')) {
+      add(root, para(doc, [
+        'Whereas the Vendor is the absolute owner of the schedule property and has agreed to sell the same for a total consideration of ',
+        ['consideration'], ', the receipt of which the Vendor hereby acknowledges, the Vendor conveys the schedule property to the Purchaser free from all encumbrances.'
+      ]));
+    } else {
+      add(root, para(doc, ['Whereas the Vendor is the absolute owner of the schedule property, the Vendor hereby conveys the schedule property to the Purchaser free from all encumbrances.']));
+    }
+
+    const sched = el('div', 'pv-schedule');
+    add(sched, el('div', 'pv-schedule-title', 'Schedule of property'));
+    add(sched, para(doc, [
+      'All that plot of land bearing plot no. ', ['plotNo', { id: true }], ' in survey no. ', ['surveyNo', { id: true }],
+      ' admeasuring ', ['extent'], ' situated at ', ['village'], ' village, within the registration sub-district of ', ['sro'], '.'
+    ], 'pv-para pv-para-tight'));
+    if (has(doc, 'boundaries')) {
+      add(sched, para(doc, ['Bounded by: ', ['boundaries']], 'pv-para pv-para-tight'));
+    }
+    add(root, sched);
+
+    if (detected(doc, 'witnesses')) {
+      const w = el('div', 'pv-witnesses');
+      add(w, el('div', 'pv-witness', 'Witness 1 ______________________'));
+      add(w, el('div', 'pv-witness', 'Witness 2 ______________________'));
+      add(root, w);
+    }
+    if (detected(doc, 'registration')) {
+      const box = el('div', 'pv-endorsement');
+      add(box, el('div', 'pv-endorsement-title', 'Registered'));
+      add(box, para(doc, ['Document no. ', ['docNo', { id: true }], ' registered on ', ['regDate', { date: true }], ' at ', ['sro'], '.'], 'pv-para pv-para-tight'));
+      if (detected(doc, 'stamp')) add(box, el('div', 'pv-endorsement-note', 'Stamp duty paid in full'));
+      add(root, box);
+    }
+    add(root, footer(doc));
+    return root;
+  };
+
+  // Letter layout (permits, NOCs, EC, tax receipt) ---------------------------
+  const letterCopy = {
+    building_permit: {
+      body: doc => ['Permission is hereby granted to ', ['applicant'], ' for construction on survey no. ', ['surveyNo', { id: true }], ' for ', ['permittedUse'], ' use, ', ['permittedFloors'], ', subject to the conditions annexed.'],
+      cond: doc => ['This permission is valid until ', ['validUpto', { date: true }], '. Construction shall commence within the validity period.'],
+      refKey: 'permitNo', dateKey: 'issueDate', sealLabel: 'Office seal'
+    },
+    fire_noc: {
+      body: doc => ['No objection is hereby accorded to ', ['applicant'], ' for the proposed building on survey no. ', ['surveyNo', { id: true }], ' up to a height of ', ['heightApprovedM'], ' m, ', ['floorsApproved'], ', from the fire safety point of view.'],
+      cond: doc => ['This certificate is valid until ', ['validUpto', { date: true }], ' and is subject to the fire safety measures indicated in the annexure.'],
+      refKey: 'nocNo', dateKey: 'issueDate', sealLabel: 'Dept. seal'
+    },
+    aai_noc: {
+      body: doc => ['No objection is hereby granted to ', ['applicant'], ' for the construction at survey no. ', ['surveyNo', { id: true }], ' (site coordinates ', ['siteCoordinates'], ') up to a permissible top elevation of ', ['permissibleHeightM'], ' m above ground level.'],
+      cond: doc => ['This NOC is valid until ', ['validUpto', { date: true }], '. Any change in site coordinates or height requires a fresh application.'],
+      refKey: 'nocId', dateKey: 'issueDate', sealLabel: 'AAI'
+    },
+    irrigation_noc: {
+      body: doc => ['No objection is hereby accorded to ', ['applicant'], ' for the proposed construction on survey no. ', ['surveyNo', { id: true }], ' with reference to the nearby water body.'],
+      cond: doc => ['Condition: ', ['bufferCondition'], ' Valid until ', ['validUpto', { date: true }], '.'],
+      refKey: 'nocNo', dateKey: 'issueDate', sealLabel: 'Dept. seal'
+    },
+    ec: {
+      body: doc => ['This is to certify that on a search of the registers for the period ', ['period'], ' in respect of survey no. ', ['surveyNo', { id: true }], ', the owner on record is ', ['owner'], '.'],
+      cond: doc => ['Encumbrances found: ', ['encumbrances'], '.'],
+      refKey: 'ecNo', dateKey: null, sealLabel: 'SRO seal'
+    },
+    tax_receipt: {
+      body: doc => ['Received from ', ['owner'], ' towards property tax for assessment no. ', ['assessmentNo', { id: true }], ' for the period ', ['period'], '.'],
+      cond: doc => ['Amount paid: ', ['amount'], '.'],
+      refKey: 'receiptNo', dateKey: null, sealLabel: 'ULB seal'
+    }
+  };
+
+  const renderLetter = (doc, application) => {
+    const t = schema(doc);
+    const copy = letterCopy[doc.typeId] || {
+      body: d => [t.label + ' issued in respect of the application.'],
+      cond: d => [],
+      refKey: (t.fields.find(f => f.kind === 'id') || {}).key, dateKey: (t.fields.find(f => f.kind === 'date') || {}).key, sealLabel: 'Seal'
+    };
+    const root = el('div', 'pv-page pv-letter');
+
+    const issuer = has(doc, 'issuedBy') ? val(doc, 'issuedBy') : el('span', null, t.label);
+    add(root, add(el('div', 'pv-letterhead'), el('div', 'pv-emblem pv-emblem-sm'), add(el('div', 'pv-letterhead-name'), issuer)));
+
+    const ref = el('div', 'pv-ref-row');
+    if (copy.refKey) add(ref, add(el('div', 'pv-ref'), el('span', 'pv-label', 'Ref.'), val(doc, copy.refKey, { id: true })));
+    if (copy.dateKey) add(ref, add(el('div', 'pv-ref'), el('span', 'pv-label', 'Date'), val(doc, copy.dateKey, { date: true })));
+    add(root, ref);
+
+    const applicantKey = has(doc, 'applicant') ? 'applicant' : has(doc, 'owner') ? 'owner' : null;
+    const to = el('div', 'pv-to');
+    add(to, el('div', 'pv-label', 'To'));
+    if (applicantKey) add(to, add(el('div', 'pv-to-name'), val(doc, applicantKey)));
+    else if (application && application.fields && application.fields.applicantName) add(to, el('div', 'pv-to-name', application.fields.applicantName));
+    add(root, to);
+
+    add(root, el('div', 'pv-subject', 'Subject: ' + t.label));
+    add(root, para(doc, copy.body(doc)));
+    const cond = copy.cond(doc);
+    if (cond.length) add(root, para(doc, cond, 'pv-para pv-conditions'));
+
+    const sig = el('div', 'pv-sign-row');
+    add(sig, seal(doc, copy.sealLabel));
+    const block = el('div', 'pv-sign-block');
+    add(block, el('div', 'pv-sign-line'));
+    add(block, el('div', 'pv-sign-caption', detected(doc, 'signature') ? 'Signature of the issuing authority' : 'Signature not detected'));
+    add(sig, block);
+    add(root, sig);
+
+    if (doc.typeId === 'aai_noc') { const q = qr(doc); if (q) add(root, add(el('div', 'pv-qr-row'), q, el('span', 'pv-label', 'Verification QR'))); }
+    add(root, footer(doc));
+    return root;
+  };
+
+  // Generic layout (unknown or real uploads) --------------------------------
+  const renderGeneric = doc => {
+    const root = el('div', 'pv-generic');
+    if (doc.objectUrl) {
+      const img = el('img', 'pv-img');
+      img.setAttribute('src', doc.objectUrl);
+      img.setAttribute('alt', (doc.file && doc.file.name) || 'Uploaded document');
+      add(root, img);
+    } else {
+      const page = el('div', 'pv-page pv-placeholder');
+      add(page, el('div', 'pv-placeholder-icon'));
+      add(page, el('div', 'pv-placeholder-name', (doc.file && doc.file.name) || 'Document'));
+      add(page, el('div', 'pv-placeholder-meta', [(doc.file && doc.file.format) || 'FILE', doc.file && doc.file.size ? fmtSize(doc.file.size) : null].filter(Boolean).join(', ')));
+      add(page, el('div', 'pv-placeholder-note', 'No rendered preview for this file. Fields on the left were read from it.'));
+      add(root, page);
+    }
+    return root;
+  };
+
+  // Entry point -------------------------------------------------------------
+  P.render = (doc, application) => {
+    const root = el('div', 'preview');
+    let kind = schema(doc).preview || 'generic';
+    if (doc.source === 'upload' && doc.objectUrl) kind = 'generic';
+    let inner;
+    try {
+      inner = kind === 'card' ? renderCard(doc)
+        : kind === 'deed' ? renderDeed(doc)
+        : kind === 'letter' ? renderLetter(doc, application)
+        : renderGeneric(doc);
+    } catch (e) {
+      inner = renderGeneric(doc);
+    }
+    add(root, inner);
+    return root;
+  };
+
+  P.esc = esc;
+  return P;
+})();
+var DI = globalThis.DI || (globalThis.DI = {});
+DI.ui = (() => {
+  const U = {};
+  const E = () => DI.engine;
+  const $ = id => document.getElementById(id);
+
+  /* ---------- icons (Lucide-style, 16px, stroke currentColor) ---------- */
+  const I = (d, extra = '') => `<svg class="ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}${extra}</svg>`;
+  const ICONS = {
+    plus: I('<path d="M12 5v14M5 12h14"/>'),
+    search: I('<circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>'),
+    paperclip: I('<path d="m21 11.5-8.6 8.6a5 5 0 0 1-7-7l8.6-8.6a3.3 3.3 0 0 1 4.7 4.7L10 17.5a1.7 1.7 0 0 1-2.4-2.4L15.5 7"/>'),
+    send: I('<path d="M5 12h14M13 6l6 6-6 6"/>'),
+    sun: I('<circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/>'),
+    moon: I('<path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8Z"/>'),
+    panelLeft: I('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/>'),
+    panelRight: I('<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/>'),
+    more: I('<circle cx="5" cy="12" r="1.2"/><circle cx="12" cy="12" r="1.2"/><circle cx="19" cy="12" r="1.2"/>'),
+    check: I('<path d="m5 12 4.5 4.5L19 7"/>'),
+    checkCircle: I('<circle cx="12" cy="12" r="9"/><path d="m8.5 12 2.5 2.5 4.5-5"/>'),
+    alert: I('<path d="M12 3 2.5 19.5h19L12 3Z"/><path d="M12 10v4M12 17h.01"/>'),
+    xCircle: I('<circle cx="12" cy="12" r="9"/><path d="m9 9 6 6M15 9l-6 6"/>'),
+    x: I('<path d="M6 6l12 12M18 6 6 18"/>'),
+    info: I('<circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 8h.01"/>'),
+    clock: I('<circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/>'),
+    plug: I('<path d="M9 3v5M15 3v5M6 8h12v3a6 6 0 0 1-12 0V8ZM12 17v4"/>'),
+    file: I('<path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z"/><path d="M14 3v5h5"/>'),
+    id: I('<rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="8.5" cy="11" r="2"/><path d="M5.5 16.5c.7-1.5 1.8-2.2 3-2.2s2.3.7 3 2.2M14 10h4M14 13.5h4"/>'),
+    deed: I('<path d="M6 3h9l4 4v14H6V3Z"/><path d="M15 3v4h4M9 12h6M9 15.5h6M9 8.5h3"/>'),
+    letter: I('<rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/>'),
+    sparkle: I('<path d="M12 3c.5 4.5 3.5 7.5 8 8-4.5.5-7.5 3.5-8 8-.5-4.5-3.5-7.5-8-8 4.5-.5 7.5-3.5 8-8Z"/>'),
+    chevronDown: I('<path d="m6 9 6 6 6-6"/>'),
+    chevronRight: I('<path d="m9 6 6 6-6 6"/>'),
+    copy: I('<rect x="9" y="9" width="11" height="11" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/>'),
+    refresh: I('<path d="M20 12a8 8 0 1 1-2.3-5.7M20 4v5h-5"/>'),
+    pen: I('<path d="M4 20h4l10-10-4-4L4 16v4Z"/><path d="m12.5 7.5 4 4"/>'),
+    external: I('<path d="M14 4h6v6M20 4l-9 9M19 14v5a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h5"/>'),
+    trash: I('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/>'),
+  };
+  ICONS.brand = `<svg class="brand-svg" viewBox="0 0 32 32"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b3fd2"/><stop offset=".55" stop-color="#8f7cff"/><stop offset="1" stop-color="#3d6bff"/></linearGradient><radialGradient id="g2" cx=".3" cy=".25" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><circle cx="16" cy="16" r="15" fill="url(#g1)"/><circle cx="16" cy="16" r="15" fill="url(#g2)"/><path d="M11 8.5h7l4 4v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 9.5 23.5v-13.5A1.5 1.5 0 0 1 11 8.5Z" fill="rgba(255,255,255,.2)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M18 8.5v4h4" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 16.5h15" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M12.5 20h7M12.5 22.6h4.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".65"/><path d="M25.5 4.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9Z" fill="#fff"/></svg>`;
+  U.icon = n => ICONS[n] || '';
+  const ORB = ({ size = 28, working = false, animate = null, cls = '' } = {}) => {
+    if (animate == null) animate = working || size >= 48;
+    const k = ['orb', cls, working ? 'working' : '', animate && !working ? 'drift' : ''].filter(Boolean).join(' ');
+    return `<span class="${k}" style="font-size:${size}px" aria-hidden="true"><i class="orb-glow"></i><i class="orb-band"><b></b></i><i class="orb-hot"><b></b></i></span>`;
+  };
+  U.orb = (cls = '') => ORB({ size: cls.includes('lg') ? 72 : cls.includes('sm') ? 22 : 28, working: cls.includes('working'), cls });
+  const STATUS_ICON = { pass: 'checkCircle', warn: 'alert', fail: 'xCircle', info: 'info', pending: 'clock', unavailable: 'plug' };
+
+  /* ---------- tiny helpers ---------- */
+  U.esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[c]);
+  U.el = html => { const t = document.createElement('template'); t.innerHTML = html.trim(); return t.content.firstElementChild; };
+  const fmtSize = b => b >= 1e6 ? `${(b / 1e6).toFixed(1)} MB` : `${Math.max(1, Math.round(b / 1000))} KB`;
+  const relTime = ts => { const m = Math.round((Date.now() - ts) / 60000); if (m < 1) return 'just now'; if (m < 60) return `${m} min ago`; const h = Math.round(m / 60); if (h < 24) return `${h} h ago`; return `${Math.round(h / 24)} d ago`; };
+  const typeOf = doc => DI.DOC_TYPES[doc.typeId] || DI.DOC_TYPES.unknown;
+  const label = doc => typeOf(doc).label;
+  const statusWord = s => ({ pass: 'passing', warn: 'a warning', fail: 'failing', info: 'informational', unavailable: 'unavailable', pending: 'pending' })[s] || s;
+  const openChecks = doc => (doc.checks || []).filter(c => !c.acknowledged && !c.manual && ['fail', 'warn', 'unavailable'].includes(c.status));
+  const docStatus = doc => { if (doc.stage !== 'done') return 'pending'; const o = openChecks(doc); if (o.some(c => c.status === 'fail')) return 'fail'; if (o.some(c => c.status === 'unavailable')) return 'unavailable'; if (o.some(c => c.status === 'warn')) return 'warn'; return 'pass'; };
+  const pillFor = doc => { const s = docStatus(doc), n = openChecks(doc).length; if (s === 'pending') return ['pending', 'Checking']; if (s === 'fail') return ['fail', `${n} failed`]; if (s === 'unavailable') return ['unavailable', 'Service unavailable']; if (s === 'warn') return ['warn', `${n} to review`]; return doc.confirmed ? ['confirmed', 'Confirmed'] : ['pass', 'Verified']; };
+  const fieldLabel = (doc, key) => (typeOf(doc).fields.find(f => f.key === key) || { label: key }).label;
+  const displayValue = (doc, key) => { const f = typeOf(doc).fields.find(x => x.key === key) || {}; const v = doc.fields[key]?.value; if (v == null || v === '') return ''; if (f.kind === 'date') return E().fmtDate(v); if (f.mask) return E().maskId(v); return String(v); };
+  const paragraphs = text => String(text || '').split('\n').filter(Boolean).map(p => `<p>${U.esc(p)}</p>`).join('');
+
+  /* ---------- state ---------- */
+  U.state = { threads: [], activeId: null, theme: 'light', tick: 0, pending: [], newCount: 0 };
+  U.activeThread = () => U.state.threads.find(t => t.id === U.state.activeId);
+  U.threadById = id => U.state.threads.find(t => t.id === id);
+  U.createThread = ({ application, title }) => { const t = E().newThread({ application, title }); t.updatedAt = Date.now(); t.ui = { scrollTop: null }; U.state.threads.unshift(t); return t; };
+
+  /* ---------- messages ---------- */
+  U.addMessage = (thread, msg) => {
+    msg.id = msg.id || `m_${thread.id}_${++thread.seq}`;
+    thread.messages.push(msg); thread.updatedAt = Date.now(); thread.updatedSeq = ++U.state.tick;
+    if (thread.id === U.state.activeId) { const m = $('messages'); m.classList.remove('empty'); const el = U.renderMessage(thread, msg); el.classList.add('fresh'); el.addEventListener('animationend', () => el.classList.remove('fresh'), { once: true }); setTimeout(() => el.classList.remove('fresh'), 600); m.appendChild(el); U.scrollToBottom(); }
+    U.renderRail();
+    return msg;
+  };
+  U.updateMessage = (thread, msgId) => {
+    if (thread.id !== U.state.activeId) return;
+    const old = $('messages').querySelector(`[data-msg="${msgId}"]`); const msg = thread.messages.find(m => m.id === msgId);
+    if (old && msg) { const atBottom = nearBottom(); old.replaceWith(U.renderMessage(thread, msg)); if (atBottom) U.scrollToBottom(); }
+  };
+  U.updateActivity = (thread, msgId) => {
+    if (thread.id !== U.state.activeId) return;
+    const msg = thread.messages.find(m => m.id === msgId); const host = $('messages').querySelector(`[data-msg="${msgId}"]`); if (!msg || !host) return;
+    const old = host.querySelector('.activity'); const atBottom = nearBottom();
+    if (old && msg.activity) old.replaceWith(renderActivity(thread, msg)); else U.updateMessage(thread, msgId);
+    if (atBottom) U.scrollToBottom();
+  };
+  const nearBottom = () => { const c = $('conversation'); return c.scrollHeight - c.scrollTop - c.clientHeight < 120; };
+  U.scrollToBottom = () => { const c = $('conversation'); c.scrollTop = c.scrollHeight; };
+  U.renderMessages = thread => {
+    const m = $('messages'); m.innerHTML = ''; m.classList.toggle('empty', thread.messages.length === 1 && thread.messages[0].kind === 'greeting');
+    for (const msg of thread.messages) m.appendChild(U.renderMessage(thread, msg));
+    const c = $('conversation'); c.scrollTop = thread.ui.scrollTop == null ? c.scrollHeight : thread.ui.scrollTop;
+  };
+  U.renderMessage = (thread, msg) => {
+    if (msg.role === 'user') {
+      const el = U.el(`<div class="msg msg-user" data-msg="${msg.id}"></div>`);
+      if (msg.files?.length) { const chips = U.el('<div class="file-chips"></div>'); for (const f of msg.files) chips.appendChild(fileChip(f)); el.appendChild(chips); }
+      if (msg.text) el.appendChild(U.el(`<div class="text">${U.esc(msg.text)}</div>`));
+      return el;
+    }
+    const working = msg.typing || (msg.activity && msg.activity.steps.some(s => s.state === 'running'));
+    if (msg.kind === 'greeting') return U.el(`<div class="msg msg-greeting" data-msg="${msg.id}">${U.orb('lg')}<div class="text">${paragraphs(msg.text)}</div></div>`);
+    const el = U.el(`<div class="msg msg-ai" data-msg="${msg.id}">${U.orb(working ? 'working' : '')}<div class="ai-body"></div></div>`);
+    const body = el.querySelector('.ai-body');
+    if (msg.typing) { body.appendChild(U.el('<div class="typing"><i></i><i></i><i></i><span class="lbl">Reading the documents</span></div>')); return el; }
+    if (msg.activity) body.appendChild(renderActivity(thread, msg));
+    if (msg.text) body.appendChild(U.el(`<div class="text">${paragraphs(msg.text)}</div>`));
+    if (msg.docIds?.length) msg.docIds.forEach((id, i) => { const d = thread.docs.find(x => x.id === id); if (d) { const c = U.renderCard(thread, d); if (c.classList.contains('enter')) c.style.animationDelay = `${i * 70}ms`; body.appendChild(c); } });
+    if (msg.attention?.length || msg.missing?.length) body.appendChild(renderAttention(thread, msg));
+    if (msg.unknownDocId) body.appendChild(renderUnknownPrompt(thread, msg));
+    if (msg.citations?.length) body.appendChild(renderCites(thread, msg));
+    if (msg.note) body.appendChild(renderNote(msg));
+    return el;
+  };
+  const fileChip = (f, onRemove) => {
+    const el = U.el(`<span class="file-chip"><span class="fmt">${U.esc(f.format)}</span><span class="fname" title="${U.esc(f.name)}">${U.esc(f.name)}</span><span class="fsize">${fmtSize(f.size)}</span></span>`);
+    if (onRemove) { const b = U.el(`<button type="button" class="rm" aria-label="Remove">${U.icon('x')}</button>`); b.onclick = onRemove; el.appendChild(b); }
+    return el;
+  };
+
+  /* ---------- activity block ---------- */
+  const STEP_LABELS = { identify: 'Identifying document types', extract: 'Extracting fields', checks: 'Running rule checks', verify: 'Verifying with external services' };
+  const renderActivity = (thread, msg) => {
+    const root = U.el('<div class="activity"></div>');
+    for (const s of msg.activity.steps) {
+      const open = s.open ?? s.state === 'running';
+      const step = U.el(`<div class="step ${s.state}${open ? ' open' : ''}"></div>`);
+      const count = s.state === 'running' && s.total ? `${s.items.length} of ${s.total}` : (s.count != null ? String(s.count) : (s.items.length ? String(s.items.length) : ''));
+      const row = U.el(`<button type="button" class="step-row"><span class="glyph">${s.state === 'running' ? '<span class="spinner"></span>' : U.icon('check')}</span><span>${U.esc(STEP_LABELS[s.id] || s.id)}</span><span class="count">${U.esc(count)}</span><span class="chev">${U.icon('chevronRight')}</span></button>`);
+      row.onclick = () => { s.open = !open; U.updateMessage(thread, msg.id); };
+      step.appendChild(row);
+      if (s.id === 'verify') {
+        const chips = U.el('<div class="svc-chips"></div>');
+        for (const it of s.items) chips.appendChild(U.el(`<span class="svc ${it.status || ''}">${it.status ? '<span class="dot"></span>' : '<span class="spinner"></span>'}<span>${U.esc(it.text)}</span></span>`));
+        if (s.items.length) step.appendChild(chips);
+      } else if (s.items.length) {
+        const list = U.el('<div class="step-items"></div>');
+        for (const it of s.items) list.appendChild(U.el(`<div class="step-item"><span class="fname">${U.esc(it.text)}</span>${it.sub ? `<span class="muted">${U.esc(it.sub)}</span>` : ''}${it.badge ? `<span class="badge">${U.esc(it.badge)}</span>` : ''}${it.pct ? `<span class="muted">${U.esc(it.pct)}</span>` : ''}</div>`));
+        step.appendChild(list);
+      }
+      root.appendChild(step);
+    }
+    return root;
+  };
+
+  /* ---------- document card ---------- */
+  U.renderCard = (thread, doc) => {
+    doc.ui = doc.ui || { expanded: false, tab: 'fields' };
+    const t = typeOf(doc); const st = docStatus(doc); const [pillCls, pillText] = pillFor(doc);
+    const enter = !doc.ui.entered; doc.ui.entered = true;
+    const card = U.el(`<div class="card ${st}${doc.ui.expanded ? ' expanded' : ''}${enter ? ' enter' : ''}" data-doc="${doc.id}"></div>`);
+    const opts = DI.DOC_TYPE_ORDER.concat(['unknown']).map(id => `<option value="${id}"${id === doc.typeId ? ' selected' : ''}>${U.esc(DI.DOC_TYPES[id].label)}</option>`).join('');
+    const head = U.el(`<div class="card-head"><span class="tico">${U.icon(t.icon === 'id' ? 'id' : t.icon === 'deed' ? 'deed' : t.icon === 'letter' ? 'letter' : 'file')}</span><span class="card-type"><select aria-label="Document type">${opts}</select>${U.icon('chevronDown')}</span><span class="card-file">${U.esc(doc.file.name)}</span><span class="badge">${U.esc(doc.file.format)}</span>${doc.stage === 'queued' || doc.stage === 'identifying' ? '' : `<span class="conf-meter" title="How sure the AI is about the document type"><span class="conf-bar"><i style="width:${Math.round(doc.confidence * 100)}%"></i></span><b>${Math.round(doc.confidence * 100)}%</b> confidence</span>`}<span class="pill ${pillCls}">${U.esc(pillText)}</span><span class="chev">${U.icon('chevronDown')}</span></div>`);
+    head.onclick = e => { if (e.target.closest('select')) return; doc.ui.expanded = !doc.ui.expanded; U.updateCard(thread, doc.id); };
+    head.querySelector('select').onchange = e => U.reclassify(thread, doc, e.target.value);
+    card.appendChild(head);
+    if (doc.stage === 'done' && !doc.ui.expanded) {
+      const keys = t.fields.filter(f => f.appKey || f.kind === 'id').slice(0, 3).map(f => f.key);
+      const parts = keys.map(k => displayValue(doc, k)).filter(Boolean);
+      const avg = Math.round(100 * Object.values(doc.fields).reduce((a, x) => a + (x.confidence || 0), 0) / Math.max(1, Object.keys(doc.fields).length));
+      card.appendChild(U.el(`<div class="card-summary">${parts.map(U.esc).join(', ')}${parts.length ? ' ' : ''}<span class="conf">${Object.keys(doc.fields).length} fields read at ${avg}% average confidence</span></div>`));
+    }
+    if (doc.ui.expanded) {
+      const body = U.el('<div class="card-body"></div>');
+      const tabs = U.el('<div class="tabs"></div>');
+      for (const [id, name] of [['fields', 'Fields'], ['checks', 'Checks'], ['preview', 'Preview']]) {
+        const b = U.el(`<button type="button" class="tab${doc.ui.tab === id ? ' active' : ''}">${name}</button>`);
+        b.onclick = () => { doc.ui.tab = id; U.updateCard(thread, doc.id); };
+        tabs.appendChild(b);
+      }
+      body.appendChild(tabs);
+      const tb = U.el('<div class="tab-body"></div>');
+      if (doc.stage !== 'done') tb.appendChild(U.el('<div class="text"><p>Still reading this document.</p></div>'));
+      else if (doc.ui.tab === 'fields') tb.appendChild(renderFields(thread, doc));
+      else if (doc.ui.tab === 'checks') tb.appendChild(renderChecks(thread, doc));
+      else tb.appendChild(renderPreview(thread, doc));
+      body.appendChild(tb);
+      card.appendChild(body);
+    }
+    return card;
+  };
+  U.updateCard = (thread, docId) => {
+    if (thread.id !== U.state.activeId) return;
+    const doc = thread.docs.find(d => d.id === docId); if (!doc) return;
+    document.querySelectorAll(`[data-doc="${docId}"]`).forEach(old => old.replaceWith(U.renderCard(thread, doc)));
+  };
+  U.updateAllCards = thread => { for (const d of thread.docs) U.updateCard(thread, d.id); };
+
+  const renderFields = (thread, doc) => {
+    const wrap = document.createElement('div');
+    const avg = Math.round(100 * Object.values(doc.fields).reduce((a, x) => a + (x.confidence || 0), 0) / Math.max(1, Object.keys(doc.fields).length));
+    const table = U.el(`<table class="fields"><thead><tr><td class="lbl">Field</td><td>Value read by AI</td><td class="cf">Confidence (avg ${avg}%)</td></tr></thead><tbody></tbody></table>`); const tb = table.querySelector('tbody');
+    for (const f of typeOf(doc).fields) {
+      const fv = doc.fields[f.key]; if (!fv) continue;
+      const tr = U.el(`<tr data-field="${f.key}"><td class="lbl">${U.esc(f.label)}</td><td class="vcell"></td><td class="cf"><span class="conf-cell"><span class="conf-bar"><i style="width:${Math.round(fv.confidence * 100)}%"></i></span><span class="conf-pct">${Math.round(fv.confidence * 100)}%</span></span></td></tr>`);
+      const cls = fv.confirmed ? 'confirmed' : fv.edited ? 'edited' : '';
+      const val = U.el(`<span class="val ${cls}" tabindex="0" title="Click to edit"><span class="${f.kind === 'id' ? 'id' : ''}">${U.esc(displayValue(doc, f.key) || '—')}</span>${fv.edited && !fv.confirmed ? '<span class="tag">edited</span>' : ''}${fv.confirmed ? `<span class="ok">${U.icon('check')}</span>` : ''}</span>`);
+      const startEdit = () => {
+        const inp = U.el(`<input class="val-input" value="${U.esc(fv.value)}" aria-label="${U.esc(f.label)}">`);
+        val.replaceWith(inp); inp.focus(); inp.select();
+        let done = false;
+        const commit = () => { if (done) return; done = true; const v = inp.value.trim(); if (v !== String(fv.value)) U.editField(thread, doc, f.key, v); else U.updateCard(thread, doc.id); };
+        inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { done = true; U.updateCard(thread, doc.id); } };
+        inp.onblur = commit;
+      };
+      val.onclick = startEdit; val.onkeydown = e => { if (e.key === 'Enter') startEdit(); };
+      tr.querySelector('.vcell').appendChild(val);
+      tr.onmouseenter = () => hl(doc, f.key, true); tr.onmouseleave = () => hl(doc, f.key, false);
+      tb.appendChild(tr);
+    }
+    wrap.appendChild(table);
+    const foot = U.el(`<div class="fields-foot">${doc.confirmed ? `<span class="pill confirmed">Confirmed by officer</span>` : `<span class="conf">Values read by AI. Confirm them once you have checked the document.</span><button type="button" class="btn btn-primary" style="height:30px">Confirm all fields</button>`}</div>`);
+    const btn = foot.querySelector('button'); if (btn) btn.onclick = () => U.confirmAll(thread, doc);
+    wrap.appendChild(foot);
+    return wrap;
+  };
+  const hl = (doc, key, on) => { document.querySelectorAll(`[data-doc="${doc.id}"] .hl[data-hl="${key}"]`).forEach(el => el.classList.toggle('active', on)); };
+
+  const renderChecks = (thread, doc) => {
+    const wrap = document.createElement('div');
+    const groups = [['rule', 'Rule checks'], ['external', 'External verification'], ['cross', 'Cross-document']];
+    for (const [g, name] of groups) {
+      const items = doc.checks.filter(c => c.group === g); if (!items.length) continue;
+      const box = U.el(`<div class="checks-group"><h4>${name}</h4></div>`);
+      for (const c of items) box.appendChild(renderCheck(thread, doc, c));
+      wrap.appendChild(box);
+    }
+    return wrap;
+  };
+  const renderCheck = (thread, doc, c) => {
+    const shown = c.manual ? 'pass' : c.status;
+    const el = U.el(`<div class="check${c.acknowledged ? ' acknowledged' : ''}" data-check="${c.id}"><span class="st ${shown}">${U.icon(STATUS_ICON[shown] || 'info')}</span><div><div class="check-title"><span>${U.esc(c.title)}</span>${c.acknowledged ? '<span class="tag">accepted</span>' : ''}${c.requested ? '<span class="tag">requested from applicant</span>' : ''}${c.manual ? '<span class="tag">verified manually</span>' : ''}</div><div class="check-detail">${U.esc(c.detail)}</div></div></div>`);
+    const right = el.lastElementChild;
+    if (c.service) {
+      const meta = U.el(`<div class="check-meta"><span>${U.esc(c.service.name)}</span><span>${(c.service.latencyMs / 1000).toFixed(1)} s</span><span class="badge">mock</span><button type="button" class="disclosure">View request and response</button></div>`);
+      const pre = U.el(`<div hidden><pre class="id">${U.esc(JSON.stringify(c.service.request, null, 2))}</pre><pre class="id">${U.esc(JSON.stringify(c.service.response, null, 2))}</pre></div>`);
+      meta.querySelector('.disclosure').onclick = e => { pre.hidden = !pre.hidden; e.target.textContent = pre.hidden ? 'View request and response' : 'Hide request and response'; };
+      right.appendChild(meta); right.appendChild(pre);
+    }
+    if (!c.acknowledged && !c.manual && ['warn', 'fail', 'unavailable', 'info'].includes(c.status)) {
+      const acts = U.el('<div class="check-actions"></div>');
+      const add = (text, fn, cls = '') => { const b = U.el(`<button type="button" class="btn btn-text ${cls}">${text}</button>`); b.onclick = fn; acts.appendChild(b); };
+      if (c.status === 'unavailable') {
+        add('Retry', () => U.retryService(thread, doc, c));
+        add('Mark manually verified', () => { c.manual = true; c.title = c.title.replace(' did not respond', '') + ', verified manually'; U.afterCheckAction(thread, doc); });
+      } else if (c.status === 'info' && !c.service && c.group === 'external') {
+        add('Mark manually verified', () => { c.manual = true; c.title = 'Verified against the original'; U.afterCheckAction(thread, doc); });
+      } else {
+        if (c.status !== 'info') add('Accept as is', () => { c.acknowledged = true; U.afterCheckAction(thread, doc); });
+        if (c.fieldKey) add('Edit value', () => { doc.ui.tab = 'fields'; U.updateCard(thread, doc.id); const row = document.querySelector(`[data-doc="${doc.id}"] tr[data-field="${c.fieldKey}"]`); if (row) { row.classList.add('row-flash'); row.querySelector('.val')?.click(); } });
+        if (c.status !== 'info') add('Request from applicant', () => { c.requested = true; c.acknowledged = true; thread.shortfall.push(`${label(doc)}: ${c.title}`); U.afterCheckAction(thread, doc); });
+      }
+      if (acts.children.length) right.appendChild(acts);
+    }
+    return el;
+  };
+  const renderPreview = (thread, doc) => {
+    if (DI.preview && DI.preview.render) { try { return DI.preview.render(doc, thread.application); } catch (e) { console.error(e); } }
+    return U.el('<div class="text"><p>Preview is not available.</p></div>');
+  };
+
+  /* ---------- attention, missing, unknown, citations, note ---------- */
+  const renderAttention = (thread, msg) => {
+    const root = U.el('<div class="attention"></div>');
+    for (const a of msg.attention || []) {
+      const doc = thread.docs.find(d => d.id === a.docId); const c = doc?.checks.find(x => x.id === a.checkId); if (!doc || !c) continue;
+      const row = U.el(`<div class="att-row"><span class="dot ${c.status}"></span><span class="txt">${U.esc(a.text)}</span><button type="button" class="btn btn-text">Open</button></div>`);
+      row.querySelector('button').onclick = () => U.openCheck(thread, doc, c);
+      root.appendChild(row);
+    }
+    for (const typeId of msg.missing || []) {
+      const t = DI.DOC_TYPES[typeId]; const reason = (E().requiredDocs(thread.application).find(r => r.typeId === typeId) || {}).reason || '';
+      const requested = thread.shortfall.includes(`${t.label} not provided`);
+      const row = U.el(`<div class="att-row"><span class="dot fail"></span><span class="txt">${U.esc(t.label)} is required${reason ? ` (${U.esc(reason.toLowerCase())})` : ''} and was not provided.</span>${requested ? '<span class="tag badge">requested</span>' : '<button type="button" class="btn btn-text">Request from applicant</button>'}</div>`);
+      const b = row.querySelector('button'); if (b) b.onclick = () => { thread.shortfall.push(`${t.label} not provided`); U.refreshAttention(thread); U.renderSidebar(thread); U.toast(`Added ${t.label} to the shortfall list`); };
+      root.appendChild(row);
+    }
+    return root;
+  };
+  const renderUnknownPrompt = (thread, msg) => {
+    const root = U.el('<div class="unknown-prompt"></div>');
+    const doc = thread.docs.find(d => d.id === msg.unknownDocId);
+    if (!doc || doc.typeId !== 'unknown') return root;
+    for (const id of DI.DOC_TYPE_ORDER) { const b = U.el(`<button type="button" class="chip">${U.esc(DI.DOC_TYPES[id].label)}</button>`); b.onclick = () => U.reclassify(thread, doc, id); root.appendChild(b); }
+    return root;
+  };
+  const renderCites = (thread, msg) => {
+    const root = U.el('<div class="cites"></div>');
+    for (const c of msg.citations) {
+      const doc = thread.docs.find(d => d.id === c.docId); if (!doc) continue;
+      const b = U.el(`<button type="button" class="cite">${U.icon('file')}<span>${U.esc(c.label)}</span></button>`);
+      b.onclick = () => U.openField(thread, doc, c.fieldKey);
+      root.appendChild(b);
+    }
+    return root;
+  };
+  const renderNote = msg => {
+    const el = U.el(`<div class="note">${U.esc(msg.note)}<button type="button" class="btn btn-ghost copy">${U.icon('copy')}Copy</button></div>`);
+    el.querySelector('.copy').onclick = async () => { try { await navigator.clipboard.writeText(msg.note); U.toast('Copied'); } catch { U.toast('Copy is blocked here. Select the text instead.'); } };
+    return el;
+  };
+  U.openCheck = (thread, doc, c) => { doc.ui.expanded = true; doc.ui.tab = 'checks'; U.updateCard(thread, doc.id); const el = document.querySelector(`[data-doc="${doc.id}"] [data-check="${c.id}"]`); (el || document.querySelector(`[data-doc="${doc.id}"]`))?.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (el) { el.style.background = 'var(--surface-2)'; setTimeout(() => el.style.background = '', 1500); } };
+  U.openField = (thread, doc, key) => { doc.ui.expanded = true; doc.ui.tab = 'fields'; U.updateCard(thread, doc.id); const row = document.querySelector(`[data-doc="${doc.id}"] tr[data-field="${key}"]`); (row || document.querySelector(`[data-doc="${doc.id}"]`))?.scrollIntoView({ behavior: 'smooth', block: 'center' }); if (row) { row.classList.add('row-flash'); setTimeout(() => row.classList.remove('row-flash'), 1400); } };
+
+  /* ---------- flows ---------- */
+  U.stageFiles = files => {
+    for (const file of files) U.state.pending.push({ file, name: file.name, size: file.size, format: E().fileFormat(file.name), objectUrl: /^image\//.test(file.type) ? URL.createObjectURL(file) : null });
+    renderTray(); $('composerInput').focus();
+  };
+  const renderTray = () => {
+    const tray = $('attachTray'); tray.innerHTML = ''; tray.hidden = !U.state.pending.length;
+    U.state.pending.forEach((p, i) => tray.appendChild(fileChip(p, () => { U.state.pending.splice(i, 1); renderTray(); })));
+  };
+  U.send = (thread, text, pending) => {
+    text = (text || '').trim();
+    if (!text && !pending.length) return;
+    const files = pending.map(p => ({ name: p.name, size: p.size, format: p.format }));
+    U.addMessage(thread, { role: 'user', kind: 'user', text, files });
+    if (pending.length) {
+      const docs = pending.map(p => E().docFromUpload(thread, { name: p.name, size: p.size, format: p.format }, p.objectUrl));
+      U.state.pending = []; renderTray();
+      U.startAnalysis(thread, docs);
+      if (text && /\?/.test(text)) setTimeout(() => U.askQuestion(thread, text, false), 400);
+    } else U.askQuestion(thread, text, false);
+  };
+  U.loadSampleSet = thread => {
+    const samples = DI.SAMPLE_SETS[thread.application.id];
+    if (!samples) { U.toast('No sample set for this application. Attach documents instead.'); return; }
+    U.addMessage(thread, { role: 'user', kind: 'user', text: 'Verify these for the application', files: samples.map(s => s.file) });
+    U.startAnalysis(thread, samples.map(s => E().docFromSample(thread, s)));
+  };
+  const summaryLine = (thread, docs) => {
+    const words = ['zero', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+    const w = n => n <= 10 ? words[n] : String(n);
+    const cap = s => s[0].toUpperCase() + s.slice(1);
+    const n = docs.length; const attn = docs.filter(d => openChecks(d).length).length; const clean = n - attn;
+    if (n === 1) return attn ? 'I read 1 document. It needs your attention.' : 'I read 1 document. It\'s clear.';
+    if (!attn) return `I read ${n} documents. All of them are clear.`;
+    return `I read ${n} documents. ${cap(w(clean))} ${clean === 1 ? 'is' : 'are'} clear. ${cap(w(attn))} need${attn === 1 ? 's' : ''} your attention.`;
+  };
+  U.startAnalysis = (thread, docs) => {
+    const msg = U.addMessage(thread, { role: 'ai', kind: 'analysis', activity: { steps: [] }, docIds: docs.map(d => d.id), text: '', attention: [], missing: [] });
+    thread.status = 'running'; U.renderRail(); U.renderChips(thread);
+    const step = id => { let s = msg.activity.steps.find(x => x.id === id); if (!s) { s = { id, state: 'running', items: [], total: docs.length }; msg.activity.steps.push(s); } return s; };
+    const hooks = {
+      onStep: (id, state, item) => {
+        const s = step(id);
+        if (item && item.doc) {
+          const d = item.doc;
+          if (id === 'identify' && state === 'done') s.items.push({ text: d.file.name, sub: label(d), badge: d.file.format, pct: `${Math.round(d.confidence * 100)}%` });
+          if (id === 'extract' && state === 'done') s.items.push({ text: d.file.name, sub: `${Object.keys(d.fields || {}).length} fields` });
+          if (id === 'verify') { const svcName = typeOf(d).service ? DI.SERVICES[typeOf(d).service].name.split(' ')[0] : label(d); let it = s.items.find(x => x.docId === d.id); if (!it) { it = { docId: d.id, text: svcName }; s.items.push(it); } if (state === 'done') it.status = item.check ? (item.check.manual ? 'pass' : item.check.status) : 'pass'; }
+          if (id === 'checks' && state === 'done') s.count = thread.docs.reduce((a, x) => a + (x.checks || []).length, 0);
+        } else if (state === 'done') { s.state = 'done'; s.open = false; if (id === 'checks') s.count = thread.docs.reduce((a, x) => a + (x.checks || []).length, 0); }
+        U.updateActivity(thread, msg.id);
+      },
+      onDoc: d => { U.updateCard(thread, d.id); },
+      onDone: () => {
+        for (const s of msg.activity.steps) { s.state = 'done'; s.open = false; }
+        const sum = E().summary(thread);
+        msg.text = summaryLine(thread, docs); msg.attention = sum.open.filter(o => docs.some(d => d.id === o.docId)); msg.missing = sum.missing;
+        thread.status = E().threadStatus(thread);
+        U.updateMessage(thread, msg.id); U.updateAllCards(thread); U.renderSidebar(thread); U.renderChips(thread); U.renderRail(); U.renderTopbar();
+        const unknown = docs.filter(d => d.typeId === 'unknown');
+        for (const d of unknown) U.addMessage(thread, { role: 'ai', kind: 'unknown-type', unknownDocId: d.id, text: `I couldn't tell what ${d.file.name} is. Which document is it?` });
+      },
+    };
+    E().analyze(thread, docs, hooks);
+  };
+  U.askQuestion = (thread, text, fromChip) => {
+    const typing = U.addMessage(thread, { role: 'ai', kind: 'answer', typing: true });
+    const delay = 600 + Math.min(900, text.length * 10);
+    setTimeout(() => {
+      const a = E().answer(thread, text);
+      Object.assign(typing, { typing: false, text: '', citations: [], streaming: true });
+      const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+      const finish = () => { typing.text = a.text; typing.citations = a.citations; typing.streaming = false; U.updateMessage(thread, typing.id); };
+      if (reduce || thread.id !== U.state.activeId) { finish(); return; }
+      U.updateMessage(thread, typing.id);
+      const host = $('messages').querySelector(`[data-msg="${typing.id}"]`); const body = host && host.querySelector('.ai-body'); if (!body) { finish(); return; }
+      let textEl = body.querySelector('.text'); if (!textEl) { textEl = U.el('<div class="text"></div>'); body.appendChild(textEl); }
+      const full = a.text; let shown = 0; let last = performance.now(); const cps = 110;
+      const frame = now => {
+        if (thread.id !== U.state.activeId || !document.contains(textEl)) { finish(); return; }
+        shown = Math.min(full.length, shown + Math.max(1, Math.round(cps * (now - last) / 1000))); last = now;
+        const partial = full.slice(0, shown);
+        textEl.innerHTML = paragraphs(partial).replace(/<\/p>$/, '<span class="caret"></span></p>') || '<p><span class="caret"></span></p>';
+        if (nearBottom()) U.scrollToBottom();
+        if (shown < full.length) requestAnimationFrame(frame); else { typing.text = full; typing.streaming = false; textEl.innerHTML = paragraphs(full); typing.citations = a.citations; if (a.citations.length) { const c = renderCites(thread, typing); c.classList.add('fresh'); body.appendChild(c); } if (nearBottom()) U.scrollToBottom(); }
+      };
+      requestAnimationFrame(frame);
+    }, delay);
+  };
+  U.editField = (thread, doc, key, value) => {
+    doc.fields[key].value = value; doc.fields[key].edited = true; doc.fields[key].confirmed = false; doc.confirmed = false;
+    const changes = E().rerunChecks(thread);
+    U.refreshAfterChange(thread, changes, `${fieldLabel(doc, key)} on the ${label(doc).toLowerCase()} changed to ${value}`);
+  };
+  U.confirmAll = (thread, doc) => { for (const k of Object.keys(doc.fields)) doc.fields[k].confirmed = true; doc.confirmed = true; U.updateCard(thread, doc.id); U.renderSidebar(thread); U.toast('Fields confirmed'); };
+  U.afterCheckAction = (thread, doc) => { thread.status = E().threadStatus(thread); U.updateCard(thread, doc.id); U.refreshAttention(thread); U.renderSidebar(thread); U.renderRail(); U.renderTopbar(); };
+  U.retryService = (thread, doc, c) => {
+    c.status = 'pending'; c.title = `Retrying ${c.service ? c.service.name : 'verification'}`; U.updateCard(thread, doc.id);
+    setTimeout(() => { const fresh = E().serviceResult(doc, thread); const i = doc.checks.findIndex(x => x.id === c.id); if (i >= 0) doc.checks[i] = fresh; U.afterCheckAction(thread, doc); }, c.service ? c.service.latencyMs : 800);
+  };
+  U.reclassify = (thread, doc, typeId) => {
+    if (typeId === doc.typeId) return;
+    E().assignType(doc, typeId, thread.application);
+    doc.checks = E().ruleChecks(doc, thread); E().crossChecks(thread);
+    if (typeId !== 'unknown') doc.checks.push(E().serviceResult(doc, thread));
+    doc.stage = 'done'; doc.ui.expanded = true; doc.ui.tab = 'fields';
+    thread.status = E().threadStatus(thread);
+    U.updateAllCards(thread); U.refreshAttention(thread); U.renderSidebar(thread); U.renderChips(thread); U.renderRail();
+    for (const m of thread.messages) if (m.unknownDocId === doc.id) U.updateMessage(thread, m.id);
+    U.addMessage(thread, { role: 'ai', kind: 'reclass', text: `I've read ${doc.file.name} as ${DI.DOC_TYPES[typeId].label.toLowerCase()} and re-run its checks.` });
+  };
+  U.refreshAttention = thread => {
+    const sum = E().summary(thread);
+    for (const m of thread.messages) if (m.kind === 'analysis' && m.docIds) { m.attention = sum.open.filter(o => m.docIds.includes(o.docId)); m.missing = m === lastAnalysis(thread) ? sum.missing : []; U.updateMessage(thread, m.id); }
+  };
+  const lastAnalysis = thread => { for (let i = thread.messages.length - 1; i >= 0; i--) if (thread.messages[i].kind === 'analysis') return thread.messages[i]; return null; };
+  U.refreshAfterChange = (thread, changes, reason) => {
+    thread.status = E().threadStatus(thread);
+    U.updateAllCards(thread); U.refreshAttention(thread); U.renderSidebar(thread); U.renderChips(thread); U.renderRail(); U.renderTopbar();
+    if (changes.length) {
+      const parts = changes.map(c => { const d = thread.docs.find(x => x.id === c.docId); return `${d ? label(d) : 'Document'}: ${c.title.toLowerCase()} is now ${statusWord(c.to)}`; });
+      U.addMessage(thread, { role: 'ai', kind: 'update', text: `${reason}. I re-ran the checks and ${changes.length === 1 ? 'one result changed' : `${changes.length} results changed`}.\n${parts.join('. ')}.` });
+    } else if (reason) U.toast('Checks re-run, nothing changed');
+  };
+  U.writeNote = thread => { if (!thread.docs.length) return; U.addMessage(thread, { role: 'ai', kind: 'note', text: 'Here is the scrutiny note for this application.', note: E().scrutinyNote(thread) }); };
+
+  /* ---------- rail, topbar, chips ---------- */
+  U.renderRail = () => {
+    const list = $('threadList'); list.innerHTML = '';
+    const q = ($('threadSearch').value || '').trim().toLowerCase();
+    const threads = [...U.state.threads].sort((a, b) => b.updatedAt - a.updatedAt).filter(t => !q || t.application.id.toLowerCase().includes(q) || (t.application.fields.applicantName || '').toLowerCase().includes(q) || (t.title || '').toLowerCase().includes(q));
+    for (const t of threads) {
+      const st = E().threadStatus(t); const open = st === 'attention' ? E().summary(t).open.length + E().summary(t).missing.length : 0;
+      const name = t.application.fields.applicantName || 'New application';
+      const item = U.el(`<li><button type="button" class="thread-item${t.id === U.state.activeId ? ' active' : ''}" title="${U.esc(t.application.id)} ${U.esc(name)}"><span class="thread-dot ${st}"></span><span class="thread-main"><span class="thread-id">${U.esc(t.title || t.application.id)}</span><span class="thread-name">${U.esc(name)}</span><span class="thread-time">${relTime(t.updatedAt)}</span></span><span class="thread-side">${open ? `<span class="count-pill">${open}</span>` : ''}<span class="icon-btn thread-more" role="button" tabindex="0" aria-label="Thread options">${U.icon('more')}</span></span></button></li>`);
+      const btn = item.firstElementChild;
+      btn.onclick = e => { if (e.target.closest('.thread-more')) { openThreadMenu(item, t); return; } U.switchThread(t.id); };
+      list.appendChild(item);
+    }
+    if (!threads.length) list.appendChild(U.el('<li class="conf" style="padding:8px">No applications match.</li>'));
+  };
+  const openThreadMenu = (item, t) => {
+    document.querySelectorAll('.thread-menu').forEach(m => m.remove());
+    const menu = U.el(`<div class="thread-menu"><button type="button">Rename</button><button type="button" style="color:var(--fail)">Delete</button></div>`);
+    const [ren, del] = menu.querySelectorAll('button');
+    ren.onclick = e => { e.stopPropagation(); menu.remove(); const v = prompt('Thread name', t.title || t.application.id); if (v && v.trim()) { t.title = v.trim(); U.renderRail(); U.renderTopbar(); } };
+    del.onclick = e => { e.stopPropagation(); menu.remove(); U.deleteThread(t); };
+    item.style.position = 'relative'; item.appendChild(menu);
+    setTimeout(() => document.addEventListener('click', () => menu.remove(), { once: true }), 0);
+  };
+  U.deleteThread = t => {
+    U.state.threads = U.state.threads.filter(x => x !== t);
+    if (!U.state.threads.length) { const n = U.createThread({ application: DI.BLANK_APPLICATION(), title: 'New scrutiny' }); U.addMessage(n, U.greeting(n)); }
+    if (U.state.activeId === t.id) U.switchThread([...U.state.threads].sort((a, b) => b.updatedAt - a.updatedAt)[0].id); else U.renderRail();
+    U.toast('Thread deleted');
+  };
+  U.renderTopbar = () => {
+    const t = U.activeThread(); if (!t) return;
+    const st = E().threadStatus(t); const pill = st === 'attention' ? ['warn', 'Needs attention'] : st === 'clear' ? ['pass', 'Clear'] : st === 'running' ? ['pending', 'Analyzing'] : ['pending', t.application.status || 'Not started'];
+    $('appChip').innerHTML = `<span class="id">${U.esc(t.application.id)}</span><span class="name">${U.esc(t.application.fields.applicantName || 'New application')}</span><span class="pill ${pill[0]}">${pill[1]}</span>`;
+  };
+  U.renderChips = thread => {
+    const root = $('chips'); root.innerHTML = '';
+    if (thread.status === 'running') return;
+    for (const chip of E().suggestedChips(thread)) { const b = U.el(`<button type="button" class="chip">${chip.action === 'load-sample' ? U.icon('sparkle') : chip.action === 'attach' ? U.icon('paperclip') : ''}<span>${U.esc(chip.label)}</span></button>`); b.onclick = () => U.runChip(thread, chip); root.appendChild(b); }
+  };
+  U.runChip = (thread, chip) => {
+    if (chip.action === 'ask') { U.addMessage(thread, { role: 'user', kind: 'user', text: chip.text || chip.label }); U.askQuestion(thread, chip.text || chip.label, true); }
+    else if (chip.action === 'load-sample') U.loadSampleSet(thread);
+    else if (chip.action === 'attach') $('fileInput').click();
+    else if (chip.action === 'required-docs') { U.addMessage(thread, { role: 'user', kind: 'user', text: chip.label }); U.askQuestion(thread, 'Which documents are required?', true); }
+  };
+  U.switchThread = id => {
+    const cur = U.activeThread(); if (cur) cur.ui.scrollTop = $('conversation').scrollTop;
+    U.state.activeId = id; const t = U.activeThread();
+    U.renderRail(); U.renderTopbar(); U.renderMessages(t); U.renderChips(t); U.renderSidebar(t);
+    const m = $('messages'); m.classList.remove('fade'); void m.offsetWidth; m.classList.add('fade');
+    $('app').classList.remove('sidebar-open', 'rail-expanded');
+  };
+
+  /* ---------- sidebar ---------- */
+  U.sbCollapsed = { app: false, docs: false };
+  const sbSection = (id, key, title, meta, extraHtml = '') => {
+    const sec = $(id); sec.innerHTML = ''; sec.classList.toggle('collapsed', !!U.sbCollapsed[key]);
+    const bar = U.el(`<div class="sb-bar" role="button" tabindex="0" aria-expanded="${!U.sbCollapsed[key]}"><h3>${U.esc(title)}</h3>${meta ? `<span class="muted">${meta}</span>` : ''}<span class="chev">${U.icon('chevronDown')}</span></div>`);
+    const toggle = () => { U.sbCollapsed[key] = !U.sbCollapsed[key]; sec.classList.toggle('collapsed', U.sbCollapsed[key]); bar.setAttribute('aria-expanded', String(!U.sbCollapsed[key])); };
+    bar.onclick = toggle; bar.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(); } };
+    sec.appendChild(bar);
+    const body = U.el(`<div class="sb-body">${extraHtml}</div>`); sec.appendChild(body); return body;
+  };
+  U.renderSidebar = thread => {
+    if (!thread || thread.id !== U.state.activeId) return;
+    const app = thread.application; const f = app.fields; const st = E().threadStatus(thread);
+    const pill = st === 'attention' ? ['warn', 'Needs attention'] : st === 'clear' ? ['pass', 'Clear'] : st === 'running' ? ['pending', 'Analyzing'] : ['pending', f.applicantName ? 'Under scrutiny' : 'Not started'];
+    const A = sbSection('sbApplication', 'app', 'Application details', 'click a value to edit', `<div class="sb-head"><span class="id">${U.esc(app.id)}</span><span class="pill ${pill[0]}">${pill[1]}</span></div>`);
+    let group = null;
+    for (const fd of DI.APPLICATION_FIELDS) {
+      if (fd.group !== group) { group = fd.group; A.appendChild(U.el(`<div class="group-name">${U.esc(group)}</div>`)); }
+      const raw = f[fd.key]; const empty = raw === '' || raw == null;
+      const shown = empty ? 'Not set' : fd.kind === 'date' ? E().fmtDate(raw) : fd.mask ? E().maskId(raw) : String(raw);
+      const row = U.el(`<div class="app-row" tabindex="0"><span class="lbl">${U.esc(fd.label)}</span><span class="v ${empty ? 'empty' : ''}${fd.kind === 'id' ? ' id' : ''}">${U.esc(shown)}</span><span class="pen">${U.icon('pen')}</span></div>`);
+      const startEdit = () => {
+        let inp;
+        if (fd.kind === 'select') inp = U.el(`<select>${fd.options.map(o => `<option${o === raw ? ' selected' : ''}>${o}</option>`).join('')}</select>`);
+        else inp = U.el(`<input type="${fd.kind === 'date' ? 'date' : fd.kind === 'number' ? 'number' : 'text'}" value="${U.esc(raw ?? '')}" ${fd.kind === 'number' ? 'step="0.1"' : ''}>`);
+        const v = row.querySelector('.v'); v.replaceWith(inp); inp.focus(); if (inp.select) inp.select();
+        let done = false;
+        const commit = () => { if (done) return; done = true; let nv = inp.value; if (fd.kind === 'number') nv = nv === '' ? '' : Number(nv); if (String(nv) !== String(raw ?? '')) U.onApplicationEdit(thread, fd, raw, nv); else U.renderSidebar(thread); };
+        inp.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); commit(); } if (e.key === 'Escape') { done = true; U.renderSidebar(thread); } };
+        inp.onblur = commit; if (fd.kind === 'select') inp.onchange = commit;
+      };
+      row.onclick = startEdit; row.onkeydown = e => { if (e.key === 'Enter' && e.target === row) startEdit(); };
+      A.appendChild(row);
+    }
+    const req = E().requiredDocs(app); const sum = E().summary(thread);
+    const D = sbSection('sbDocuments', 'docs', 'Documents', `${sum.provided} of ${sum.required} required`);
+    const list = U.el('<div class="req-list"></div>');
+    for (const r of req) {
+      const t = DI.DOC_TYPES[r.typeId]; const docs = thread.docs.filter(d => d.typeId === r.typeId && d.stage === 'done');
+      if (!r.required && !docs.length && !['dl', 'building_permit'].includes(r.typeId) && !DI.SAMPLE_SETS[app.id]?.some(s => s.typeId === r.typeId)) continue;
+      let dot = 'pending', stat = 'Optional', cls = '';
+      if (docs.length) { const open = docs.reduce((a, d) => a + openChecks(d).length, 0); dot = open ? (docs.some(d => docStatus(d) === 'fail') ? 'fail' : 'warn') : 'pass'; stat = open ? `${open} to review` : 'Provided'; cls = open ? dot : ''; }
+      else if (r.required) { dot = 'fail'; stat = 'Missing'; cls = 'fail'; }
+      const row = U.el(`<button type="button" class="req-row${docs.length ? ' link' : ''}" title="${U.esc(r.reason)}"><span class="dot ${dot}"></span><span class="lbl">${U.esc(t.label)}</span><span class="stat ${cls}">${stat}</span></button>`);
+      if (docs.length) row.onclick = () => { const d = docs[0]; d.ui.expanded = true; U.updateCard(thread, d.id); document.querySelector(`[data-doc="${d.id}"]`)?.scrollIntoView({ behavior: 'smooth', block: 'start' }); $('app').classList.remove('sidebar-open'); };
+      list.appendChild(row);
+    }
+    D.appendChild(list);
+    D.appendChild(U.el(`<div class="group-name">Checks</div>`));
+    D.appendChild(U.el(`<div class="summary-tiles"><div class="tile pass"><div class="n">${sum.pass}</div><div class="l">passed</div></div><div class="tile warn"><div class="n">${sum.warn}</div><div class="l">warnings</div></div><div class="tile fail"><div class="n">${sum.fail}</div><div class="l">failed</div></div><div class="tile"><div class="n">${sum.unavailable + sum.info}</div><div class="l">to note</div></div></div>`));
+    if (thread.shortfall.length) { const ul = U.el('<ul class="shortfall"></ul>'); ul.appendChild(U.el('<div class="group-name">Requested from applicant</div>')); for (const s of thread.shortfall) ul.appendChild(U.el(`<li>${U.esc(s)}</li>`)); D.appendChild(ul); }
+    const btn = U.el(`<button type="button" class="btn btn-primary sb-summary-btn" ${thread.docs.length ? '' : 'disabled title="Load documents first"'}>Write scrutiny note</button>`);
+    btn.onclick = () => { U.writeNote(thread); $('app').classList.remove('sidebar-open'); };
+    D.appendChild(btn);
+  };
+  U.onApplicationEdit = (thread, fd, oldValue, newValue) => {
+    const app = thread.application; const wasBlank = !app.fields.applicantName;
+    const before = E().requiredDocs(app).filter(r => r.required).map(r => r.typeId);
+    app.fields[fd.key] = newValue;
+    if (app.status === 'Not started' && app.fields.applicantName) app.status = 'Under scrutiny';
+    if (fd.key === 'applicantName' && (thread.title === 'New scrutiny' || !thread.title)) thread.title = app.id;
+    const after = E().requiredDocs(app).filter(r => r.required).map(r => r.typeId);
+    const added = after.filter(x => !before.includes(x)).map(x => DI.DOC_TYPES[x].label), removed = before.filter(x => !after.includes(x)).map(x => DI.DOC_TYPES[x].label);
+    const show = v => v === '' || v == null ? 'blank' : fd.kind === 'date' ? E().fmtDate(v) : fd.mask ? E().maskId(v) : String(v);
+    if (thread.docs.some(d => d.stage === 'done')) {
+      const changes = E().rerunChecks(thread);
+      U.refreshAfterChange(thread, changes, `${fd.label} changed from ${show(oldValue)} to ${show(newValue)}`);
+    } else { U.renderSidebar(thread); U.renderTopbar(); U.renderRail(); U.renderChips(thread); }
+    if (added.length || removed.length) {
+      const bits = []; if (added.length) bits.push(`${added.join(' and ')} ${added.length > 1 ? 'are' : 'is'} now required`); if (removed.length) bits.push(`${removed.join(' and ')} ${removed.length > 1 ? 'are' : 'is'} no longer required`);
+      U.addMessage(thread, { role: 'ai', kind: 'update', text: `The proposal changed, so the required documents changed: ${bits.join('; ')}.` });
+      U.refreshAttention(thread); U.renderSidebar(thread);
+    }
+    if (wasBlank && app.fields.applicantName) U.renderMessages(thread);
+    const row = [...document.querySelectorAll('#sbApplication .app-row')].find(r => r.querySelector('.lbl')?.textContent === fd.label); if (row) row.classList.add('changed');
+  };
+
+  /* ---------- dialog & demo menu ---------- */
+  U.openNewDialog = () => {
+    const root = $('dialogRoot'); root.innerHTML = '';
+    const scrim = U.el('<div class="scrim"></div>');
+    const dlg = U.el(`<div class="dialog" role="dialog" aria-label="New scrutiny"><h3>New scrutiny</h3><div class="sub">Pick an application from the queue, or start blank and fill in the details yourself.</div><div class="opts"></div><div class="dialog-actions"><button type="button" class="btn btn-ghost" id="dlgCancel">Cancel</button><button type="button" class="btn btn-primary" id="dlgStart">Start scrutiny</button></div></div>`);
+    const opts = dlg.querySelector('.opts'); let choice = DI.APPLICATIONS[0].id;
+    const rows = DI.APPLICATIONS.map(a => ({ id: a.id, t: `${a.id}`, d: `${a.fields.applicantName}, ${a.fields.proposedUse.toLowerCase()}, ${a.fields.floors}, ${a.fields.heightM} m, ${a.fields.village}` })).concat([{ id: 'blank', t: 'Blank application', d: 'Fill in the applicant, plot, and proposal in the sidebar.' }]);
+    const paint = () => { opts.innerHTML = ''; for (const r of rows) { const o = U.el(`<div class="opt${choice === r.id ? ' on' : ''}" tabindex="0"><span class="radio"></span><span><div class="t ${r.id !== 'blank' ? 'id' : ''}">${U.esc(r.t)}</div><div class="d">${U.esc(r.d)}</div></span></div>`); o.onclick = () => { choice = r.id; paint(); }; o.onkeydown = e => { if (e.key === 'Enter' || e.key === ' ') { choice = r.id; paint(); } }; opts.appendChild(o); } };
+    paint();
+    const close = () => root.innerHTML = '';
+    dlg.querySelector('#dlgCancel').onclick = close; scrim.onclick = close;
+    dlg.querySelector('#dlgStart').onclick = () => {
+      let application, title;
+      if (choice === 'blank') { application = DI.BLANK_APPLICATION(); application.id = `BN/2026/NEW-${++U.state.newCount}`; title = 'New scrutiny'; }
+      else { application = structuredClone(DI.APPLICATIONS.find(a => a.id === choice)); title = application.id; }
+      const t = U.createThread({ application, title }); U.addMessage(t, U.greeting(t)); close(); U.switchThread(t.id);
+    };
+    root.appendChild(scrim); root.appendChild(dlg); dlg.querySelector('#dlgStart').focus();
+    document.addEventListener('keydown', function esc(e) { if (e.key === 'Escape') { close(); document.removeEventListener('keydown', esc); } });
+  };
+  const renderDemoPanel = () => {
+    const p = $('demoPanel'); const t = U.activeThread(); p.innerHTML = '';
+    const item = (text, fn, icon) => { const b = U.el(`<button type="button" class="menu-item">${icon ? U.icon(icon) : ''}<span>${text}</span></button>`); b.onclick = () => { closeDemo(); fn(); }; p.appendChild(b); };
+    item('Load sample set', () => U.loadSampleSet(t), 'sparkle');
+    item('Reset this thread', () => U.resetThread(t), 'refresh');
+    item('Reset all threads', () => U.resetAll(), 'trash');
+    p.appendChild(U.el('<div class="menu-sep"></div>'));
+    p.appendChild(U.el('<div class="menu-title">External services for the next run in this thread</div>'));
+    for (const s of Object.values(DI.SERVICES)) {
+      const cur = t.serviceOverrides[s.id] || 'auto';
+      const row = U.el(`<div class="svc-row"><span class="svc-name" title="${U.esc(s.name)}">${U.esc(s.name.replace(' verification', '').replace(' check', '').replace(' lookup', ''))}</span><span class="seg"></span></div>`);
+      const seg = row.querySelector('.seg');
+      for (const [v, l] of [['auto', 'Auto'], ['fail', 'Fail'], ['timeout', 'Timeout']]) { const b = U.el(`<button type="button" class="${cur === v ? 'on' : ''}">${l}</button>`); b.onclick = e => { e.stopPropagation(); t.serviceOverrides[s.id] = v; renderDemoPanel(); }; seg.appendChild(b); }
+      p.appendChild(row);
+    }
+  };
+  const closeDemo = () => { $('demoPanel').hidden = true; $('demoBtn').setAttribute('aria-expanded', 'false'); };
+  U.resetThread = t => { t.docs = []; t.messages = []; t.shortfall = []; t.status = 'new'; t.seq = 0; U.addMessage(t, U.greeting(t)); if (t.id === U.state.activeId) U.switchThread(t.id); };
+  U.resetAll = () => { U.state.threads = []; U.seed(); U.switchThread([...U.state.threads].sort((a, b) => b.updatedAt - a.updatedAt)[0].id); U.toast('Threads reset'); };
+  U.toast = text => { document.querySelectorAll('.toast').forEach(x => x.remove()); const el = U.el(`<div class="toast">${U.esc(text)}</div>`); document.body.appendChild(el); setTimeout(() => el.remove(), 2200); };
+  U.setTheme = name => { document.documentElement.dataset.theme = name; U.state.theme = name; try { localStorage.setItem('di-theme', name); } catch {} $('themeBtn').innerHTML = U.icon(name === 'dark' ? 'sun' : 'moon'); };
+
+  /* ---------- greeting & seeding ---------- */
+  U.greeting = thread => {
+    const f = thread.application.fields; const blank = !f.applicantName;
+    return { role: 'ai', kind: 'greeting', text: blank ? 'This is a new scrutiny. Fill in the application details on the right, then attach the applicant\'s documents.' : `I'm ready to scrutinize ${thread.application.id} for ${f.applicantName}.\nAttach the applicant's documents, or load the sample set to see how this works.` };
+  };
+  const seedAnalyzed = (app, agoMs, question) => {
+    const t = U.createThread({ application: structuredClone(app), title: app.id });
+    t.messages.push(Object.assign(U.greeting(t), { id: `m_${t.id}_${++t.seq}` }));
+    const samples = DI.SAMPLE_SETS[app.id];
+    t.messages.push({ id: `m_${t.id}_${++t.seq}`, role: 'user', kind: 'user', text: 'Verify these for the application', files: samples.map(s => s.file) });
+    const docs = samples.map(s => E().docFromSample(t, s));
+    E().analyzeSync(t, docs);
+    const sum = E().summary(t);
+    const steps = [
+      { id: 'identify', state: 'done', open: false, items: docs.map(d => ({ text: d.file.name, sub: label(d), badge: d.file.format, pct: `${Math.round(d.confidence * 100)}%` })) },
+      { id: 'extract', state: 'done', open: false, items: docs.map(d => ({ text: d.file.name, sub: `${Object.keys(d.fields).length} fields` })) },
+      { id: 'checks', state: 'done', open: false, items: [], count: docs.reduce((a, d) => a + d.checks.length, 0) },
+      { id: 'verify', state: 'done', open: false, items: docs.map(d => { const c = d.checks.find(x => x.group === 'external'); return { docId: d.id, text: typeOf(d).service ? DI.SERVICES[typeOf(d).service].name.split(' ')[0] : label(d), status: c ? c.status : 'pass' }; }) },
+    ];
+    t.messages.push({ id: `m_${t.id}_${++t.seq}`, role: 'ai', kind: 'analysis', activity: { steps }, docIds: docs.map(d => d.id), text: summaryLine(t, docs), attention: sum.open, missing: sum.missing });
+    if (question) { t.messages.push({ id: `m_${t.id}_${++t.seq}`, role: 'user', kind: 'user', text: question }); const a = E().answer(t, question); t.messages.push({ id: `m_${t.id}_${++t.seq}`, role: 'ai', kind: 'answer', text: a.text, citations: a.citations }); }
+    t.status = E().threadStatus(t); t.updatedAt = Date.now() - agoMs;
+    return t;
+  };
+  U.seed = () => {
+    seedAnalyzed(DI.APPLICATIONS[1], 3 * 3600e3, null);
+    seedAnalyzed(DI.APPLICATIONS[0], 40 * 60e3, "Is the sale deed in the applicant's name?");
+    const fresh = U.createThread({ application: structuredClone(DI.APPLICATIONS[2]), title: DI.APPLICATIONS[2].id });
+    fresh.messages.push(Object.assign(U.greeting(fresh), { id: `m_${fresh.id}_${++fresh.seq}` }));
+    fresh.updatedAt = Date.now();
+  };
+
+  /* ---------- boot ---------- */
+  U.wire = () => {
+    $('themeBtn').onclick = () => U.setTheme(U.state.theme === 'dark' ? 'light' : 'dark');
+    $('railToggle').onclick = () => $('app').classList.toggle('rail-collapsed');
+    $('railOpen').onclick = () => $('app').classList.toggle('rail-expanded');
+    $('sidebarToggle').onclick = () => $('app').classList.toggle('sidebar-open');
+    $('scrim').onclick = () => $('app').classList.remove('sidebar-open');
+    $('newThreadBtn').onclick = U.openNewDialog;
+    $('threadSearch').oninput = U.renderRail;
+    $('demoBtn').onclick = e => { e.stopPropagation(); const p = $('demoPanel'); if (p.hidden) { renderDemoPanel(); p.hidden = false; $('demoBtn').setAttribute('aria-expanded', 'true'); } else closeDemo(); };
+    document.addEventListener('click', e => { if (!e.target.closest('#demoMenu')) closeDemo(); });
+    document.addEventListener('keydown', e => { if (e.key === 'Escape') { closeDemo(); $('app').classList.remove('sidebar-open'); } });
+    const ta = $('composerInput');
+    const grow = () => { ta.style.height = 'auto'; ta.style.height = Math.min(160, ta.scrollHeight) + 'px'; };
+    ta.oninput = grow;
+    ta.onkeydown = e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); $('composer').requestSubmit(); } };
+    $('composer').onsubmit = e => { e.preventDefault(); const t = U.activeThread(); U.send(t, ta.value, U.state.pending.slice()); ta.value = ''; grow(); };
+    $('attachBtn').onclick = () => $('fileInput').click();
+    $('fileInput').onchange = e => { U.stageFiles(Array.from(e.target.files)); e.target.value = ''; };
+    const main = $('main'); let dragDepth = 0;
+    main.addEventListener('dragenter', e => { e.preventDefault(); dragDepth++; $('dropOverlay').hidden = false; });
+    main.addEventListener('dragover', e => e.preventDefault());
+    main.addEventListener('dragleave', () => { dragDepth = Math.max(0, dragDepth - 1); if (!dragDepth) $('dropOverlay').hidden = true; });
+    main.addEventListener('drop', e => { e.preventDefault(); dragDepth = 0; $('dropOverlay').hidden = true; const files = Array.from(e.dataTransfer.files || []); if (!files.length) return; U.stageFiles(files); if (!ta.value.trim()) { const t = U.activeThread(); U.send(t, 'Verify these for the application', U.state.pending.slice()); } });
+    $('attachBtn').innerHTML = U.icon('paperclip'); $('sendBtn').innerHTML = U.icon('send'); $('railToggle').innerHTML = U.icon('panelLeft'); $('railOpen').innerHTML = U.icon('panelLeft'); $('sidebarToggle').innerHTML = U.icon('panelRight');
+    document.querySelector('.rail-new .btn-ico').innerHTML = U.icon('plus'); document.querySelector('.brand-mark').innerHTML = ORB({ size: 24, animate: false }); const fav = document.createElement('link'); fav.rel = 'icon'; fav.href = 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32"><defs><linearGradient id="g1" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#4b3fd2"/><stop offset=".55" stop-color="#8f7cff"/><stop offset="1" stop-color="#3d6bff"/></linearGradient><radialGradient id="g2" cx=".3" cy=".25" r=".8"><stop offset="0" stop-color="#fff" stop-opacity=".85"/><stop offset=".55" stop-color="#fff" stop-opacity="0"/></radialGradient></defs><circle cx="16" cy="16" r="15" fill="url(#g1)"/><circle cx="16" cy="16" r="15" fill="url(#g2)"/><path d="M11 8.5h7l4 4v11a1.5 1.5 0 0 1-1.5 1.5h-9.5A1.5 1.5 0 0 1 9.5 23.5v-13.5A1.5 1.5 0 0 1 11 8.5Z" fill="rgba(255,255,255,.2)" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M18 8.5v4h4" fill="none" stroke="#fff" stroke-width="1.4" stroke-linejoin="round"/><path d="M8.5 16.5h15" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/><path d="M12.5 20h7M12.5 22.6h4.5" stroke="#fff" stroke-width="1.2" stroke-linecap="round" opacity=".65"/><path d="M25.5 4.5l.9 2.1 2.1.9-2.1.9-.9 2.1-.9-2.1-2.1-.9 2.1-.9Z" fill="#fff"/></svg>`); document.head.appendChild(fav); document.querySelector('.search-ico').innerHTML = U.icon('search');
+  };
+  U.boot = () => {
+    let theme = 'light'; try { theme = localStorage.getItem('di-theme') || 'light'; } catch {}
+    U.wire(); U.setTheme(theme); U.seed();
+    const wanted = decodeURIComponent((location.hash || '').slice(1)); const deep = wanted && U.state.threads.find(t => t.application.id === wanted);
+    U.switchThread(deep ? deep.id : [...U.state.threads].sort((a, b) => b.updatedAt - a.updatedAt)[0].id);
+    setInterval(() => { if (!document.querySelector('.thread-menu')) U.renderRail(); }, 60000);
+  };
+  document.addEventListener('DOMContentLoaded', U.boot);
+  return U;
+})();
+</script>
+</body>
+</html>

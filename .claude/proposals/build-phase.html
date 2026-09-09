@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Build &amp; Verify Phase — the inner loop, its guards, and this week's decisions</title>
+<style>
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --ink:#1f2328; --muted:#59636e; --line:#d1d9e0;
+  --accent:#0969da; --accent-soft:rgba(9,105,218,.08);
+  --gate:#9a6700; --gate-soft:#fff8c5;
+  --ok:#1a7f37; --ok-soft:#dafbe1;
+  --warn:#cf222e; --warn-soft:#ffebe9;
+  --violet:#8250df; --violet-soft:#fbefff;
+  --teal:#1b7c83; --teal-soft:#d6f3f5;
+  --serif:"Charter","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);
+  background-image:radial-gradient(circle at 85% -5%, rgba(9,105,218,.06), transparent 55%);}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 28px 120px}
+.crumb{display:flex;align-items:center;gap:9px;margin:0 0 26px;flex-wrap:wrap}
+.crumb .blk{font:700 10.5px/1 var(--sans);letter-spacing:.05em;border-radius:7px;padding:8px 12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);text-decoration:none;transition:border-color .15s}
+.crumb a.blk:hover{border-color:var(--accent);color:var(--accent)}
+.crumb .blk.here{background:var(--accent-soft);border-color:rgba(9,105,218,.42);color:var(--accent)}
+.crumb .arr{color:var(--line);font-size:12px}
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+h1{font:700 40px/1.15 var(--serif);letter-spacing:-.01em;margin-bottom:10px}
+.sub{font-size:16.5px;color:var(--muted);max-width:70ch}
+.hero-law{margin:28px 0 6px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--accent);
+  border-radius:10px;padding:20px 24px}
+.hero-law b{display:block;font:700 18px/1.4 var(--serif);color:var(--ink);margin-bottom:4px}
+.hero-law span{font-size:13.5px;color:var(--muted)}
+h2{font:700 25px/1.25 var(--serif);margin:64px 0 6px;display:flex;align-items:baseline;gap:12px}
+h2 .n{font:700 13px/1 var(--mono);color:#fff;background:var(--ink);border-radius:6px;padding:5px 8px;transform:translateY(-3px)}
+.because{color:var(--muted);font-size:14px;margin-bottom:22px;max-width:76ch}
+.badge{font:600 9.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;border-radius:20px;padding:4px 8px;white-space:nowrap}
+.b-ship{color:var(--ok);background:var(--ok-soft);border:1px solid rgba(26,127,55,.3)}
+.b-live{color:var(--teal);background:var(--teal-soft);border:1px solid rgba(27,124,131,.3)}
+.b-watch{color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.32)}
+.b-rej{color:var(--warn);background:var(--warn-soft);border:1px solid rgba(207,34,46,.3)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0 4px;font-size:12px;color:var(--muted);align-items:center}
+.legend .badge{margin-right:6px}
+.flow{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 22px;margin:16px 0;
+  font:12.5px/1.9 var(--mono);overflow-x:auto;white-space:pre}
+.flow em{font-style:normal;color:var(--gate);font-weight:700}
+.flow i{font-style:normal;color:var(--teal)}
+.rail{position:relative;margin:26px 0 6px;padding-left:34px}
+.rail::before{content:"";position:absolute;left:12px;top:14px;bottom:14px;width:2px;
+  background:repeating-linear-gradient(to bottom,var(--line) 0 6px,transparent 6px 11px)}
+.station{position:relative;margin-bottom:14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:13px 18px}
+.station::before{content:"";position:absolute;left:-28px;top:20px;width:12px;height:12px;border-radius:50%;
+  background:var(--surface);border:3px solid var(--accent)}
+.station.rev::before{border-color:var(--warn)}
+.station.chk::before{border-color:var(--ok)}
+.station .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.station b{font:650 15.5px/1.3 var(--sans)}
+.station .who{font:500 11px/1 var(--mono);color:var(--accent);background:var(--accent-soft);border-radius:20px;padding:4px 9px}
+.station .who.r{color:var(--warn);background:var(--warn-soft)}
+.station .skl{font:500 11px/1 var(--mono);color:var(--teal);background:var(--teal-soft);border-radius:20px;padding:4px 9px}
+.station .enf{font:500 10.5px/1 var(--mono);color:var(--violet);background:var(--violet-soft);border-radius:20px;padding:4px 9px}
+.station p{font-size:12.5px;color:var(--muted);margin-top:5px;max-width:82ch}
+.gate{margin:2px 0 16px 34px}
+.gate .sig{display:inline-flex;align-items:center;gap:8px;font:600 11.5px/1 var(--sans);
+  color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.35);border-radius:20px;padding:6px 13px;margin-left:-6px}
+.gate .sig::before{content:"◆";font-size:9px}
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px;margin:14px 0}
+th{font:600 11px/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfd}
+td{padding:10px 14px;border-bottom:1px solid #eef1f4;vertical-align:top}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+code{font:12px var(--mono);background:var(--accent-soft);border-radius:4px;padding:1.5px 5px}
+.dcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 20px;margin:13px 0}
+.dcard .head{display:flex;align-items:center;gap:10px;flex-wrap:wrap;margin-bottom:8px}
+.dcard .id{font:700 12px/1 var(--mono);color:#fff;background:var(--ink);border-radius:6px;padding:5px 8px}
+.dcard b.t{font:650 15px/1.35 var(--sans)}
+.dcard .kv{font-size:12.5px;color:var(--muted);margin:3px 0}
+.dcard .kv b{color:var(--ink);font-weight:650}
+.dcard .seat{font:500 10.5px/1 var(--mono);border-radius:20px;padding:4px 9px}
+.dcard .seat.d{color:var(--accent);background:var(--accent-soft)}
+.dcard .seat.r{color:var(--warn);background:var(--warn-soft)}
+.dcard .seat.dh{color:var(--violet);background:var(--violet-soft)}
+.note{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gate);border-radius:10px;padding:16px 20px;margin:18px 0;font-size:13.5px}
+.note b{display:block;margin-bottom:6px}
+.foot{margin-top:70px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+.foot code{font-size:11px}
+</style>
+</head>
+<body><div style="background:#12341c;color:#7ee2a0;border-bottom:1px solid #1a7f37;padding:10px 24px;font:13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.02em"><strong>Current — process as of 2026-07-04.</strong> This page is the build-phase REVIEW: every decision card below is bless-or-veto. The live <code style="background:#0b2413;padding:1px 5px;border-radius:3px">.claude/</code> config remains the source of truth; on drift, the config wins.</div><div class="wrap">
+
+<div class="crumb">
+  <a class="blk" href="sdlc-process-report.html">SDLC HUB</a><span class="arr">→</span>
+  <a class="blk" href="requirement-phase.html">A · REQUIREMENT</a><span class="arr">→</span>
+  <a class="blk" href="design-phase.html">B · DESIGN</a><span class="arr">→</span>
+  <span class="blk here">C · BUILD &amp; VERIFY</span><span class="arr">→</span>
+  <span class="blk">D · DELIVER + RETRO</span>
+</div>
+
+<div class="eyebrow">SDLC · Phase C</div>
+<h1>Build &amp; Verify</h1>
+<p class="sub">The inner loop that turns an approved plan into reviewed, integrated, committed code —
+one task at a time, test-first, with one user gate at the end instead of one per task.</p>
+
+<div class="hero-law">
+  <b>A false "done" is structurally impossible.</b>
+  <span>Every task's failing tests are written FROM its planned <code>Cases:</code> list before any code exists;
+  every ✔ names a real artifact a hook can verify; every task passes an independent review before the plan advances.
+  The loop doesn't trust the builder's claim — it makes the claim checkable at every stage.</span>
+</div>
+
+<h2><span class="n">1</span>Where the phase sits</h2>
+<p class="because">Everything left of the loop was approved at Gates 1–3. Everything right of it is delivery.
+The user touches the build phase at exactly ONE gate — end-of-plan commit+push (◆4). Per-task reviews run
+every task but only pause the pipeline on Critical/High findings.</p>
+
+<div class="flow">Gate 3 ✓ (plan approved)
+   │
+   ▼
+┌─ per task ──────────────────────────────────────────────────────────────┐
+│  ANALYZE → ⟳(RED → GREEN → REFACTOR) per Cases: entry → VERIFY* → SELF-REVIEW → REVIEW → INTEGRATE │ × N tasks
+└──────────────────────────────────────────────────────────────────────────┘
+   │   (auto-advance between tasks — commits automatic, no questions)
+   ▼
+per task: LOCAL COMMIT (auto, announced)  →  <em>◆4 PUSH GATE</em> (commit series + test report, ONE approval)  →  security†  →  promote-to-envs  →  /feature-retro
+                                                                <i>* conditional — artifact tasks only</i>
+                                                                <i>† auto — sensitive paths touched</i></div>
+
+<h2><span class="n">2</span>The inner loop, station by station</h2>
+<p class="because">Who runs each stage, what skill drives it, and what mechanically enforces it.
+Blue dots = developer · red dots = independent seats · green dots = mechanical checks ride along.</p>
+
+<div class="rail">
+  <div class="station"><div class="row"><b>ANALYZE</b><span class="who">developer</span><span class="skl">/process-tasks-list</span></div>
+    <p>Read the task line: its <code>Cases:</code> list (authored at planning, AC-traced) and ✔ criterion.
+    The task text is self-sufficient — the ADR is only consulted for WHY, never to decode WHAT.</p></div>
+  <div class="station"><div class="row"><b>RED</b><span class="who">developer</span><span class="skl">/interactor-test-writer</span><span class="enf">Cases: = the test list</span></div>
+    <p>A LOOP with GREEN/REFACTOR, one cycle per <code>Cases:</code> entry: this case's failing test — written FROM the list, never re-derived from code. Watch it fail for
+    the RIGHT reason. Dependency-first: the task's collaborators are already built (earlier slice tasks) — wire them real; autospec only interfaces.
+    A missing <code>Cases:</code> line is an authoring error → Design Correction, not improvisation.</p></div>
+  <div class="station"><div class="row"><b>GREEN</b><span class="who">developer</span><span class="skl">/write-interactor · /write-graphql-*</span><span class="enf">quality-gate.sh</span></div>
+    <p>Minimum code that passes — one task only. The matching workflow skill is invoked first (skill gate table in the
+    developer persona). Cross-app imports and framework-in-interactor violations are hook-blocked at write time.</p></div>
+  <div class="station"><div class="row"><b>REFACTOR</b><span class="who">developer</span></div>
+    <p>On green only: naming, extraction, clean-code limits. Tests stay green.</p></div>
+  <div class="station chk"><div class="row"><b>VERIFY <span style="font:600 11px var(--mono);color:var(--gate)">(conditional)</span></b><span class="who">developer</span></div>
+    <p>Fires ONLY when the deliverable is an artifact unit tests can't assert directly — generated PDF/letter,
+    <code>schema_gen</code> output, CSV export, HTML report. Locate that domain's specific generator, run it, inspect, present.
+    Never blind-glob repo-root notebooks (450+ ops/migration scripts, several destructive). No artifact → one-line skip.</p></div>
+  <div class="station chk"><div class="row"><b>SELF-REVIEW</b><span class="who">developer</span><span class="skl">/self-review-checklist</span><span class="enf">checks A–L · L is blocking</span></div>
+    <p>Twelve checks from real review history (DRY, cross-app, null guards, truthiness, dead code, scope drift, ConfigIO…).
+    Check L blocks the verdict: every production file has tests AND every <code>Cases:</code> entry has a corresponding test.</p></div>
+  <div class="station rev"><div class="row"><b>INDEPENDENT REVIEW</b><span class="who r">reviewer</span><span class="skl">/review-pr</span><span class="enf">saved → .claude/reviews/</span></div>
+    <p>Fresh eyes, 12-item checklist, severity-ranked findings, ends with APPROVED / CHANGES REQUESTED.
+    Emits the <code>## Escaped Cases</code> section (explicit <code>None</code>) — behavioural misses the <code>Cases:</code> line
+    should have listed. Critical/High → developer auto-fixes via /impl-review-points (no "should I fix?" question) → re-review.
+    6+ files → review team (2; +security teammate on sensitive paths).</p></div>
+  <div class="station"><div class="row"><b>INTEGRATE</b><span class="who">developer</span></div>
+    <p>Full app test suite. Regressions fixed NOW, in this loop — no debt forwarded to the next task.</p></div>
+</div>
+<div class="gate"><span class="sig">◆4 · END-OF-PLAN — the PUSH gate: commit series + test report, one approval · then env-promotion checklist (one question)</span></div>
+<p class="because" style="margin-top:6px">Path-triggered nudge at this gate: if the plan touched GraphQL/portal surfaces, one line recommends a
+<code>@scout</code> gamma E2E after merge — a recommendation, never a gate, and explicitly NOT a substitute for review/security.</p>
+
+<h2><span class="n">3</span>The enforcement ladder</h2>
+<p class="because">Knowing ≠ following (canon law 3). Every invariant lives as far DOWN this ladder as evidence justifies:
+hooks physically block, skill hard-checks structure the work, persona prose waits for promotion.</p>
+<table>
+  <tr><th style="width:26%">Guard</th><th style="width:18%">Rung</th><th>What it makes impossible</th></tr>
+  <tr><td><code>check-task-ordering.py</code></td><td><span class="badge b-ship">HOOK · blocks</span></td><td>Consumer-after-producer plans: storage before interactor, engine before door, layer-noun slices (C1–C6)</td></tr>
+  <tr><td><code>check-tick-evidence.py</code></td><td><span class="badge b-ship">HOOK · blocks</span></td><td>False ticks and tick-wipes on tasks files — a ✔ needs its named artifact to exist</td></tr>
+  <tr><td><code>check-dead-contracts.py</code></td><td><span class="badge b-ship">HOOK · blocks</span></td><td>Interface methods no interactor calls (table-shaped design smell) at write time</td></tr>
+  <tr><td><code>quality-gate.sh</code></td><td><span class="badge b-ship">HOOK · blocks</span></td><td>Cross-app internal imports, framework-in-interactor, print/logger in business logic</td></tr>
+  <tr><td><code>check-scope-drift.py</code></td><td><span class="badge b-ship">HOOK · flags</span></td><td>Diffs escaping the ADR's declared-modules fence — High finding, never self-patched</td></tr>
+  <tr><td>Self-review checks A–L</td><td><span class="badge b-live">SKILL · hard-check</span></td><td>Advancing to independent review with known recurring-issue classes present; L blocks on missing tests / uncovered Cases</td></tr>
+  <tr><td><code>## Escaped Cases</code> + save step</td><td><span class="badge b-live">SKILL · required slot</span></td><td>Silent planning blind spots — an absent section proves nothing, an explicit <code>None</code> proves the check ran</td></tr>
+  <tr><td>Persona prose (dev-loop rules)</td><td><span class="badge b-watch">PROSE · waiting</span></td><td>Everything else — candidates promote DOWN the ladder when evidence shows the prose isn't holding</td></tr>
+</table>
+
+<h2><span class="n">4</span>Orchestration — who drives what</h2>
+<table>
+  <tr><th style="width:30%">Rule</th><th>Contract</th></tr>
+  <tr><td><b>Two nested loops</b></td><td>Manager drives the OUTER pipeline between gates; developer executes the INNER loop per task. Never conflated.</td></tr>
+  <tr><td><b>Commit batching</b></td><td>Multi-task plans: NO commit gate between tasks; ONE consolidated gate at end-of-plan. Overrides: user "commit now" · safety valve at 10+ tasks / 30+ files · plan-failure checkpoint (good work never sits hostage to a bad task).</td></tr>
+  <tr><td><b>Auto-continue</b></td><td>Review findings → developer fixes → re-review, with zero questions asked. The fix cycle shares the original commit gate.</td></tr>
+  <tr><td><b>Test ownership</b></td><td>Developer authors RED for every active task — the test derives from and drives the implementation ("one continuous thought"). test-writer only for: standalone test tasks · backfill on shipped code · review-team audits.</td></tr>
+  <tr><td><b>Review teams</b></td><td>6+ files → 2 teammates (Architecture+CleanCode, TestCoverage+EdgeCases); sensitive paths → +Security. The TestCoverage seat is a REVIEWER, never the test-writer (fresh-eyes). Consolidated review saved to <code>.claude/reviews/</code>.</td></tr>
+  <tr><td><b>Security trigger</b></td><td>Auto after final clean review when the diff touches <code>iam/ payments_engine/ plugins/razorpay/ bps/ tdr/</code> or new integration adapters.</td></tr>
+  <tr><td><b>Design Correction Protocol</b></td><td>Developer discovers the plan is wrong → HALT + report (never work around it). Manager fixes PRD/flows/stories; architect fixes ADR/tasks; user approves the delta; developer resumes. Severity maps: cosmetic=batched · design=delta-only approval · structural=Gate-3 re-run for remaining tasks.</td></tr>
+  <tr><td><b>Single-writer + fresh sessions</b></td><td>One writer per shared file; background agents deliver to report files; long plans hand off to a fresh developer session at task boundaries instead of resuming a saturated transcript.</td></tr>
+</table>
+
+<h2><span class="n">5</span>This week's decisions — bless or veto</h2>
+<p class="because">Five decision cards. D1 shipped Wednesday; D2–D5 shipped today after developer-seat and
+reviewer-seat consults (both consults disk-verified). Each card names its decider — veto any card and it
+reverts via a config change, nothing else depends on staying as-is.</p>
+<div class="legend"><span class="badge b-ship">SHIPPED</span> in live config <span class="badge b-rej">REJECTED</span> considered and declined</div>
+
+<div class="dcard"><div class="head"><span class="id">D1</span><b class="t">RED is seeded by the plan's Cases: list — never re-derived from code</b><span class="badge b-ship">SHIPPED</span><span class="seat dh">dhruva · seam audit</span></div>
+  <div class="kv"><b>CHOSEN:</b> all five build-layer artifacts (dev-loop, developer, test-writer, both test skills) consume the pre-approved list; in-plan work has no per-case approval gate; a genuine gap is a Design-Correction flag.</div>
+  <div class="kv"><b>OVER:</b> each artifact re-deriving cases from the code (the pre-Wednesday state).</div>
+  <div class="kv"><b>BECAUSE:</b> re-derivation defeats the point of planning-time case authoring — the executable ✔ before code exists — and re-inserted gates the pipeline had removed.</div></div>
+
+<div class="dcard"><div class="head"><span class="id">D2</span><b class="t">VERIFY is conditional — artifact-producing tasks only</b><span class="badge b-ship">SHIPPED</span><span class="seat d">developer seat</span></div>
+  <div class="kv"><b>CHOSEN:</b> fires only for outputs unit tests can't assert (PDF, schema_gen, export, report) via that domain's SPECIFIC generator; all other tasks skip with one line.</div>
+  <div class="kv"><b>OVER:</b> the old blanket "search for and execute test notebooks" on every task.</div>
+  <div class="kv"><b>BECAUSE:</b> the blanket step was a no-op for most tasks AND a latent hazard — 450+ repo-root notebooks are ops/migration scripts, several destructive (flush/reset/delete). The dev seat caught the hazard; I had only flagged staleness.</div></div>
+
+<div class="dcard"><div class="head"><span class="id">D3</span><b class="t">Developer owns RED; test-writer stays OUT of review seats</b><span class="badge b-ship">SHIPPED</span><span class="seat d">developer seat</span><span class="seat r">reviewer seat — rejection</span></div>
+  <div class="kv"><b>CHOSEN:</b> no mid-task RED handoff ever (test derivation is inseparable from implementation decisions); test-writer = standalone test tasks, backfill, coverage audits. Review-team TestCoverage seat = a reviewer with a testing.md focus briefing.</div>
+  <div class="kv"><b>OVER:</b> dhruva's original lean — seating test-writer as a review teammate.</div>
+  <div class="kv"><b>BECAUSE:</b> an authoring persona reviewing its own tests violates fresh-eyes and lacks the findings/severity/REVIEW-RESULT discipline. Depth belongs in the briefing, not a persona swap. (Reviewer seat overturned me — the better argument won.)</div></div>
+
+<div class="dcard"><div class="head"><span class="id">D4</span><b class="t">Scout nudge — path-triggered, end-of-plan, never a gate</b><span class="badge b-ship">SHIPPED</span><span class="seat d">dev</span><span class="seat r">reviewer</span></div>
+  <div class="kv"><b>CHOSEN:</b> one line at the ◆4 presentation when the plan touched GraphQL/portal paths (same list as the schema-regen check), with an explicit "does not substitute for reviewer/security" clause. Backend-only plans: zero mention.</div>
+  <div class="kv"><b>OVER:</b> auto-chaining scout into the pipeline, or a subjective "feels user-facing" trigger.</div>
+  <div class="kv"><b>BECAUSE:</b> scout verifies runtime behaviour on gamma AFTER review+merge — complementary to static review, structurally unable to replace it; a hard path-match keeps the nudge honest and non-annoying.</div></div>
+
+<div class="dcard"><div class="head"><span class="id">D5</span><b class="t">Escaped-case instrument + the review-save fix</b><span class="badge b-ship">SHIPPED</span><span class="seat r">reviewer seat</span></div>
+  <div class="kv"><b>CHOSEN:</b> reviewer output carries a required <code>## Escaped Cases</code> section (explicit <code>None</code>; Critical/High missed BEHAVIOURS only — code-hygiene never qualifies) in a grep-stable format; reviews MUST be saved to <code>.claude/reviews/</code> (persona save step + team consolidation-save added). /feature-retro greps the directory.</div>
+  <div class="kv"><b>OVER:</b> dev-seat alternative (tag in feature-context.md) and the status quo (retro reconstructs from conversation).</div>
+  <div class="kv"><b>BECAUSE:</b> the reviewer holds both artifacts at decision time, and feature-context is manager-owned (single-writer). The reviewer seat also found the dependency nobody named: <code>.claude/reviews/</code> was EMPTY — the persona had no save step, teams had no consolidation-save. Without that fix the whole instrument greps nothing.</div></div>
+
+<h2><span class="n">6</span>Deliberately NOT built — evidence-gated</h2>
+<table>
+  <tr><th style="width:34%">Candidate</th><th style="width:16%">Status</th><th>Earns promotion when</th></tr>
+  <tr><td>Cross-file contract-integrity script (task-breakdown step 4)</td><td><span class="badge b-watch">WATCHING</span></td><td>The first multi-module plan runs and the model gets a seam check wrong</td></tr>
+  <tr><td>Zero-token-✔ authoring check as a hook</td><td><span class="badge b-watch">WATCHING</span></td><td>Same trigger — evidence over ceremony</td></tr>
+  <tr><td>More per-stage gates / questions</td><td><span class="badge b-rej">REJECTED</span></td><td>Never — the phase already carries 5 hooks + 2 required slots; the user gate count stays at ONE</td></tr>
+</table>
+
+<div class="note"><b>The first live run is the real review.</b>
+This page records the design as blessed; REF-001 through the full rail is what tests it. The run is instrumented —
+escaped-case tags, DCP bounce origins, size accuracy, extension-cost deltas — and /feature-retro harvests them into
+routed lessons. Guardrails that never fire get stripped; prose that fails gets promoted to hooks.</div>
+
+<div class="foot">Build &amp; Verify phase · reviewed 2026-07-04 · live sources:
+<code>.claude/rules/dev-loop.md</code> · <code>.claude/skills/dev-loop/SKILL.md</code> ·
+<code>.claude/rules/references/agent-teams-pipeline.md</code> · <code>.claude/agents/developer.md</code> ·
+<code>.claude/agents/reviewer.md</code> · <code>.claude/skills/self-review-checklist/SKILL.md</code> ·
+<code>.claude/skills/review-pr/SKILL.md</code> — on any drift, the config wins.</div>
+</div></body></html>

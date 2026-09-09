@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Design Phase — entry depth, the ADR contract, and the plan</title>
+<style>
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --ink:#1f2328; --muted:#59636e; --line:#d1d9e0;
+  --accent:#0969da; --accent-soft:rgba(9,105,218,.08);
+  --gate:#9a6700; --gate-soft:#fff8c5;
+  --ok:#1a7f37; --ok-soft:#dafbe1;
+  --warn:#cf222e; --warn-soft:#ffebe9;
+  --violet:#8250df; --violet-soft:#fbefff;
+  --teal:#1b7c83; --teal-soft:#d6f3f5;
+  --serif:"Charter","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);
+  background-image:radial-gradient(circle at 85% -5%, rgba(27,124,131,.06), transparent 55%);}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 28px 120px}
+
+.back{display:inline-flex;align-items:center;gap:6px;font:600 12.5px/1 var(--sans);color:var(--accent);
+  text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:8px 15px;margin-bottom:26px;transition:border-color .15s}
+.back:hover{border-color:var(--accent)}
+
+.crumb{display:flex;align-items:center;gap:9px;margin:-14px 0 26px;flex-wrap:wrap}
+.crumb .blk{font:700 10.5px/1 var(--sans);letter-spacing:.05em;border-radius:7px;padding:8px 12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);text-decoration:none;transition:border-color .15s}
+.crumb a.blk:hover{border-color:var(--teal);color:var(--teal)}
+.crumb .blk.here{background:var(--teal-soft);border-color:rgba(27,124,131,.42);color:var(--teal)}
+.crumb .arr{color:var(--line);font-size:12px}
+
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--teal);margin-bottom:14px}
+h1{font:700 40px/1.15 var(--serif);letter-spacing:-.01em;margin-bottom:10px}
+.sub{font-size:16.5px;color:var(--muted);max-width:70ch}
+.hero-law{margin:28px 0 6px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--teal);
+  border-radius:10px;padding:20px 24px}
+.hero-law b{display:block;font:700 18px/1.4 var(--serif);color:var(--ink);margin-bottom:4px}
+.hero-law span{font-size:13.5px;color:var(--muted)}
+
+h2{font:700 25px/1.25 var(--serif);margin:64px 0 6px;display:flex;align-items:baseline;gap:12px}
+h2 .n{font:700 13px/1 var(--mono);color:#fff;background:var(--ink);border-radius:6px;padding:5px 8px;transform:translateY(-3px)}
+.because{color:var(--muted);font-size:14px;margin-bottom:22px;max-width:76ch}
+
+.badge{font:600 9.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;border-radius:20px;padding:4px 8px;white-space:nowrap}
+.b-ship{color:var(--ok);background:var(--ok-soft);border:1px solid rgba(26,127,55,.3)}
+.b-prop{color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.32)}
+.b-live{color:var(--teal);background:var(--teal-soft);border:1px solid rgba(27,124,131,.3)}
+.b-open{color:var(--warn);background:var(--warn-soft);border:1px solid rgba(207,34,46,.3)}
+.b-del{color:var(--warn);background:var(--warn-soft);border:1px solid rgba(207,34,46,.3);text-decoration:line-through}
+.b-new{color:var(--violet);background:var(--violet-soft);border:1px solid rgba(130,80,223,.32)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0 4px;font-size:12px;color:var(--muted);align-items:center}
+.legend .badge{margin-right:6px}
+
+.rail{position:relative;margin:26px 0 6px;padding-left:34px}
+.rail::before{content:"";position:absolute;left:12px;top:14px;bottom:14px;width:2px;
+  background:repeating-linear-gradient(to bottom,var(--line) 0 6px,transparent 6px 11px)}
+.station{position:relative;margin-bottom:14px;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:13px 18px}
+.station::before{content:"";position:absolute;left:-28px;top:20px;width:12px;height:12px;border-radius:50%;
+  background:var(--surface);border:3px solid var(--teal)}
+.station.mgr::before{border-color:var(--violet)}
+.station.chk::before{border-color:var(--ok)}
+.station .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.station b{font:650 15.5px/1.3 var(--sans)}
+.station .who{font:500 11px/1 var(--mono);color:var(--teal);background:var(--teal-soft);border-radius:20px;padding:4px 9px}
+.station .who.m{color:var(--violet);background:var(--violet-soft)}
+.station .skl{font:500 11px/1 var(--mono);color:var(--accent);background:var(--accent-soft);border-radius:20px;padding:4px 9px}
+.station p{font-size:12.5px;color:var(--muted);margin-top:5px;max-width:82ch}
+.gate{margin:2px 0 16px 34px}
+.gate .sig{display:inline-flex;align-items:center;gap:8px;font:600 11.5px/1 var(--sans);
+  color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.35);border-radius:20px;padding:6px 13px;margin-left:-6px}
+.gate .sig::before{content:"◆";font-size:9px}
+.fork-edge{margin:-6px 0 14px 40px;font:12px var(--mono);color:var(--warn)}
+
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px;margin:14px 0}
+th{font:600 11px/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfd}
+td{padding:10px 14px;border-bottom:1px solid #eef1f4;vertical-align:top}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+code{font:12px var(--mono);background:var(--accent-soft);border-radius:4px;padding:1.5px 5px}
+.kind{font:700 12px/1 var(--sans);letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin:26px 0 0}
+
+.fork{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin:16px 0}
+.fcard{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px}
+.fcard.rec{border-color:rgba(27,124,131,.5);box-shadow:0 2px 10px rgba(27,124,131,.08)}
+.fcard .who{font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;display:block}
+.fcard .who .r{color:var(--teal)}
+.fcard b{font:650 14px/1.35 var(--sans)}
+.fcard pre{background:#fbfcfd;border:1px solid var(--line);border-radius:6px;padding:11px;font:11.5px/1.5 var(--mono);overflow-x:auto;margin:9px 0}
+.fcard ul{margin:6px 0 0 16px;font-size:12.5px;color:var(--muted)}
+.fcard li{margin-bottom:3px}
+@media(max-width:800px){.fork{grid-template-columns:1fr}}
+
+.note{background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--gate);border-radius:10px;padding:16px 20px;margin:18px 0;font-size:13.5px}
+.note b{display:block;margin-bottom:6px}
+.note ol{margin:4px 0 0 18px;color:var(--muted)}
+.foot{margin-top:70px;padding-top:18px;border-top:1px solid var(--line);font-size:12.5px;color:var(--muted)}
+</style>
+</head>
+<body><div style="background:#3d3016;color:#e8c96a;border-bottom:1px solid #8a6d1f;padding:10px 24px;font:13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.02em"><strong>Historical snapshot — process as of 2026-07-02.</strong> The pipeline has moved on (task-breakdown rename, per-task Cases: lines, retro loop, Phase-C wiring). The live <code style="background:#2a2210;padding:1px 5px;border-radius:3px">.claude/</code> config is the source of truth; this page is kept for reference only.</div><div class="wrap">
+
+<a class="back" href="sdlc-process-report.html">← SDLC process hub</a>
+<div class="crumb">
+  <a class="blk" href="requirement-phase.html">PHASE A · REQUIREMENT</a><span class="arr">→</span>
+  <span class="blk here">PHASE B · DESIGN</span><span class="arr">→</span>
+  <span class="blk">IMPLEMENTATION</span><span class="arr">→</span>
+  <span class="blk">REVIEW → SHIP</span>
+</div>
+
+<div class="eyebrow">Proposal · 2026-07-03 · consults: manager + architect</div>
+<h1>The Design Phase</h1>
+<p class="sub">From dispatch manifest to an approved plan — the architect's phase, where ALL the depth
+Phase A refused to pay lands as the opening move. Built from the two consult reports; the forks they
+split on are yours to settle (§4).</p>
+
+<div class="hero-law">
+  <b>Phase B is wiring, not construction: 0 new agents · 0 new skills · 1 new reference file.</b>
+  <span>The canon package already shipped the heavy machinery (outside-in plan grammar, ordering hooks,
+  blueprint toolkit, ADR discipline). This pass relocates the depth the A2 re-cut evicted from intake —
+  entry read, T1–T6 ledger, scope fence — and names two checkpoints. Most components below already fit.</span>
+</div>
+
+<h2><span class="n">1</span> The station rail</h2>
+<p class="because">Same reading as Phase A's rail: stations are owned, gates pause, ✓ checkpoints confirm
+before the next artifact derives. Teal = architect, violet = manager. The manager only RELAYS in this phase —
+envelope in, gates presented, dev-loop handoff out — Phase B is named for the architect because the architect
+signs both exit gates' content.</p>
+
+<div class="rail">
+  <div class="fork-edge" style="margin-top:0;color:var(--violet)">↓ arrives from Phase A — PRD (Final) · flows ✓ · stories, plus the <b>dispatch-manifest envelope</b>
+  (intake-templates.md, manager-packaged: Q&amp;A digest · rejected shapes · surviving UNCONFIRMEDs · candidate
+  modules-as-UNWITNESSED · proposed: T-suspicions + living-page pointer). Not a step — the context that lives in
+  no artifact, so the architect never re-asks what intake already learned.</div>
+
+  <div class="station">
+    <div class="row"><b>Step 1 · Understand — the Phase-B entry read</b><span class="who">ARCHITECT</span><span class="skl">rules/references/phase-b-entry.md · t-triggers.md</span><span class="badge b-ship">SHIPPED</span></div>
+    <p>The architect's first work: build the understanding, then verify it against code. Read order — PRD's four
+    sole-witness sections → <code>flows.md</code> → stories → the manifest envelope → candidate apps'
+    CLAUDE.mds → code (unfamiliar app: layers in order — models → storages → interactors → app_interfaces →
+    adapters). Verify the PRD's Assumptions and
+    candidate modules against code; resolve surviving UNCONFIRMEDs with evidence. Fill the <b>T1–T6 ledger</b> →
+    <code>feature-context.md</code> (Phase-B Entry block). Class 4: <code>/design-module</code> Step-0 parity
+    inventory IS this read (T5 is literally its output).</p>
+  </div>
+  <div class="fork-edge">├─ T-TRIP → halt → Design Correction Protocol → manager card → user confirms → re-enter Phase A ideation</div>
+
+  <div class="station chk">
+    <div class="row"><b>Grounding ✓</b><span class="who m">ARCH → MGR → USER</span><span class="badge b-ship">SHIPPED (phase-b-entry.md)</span></div>
+    <p>A short digest back to you — candidates→witnessed modules, falsified assumptions, T-verdicts — BEFORE any
+    blueprint/ADR effort. The cheapest wrong-PRD catch in the pipeline; mirrors the flows ✓ (confirm the ground
+    before building on it). Announce-and-confirm, not a formal gate: a falsified assumption caught here costs a
+    one-line PRD patch; caught at Gate 2 it invalidates a finished design.</p>
+  </div>
+
+  <div class="station">
+    <div class="row"><b>B2a · Module design — explore &amp; converge</b><span class="who">ARCHITECT ⇄ USER</span><span class="skl">/module-blueprint</span><span class="badge b-ship">SHIPPED — /design-module feature lane</span></div>
+    <p><b>Phase B's ideation beat</b> — the divergent stretch, mirroring Phase A's concept shapes. The blueprint
+    is the exploration surface: entity taxonomy and layer cuts tried pass-by-pass, alternatives weighed as L2
+    decision cards (mini-ADRs), the model read outside-in — entities → behaviours → logical layers → exposed
+    interface. <b>Storage-agnostic — no tables yet.</b> Nothing here is final until the ✓ below converges it;
+    the ADR then RECORDS what the exploration decided (transcribe, don't re-derive). Optional — earned by
+    decision density. Hosted by the generalized <code>/design-module</code> (Fork 1 settled). Class 4 rides the
+    module lane: parity ✓ → slices ✓ → per-slice exploration → ADR → plan.</p>
+  </div>
+
+  <div class="station chk">
+    <div class="row"><b>Model locked ✓</b><span class="who">ARCH → USER</span><span class="badge b-ship">SHIPPED (design-module f3)</span></div>
+    <p>When a blueprint exists: no schema and no ADR until the model's passes are confirmed. Same logic as
+    flows-before-stories — flows determine stories; the model determines both the schema and the ADR (decision
+    cards are transcribed, not re-derived). No blueprint → no checkpoint.</p>
+  </div>
+
+  <div class="station">
+    <div class="row"><b>B2b · DB design</b><span class="who">ARCHITECT</span><span class="skl">/design-db</span><span class="badge b-live">FITS AS-IS</span></div>
+    <p>The schema as a <b>projection of the locked entities</b> — tables, indexes, migration shape, per
+    <code>models.md</code> (query-driven fields are columns, base classes, soft delete). Deliberately AFTER the
+    model ✓: schema derives from the model, never the reverse — tables designed first anchor the entities to
+    storage shapes. Output feeds the ADR's Entities &amp; Core DB Design section (§6), written as lifecycle
+    narratives, not column dumps.</p>
+  </div>
+
+  <div class="station">
+    <div class="row"><b>ADR-XXX-&lt;feature&gt;.md</b><span class="who">ARCHITECT</span><span class="skl">/create-adr</span><span class="badge b-ship">SHIPPED — fence = ADR header line</span></div>
+    <p>Decisions · rejected alternatives · extension cost (§12) · the <b>declared-modules fence</b> — written HERE
+    because here is where module knowledge first exists with code evidence (home = Fork 2). T-overrules recorded
+    inline with their decisions. Proposed: step-2 prefix "answer from the manifest/PRD/flows/stories first; ask
+    only what those leave open."</p>
+  </div>
+
+  <div class="gate"><span class="sig">GATE 2 — ADR approved · architect signs the content, manager presents</span></div>
+
+  <div class="station">
+    <div class="row"><b>tasks-ADR-XXX.md</b><span class="who">ARCHITECT</span><span class="skl">/task-breakdown</span><span class="badge b-live">FITS AS-IS</span></div>
+    <p>Outside-in grammar (steel thread first, ports after the demanding slice) · <code>check-task-ordering.py</code>
+    C1–C6 · <code>check-tick-evidence.py</code>. Nothing to change — shipped with the canon package.</p>
+  </div>
+
+  <div class="gate"><span class="sig">GATE 3 — plan approved · dispatch to the dev loop</span></div>
+
+  <div class="station mgr">
+    <div class="row"><b>Dispatch to the dev loop</b><span class="who m">MANAGER</span><span class="skl">agent-teams-pipeline.md (clarity cascade) · /dev-loop</span></div>
+    <p>Manager logs phase + declared-modules fence in <code>feature-context.md</code>, spawns the developer with
+    the clarity cascade (persona + memory + prior-context = the approved ADR + tasks file). Mid-implementation
+    bounces come back through the Design Correction Protocol (<code>dev-loop.md</code>) — including the two lanes
+    it's gaining (§3).</p>
+  </div>
+</div>
+
+<h2><span class="n">2</span> Config inventory — what exists, what fits, what changes</h2>
+<p class="because">The direct answer to "what's needed": nearly everything exists. Verdicts:
+<span class="badge b-live">FITS</span> no change ·
+<span class="badge b-prop">CHANGE</span> targeted edit proposed ·
+<span class="badge b-new">NEW</span> to create ·
+<span class="badge b-ship">SHIPPED</span> already landed in the A2 re-cut ·
+<span class="badge b-del">DELETE</span> superseded.</p>
+
+<p class="kind">Agents — 0 new</p>
+<table>
+  <tr><th style="width:200px">Component</th><th style="width:110px">Verdict</th><th>Changes needed</th></tr>
+  <tr><td><b>architect</b></td><td><span class="badge b-prop">CHANGE</span></td><td>Phase-B Entry section <span class="badge b-ship">SHIPPED</span> (deep read → ledger → fence). Remaining: point at <code>phase-b-entry.md</code> once it exists; add model-locked ✓ + grounding-digest duty (per Q4). Witness-era paragraphs already stripped.</td></tr>
+  <tr><td><b>manager</b></td><td><span class="badge b-live">FITS</span></td><td>Relay stations (gate presentation, bounce coordination, feature-context logging) already covered by pipeline rules. Only gains the grounding ✓ relay if Q4 = yes — a rules edit, not a persona edit.</td></tr>
+  <tr><td><b>fees-agent · tdr-agent</b></td><td><span class="badge b-live">FITS</span></td><td>None — nested domain consults during design, exactly as built.</td></tr>
+  <tr><td><b>developer · reviewer · security</b></td><td><span class="badge b-live">FITS</span></td><td>Not Phase-B actors. Developer meets the fence only as a consumer (scope-drift check at review).</td></tr>
+</table>
+
+<p class="kind">Skills — 0 new · 1 delete</p>
+<table>
+  <tr><th style="width:200px">Component</th><th style="width:110px">Verdict</th><th>Changes needed</th></tr>
+  <tr><td><b>/design-module</b></td><td><span class="badge b-ship">SHIPPED</span></td><td>Generalized into THE Phase-B driver — feature lane (entry → grounding ✓ → [blueprint?] → model ✓ → /design-db → ADR → plan) + module lane (parity → slices → per-slice loop). Lane picked mechanically off the manifest class; model-locked ✓ named.</td></tr>
+  <tr><td><b>/create-adr</b></td><td><span class="badge b-ship">SHIPPED</span></td><td>Fence = machine-readable ADR-header line (step 6); step-2 prefix: answer from manifest/PRD/flows/stories first, ask the user only what those leave open.</td></tr>
+  <tr><td><b>/module-blueprint</b></td><td><span class="badge b-live">FITS</span></td><td>Stays optional and earned (decision density). One-line addition: cross-link header → the feature's living review page.</td></tr>
+  <tr><td><b>/task-breakdown</b></td><td><span class="badge b-live">FITS</span></td><td>None — outside-in grammar + ordering hooks shipped with the canon package.</td></tr>
+  <tr><td><b>/design-db</b></td><td><span class="badge b-live">FITS</span></td><td>None — invoked from within ADR work as-is.</td></tr>
+  <tr><td><b>/load-app-context</b></td><td><span class="badge b-del">DELETED</span></td><td>The banned "context-loader" anti-pattern — app CLAUDE.mds auto-load, clean-architecture.md owns the layer read order. Its <code>domain-knowledge.md</code> reference rescued to <code>agents/references/</code>; 6 consumers repointed; routing row dropped.</td></tr>
+  <tr><td><b>/impact-audit</b></td><td><span class="badge b-del">DELETE</span></td><td>Superseded — its depth moved to B0 entry, its T1–T6 to <code>rules/references/t-triggers.md</code>. Directory removal pending your nod (rm was permission-denied).</td></tr>
+</table>
+
+<p class="kind">Rules &amp; references — 1 new</p>
+<table>
+  <tr><th style="width:200px">Component</th><th style="width:110px">Verdict</th><th>Changes needed</th></tr>
+  <tr><td><b>rules/references/phase-b-entry.md</b></td><td><span class="badge b-ship">SHIPPED</span></td><td>39 lines: two-lane entry checklist (read order per class) + T1–T6 ledger procedure + grounding ✓ + fence pointer. Single home; architect persona + /design-module point at it — never three copies.</td></tr>
+  <tr><td><b>rules/references/t-triggers.md</b></td><td><span class="badge b-ship">SHIPPED</span></td><td>Moved from impact-audit, reheaded for Phase-B entry; ledger home = feature-context (ADRs ban process evidence); trips bounce via Design Correction Protocol.</td></tr>
+  <tr><td><b>rules/dev-loop.md</b> (Design Correction Protocol)</td><td><span class="badge b-ship">SHIPPED</span></td><td>Two lanes landed: (1) <code>flows.md → manager</code> ownership row + flow patch-lane (cascade to citing stories, delta-only re-approval); (2) reclassification lane — a T-trip voids the class and re-enters Phase A at ideation.</td></tr>
+  <tr><td><b>intake-templates.md</b> (dispatch manifest)</td><td><span class="badge b-ship">SHIPPED</span></td><td>Manifest carries flows · candidates-as-UNWITNESSED · T-suspicions · living-page pointer; declared-modules section repointed to the ADR-header home.</td></tr>
+  <tr><td><b>review-page.md</b></td><td><span class="badge b-ship">SHIPPED</span></td><td>Phase-B+ row: architect writes the B-passes (grounding digest, then decision-card digest + links); blueprint cross-linked, never inlined.</td></tr>
+  <tr><td><b>engineering-canon.md · rich-domain-models.md · feature-context.md</b></td><td><span class="badge b-live">FITS</span></td><td>Canon loaders already bind the architect at design + ADR/plan authoring; feature-context re-cut shipped (fence wording + Phase-B Entry block + <code>globs:</code> fix).</td></tr>
+</table>
+
+<p class="kind">Scripts &amp; hooks — 0 new</p>
+<table>
+  <tr><th style="width:200px">Component</th><th style="width:110px">Verdict</th><th>Changes needed</th></tr>
+  <tr><td><b>check-task-ordering.py</b> (C1–C6)</td><td><span class="badge b-live">FITS</span></td><td>None — already the Gate-3 mechanical floor.</td></tr>
+  <tr><td><b>check-tick-evidence.py · check-dead-contracts.py</b></td><td><span class="badge b-live">FITS</span></td><td>None.</td></tr>
+  <tr><td><b>check-scope-drift.py</b></td><td><span class="badge b-ship">SHIPPED</span></td><td>ADR-path indirection landed: feature-context → ADR path → <code>**Declared modules:**</code> header line (ADR wins when present; bug-card fallback intact; missing-ADR warns + falls back). 13/13 self-tests, verified independently.</td></tr>
+</table>
+
+<h2><span class="n">3</span> Where the consults agreed</h2>
+<p class="because">Adopted pending your direction ✓ — no debate needed, both seats independently converged.</p>
+<table>
+  <tr><th style="width:230px">Agreement</th><th>Substance</th></tr>
+  <tr><td><b>Entry is common to all lanes</b></td><td>Deep read + T1–T6 + fence obligation run once per feature regardless of class; only the FORM differs (FULL / DELTA / two-sided-parity).</td></tr>
+  <tr><td><b>Model-locked ✓, conditional</b></td><td>Blueprint confirmed before ADR authoring — but the blueprint itself stays optional. Never a checkpoint on an artifact that doesn't exist.</td></tr>
+  <tr><td><b>Two surfaces, cross-linked</b></td><td>Living page = requirement truth (manager-owned) + thin B-pass digests; Module Blueprint = design truth (architect-owned). Link, never inline — single-writer discipline holds.</td></tr>
+  <tr><td><b>Class 2 stays thin</b></td><td>The majority lane pays no parity ceremony; its ADR is often an amendment to the feature's existing ADR.</td></tr>
+  <tr><td><b>Gate 3 needs no HTML</b></td><td>The markdown tasks file + ordering hooks are the right comprehension form for a plan; a visual layer adds nothing the hooks don't guarantee.</td></tr>
+</table>
+
+<h2><span class="n">4</span> The two forks + one toggle — yours to settle</h2>
+
+<div class="fork">
+  <div class="fcard rec">
+    <span class="who">FORK 1 · <span class="r">architect's pick — recommended</span></span>
+    <b>One driver, two lanes</b>
+    <pre>/design-module  (THE Phase-B driver)
+├ ENTRY (common): deep read → T1–T6
+├ feature lane (c1 small · c2):
+│    [blueprint?] ✓ → ADR → plan
+└ module lane (c1 big · c4):
+     parity ✓ → slices ✓ →
+     per slice: blueprint ✓ → ADR → plan</pre>
+    <ul><li>Mirrors /intake-requirement — one entry point per phase</li>
+    <li>Fence + ledger obligations written once</li>
+    <li>Lane picked mechanically off the manifest class — the orchestrator stops choosing rails (it boarded REF-001 wrong once already)</li></ul>
+  </div>
+  <div class="fcard">
+    <span class="who">FORK 1 · manager's pick</span>
+    <b>Two rails, keep as-is</b>
+    <pre>class 1/2 ► plain ADR rail
+  entry checks → [blueprint?] →
+  /create-adr → /task-breakdown
+
+class 4  ► /design-module (unchanged)</pre>
+    <ul><li>Zero churn on a battle-tested refactor skill</li>
+    <li>Majority lane maximally thin</li>
+    <li>Cost: entry/fence obligations documented in two places; rail choice stays judgment</li></ul>
+  </div>
+</div>
+
+<div class="fork">
+  <div class="fcard rec">
+    <span class="who">FORK 2 · <span class="r">architect's pick — recommended</span></span>
+    <b>Fence = ADR header line</b>
+    <pre># ADR-014 — &lt;feature&gt;
+**Status:** Accepted · **Date:** …
+**Declared modules:** `bps/configio`, `tdr`
+**Implementation plan:** [path]</pre>
+    <ul><li>The fence is part of what Gate 2 APPROVES</li>
+    <li>Single writer; growth = ADR rewrite + your approval — "a fence you can widen from inside the violation isn't a fence"</li>
+    <li>Cost: scope-drift script follows one indirection</li></ul>
+  </div>
+  <div class="fcard">
+    <span class="who">FORK 2 · as landed in the re-cut</span>
+    <b>Fence = feature-context line</b>
+    <pre>feature-context.md
+**Declared modules:** {type: 1,
+  modules: [bps/configio, tdr]}</pre>
+    <ul><li>Zero script change; already implemented (create-adr step 6)</li>
+    <li>Cost: fence lives in a multi-writer file; weaker approval trail</li></ul>
+  </div>
+</div>
+
+<div class="note">
+  <b>Open questions (one reply settles all four):</b>
+  <ol>
+    <li><b>Commit gate</b> — <span style="color:var(--ok);font-weight:600">DONE</span>: <code>2a948d04d3</code> pushed (re-cut + deletions + zoom pages)</li>
+    <li><b>Fork 1</b> — <span style="color:var(--ok);font-weight:600">SETTLED: one driver, two lanes</span> (user ✓ 2026-07-03)</li>
+    <li><b>Fork 2</b> — <span style="color:var(--ok);font-weight:600">SETTLED: ADR header line</span> (user ✓ 2026-07-03)</li>
+    <li><b>Grounding ✓</b> — <span style="color:var(--ok);font-weight:600">SETTLED: adopted</span> (user ✓ 2026-07-03)</li>
+    <li><b>Module vs DB design</b> — <span style="color:var(--ok);font-weight:600">SETTLED: two sub-steps</span> (B2a model → ✓ → B2b schema; user-raised 2026-07-03)</li>
+  </ol>
+</div>
+
+<div class="foot">Proposal · 2026-07-03 · dhruva · sources: /tmp/manager-b-consult.md · /tmp/architect-b-consult.md ·
+sibling of <a href="requirement-phase.html">requirement-phase.html</a><br>
+Retirement clock: this page retires when every PROPOSED/OPEN item above is implemented-or-rejected and the hub's Phase-B stations link here no more.</div>
+
+</div></body>
+</html>

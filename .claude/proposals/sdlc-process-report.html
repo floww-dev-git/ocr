@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The SDLC Process — artifacts · agents · skills</title>
+<style>
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --ink:#1f2328; --muted:#59636e; --line:#d1d9e0;
+  --accent:#0969da; --accent-soft:rgba(9,105,218,.08);
+  --gate:#9a6700; --gate-soft:#fff8c5;
+  --ok:#1a7f37; --ok-soft:#dafbe1;
+  --warn:#cf222e; --warn-soft:#ffebe9;
+  --violet:#8250df; --violet-soft:#fbefff;
+  --teal:#1b7c83; --teal-soft:#d6f3f5;
+  --serif:"Charter","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);
+  background-image:radial-gradient(circle at 85% -5%, rgba(9,105,218,.05), transparent 55%);}
+.wrap{max-width:1060px;margin:0 auto;padding:48px 28px 120px}
+
+/* ---------- hero ---------- */
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--accent);margin-bottom:14px}
+h1{font:700 40px/1.15 var(--serif);letter-spacing:-.01em;margin-bottom:10px}
+.sub{font-size:16.5px;color:var(--muted);max-width:70ch}
+
+/* ---------- section chrome ---------- */
+h2{font:700 25px/1.25 var(--serif);margin:64px 0 6px;display:flex;align-items:baseline;gap:12px}
+h2 .n{font:700 13px/1 var(--mono);color:#fff;background:var(--ink);border-radius:6px;padding:5px 8px;transform:translateY(-3px)}
+.because{color:var(--muted);font-size:14px;margin-bottom:22px;max-width:76ch}
+.hint{font-size:12px;color:var(--muted);font-style:italic}
+
+/* ---------- pipeline rail ---------- */
+.rail{position:relative;margin:26px 0 6px;padding-left:34px}
+.rail::before{content:"";position:absolute;left:12px;top:14px;bottom:14px;width:2px;
+  background:repeating-linear-gradient(to bottom,var(--line) 0 6px,transparent 6px 11px)}
+.station{position:relative;margin-bottom:14px;cursor:pointer;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:13px 18px;transition:border-color .15s, box-shadow .15s}
+.station:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(9,105,218,.10)}
+.station::before{content:"";position:absolute;left:-28px;top:20px;width:12px;height:12px;border-radius:50%;
+  background:var(--surface);border:3px solid var(--accent)}
+.station .row{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.station b{font:650 15.5px/1.3 var(--sans)}
+.station .who{font:500 11px/1 var(--mono);color:var(--violet);background:var(--violet-soft);border-radius:20px;padding:4px 9px}
+.station .skl{font:500 11px/1 var(--mono);color:var(--teal);background:var(--teal-soft);border-radius:20px;padding:4px 9px}
+.station p{font-size:12.5px;color:var(--muted);margin-top:4px}
+.station .more{position:absolute;right:14px;top:13px;font-size:11px;color:var(--accent)}
+.station p a{color:var(--accent);text-decoration:none;font-weight:600;white-space:nowrap}
+.station p a:hover{text-decoration:underline}
+.gate{position:relative;margin:2px 0 16px 0;padding-left:0}
+.gate .sig{display:inline-flex;align-items:center;gap:8px;font:600 11.5px/1 var(--sans);
+  color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.35);border-radius:20px;padding:6px 13px;margin-left:-6px}
+.gate .sig::before{content:"◆";font-size:9px}
+.gate{margin-left:34px}
+
+/* ---------- pipeline map (the hub picture) ---------- */
+.pmap{width:100%;height:auto;display:block;margin:24px 0 10px;background:var(--surface);
+  border:1px solid var(--line);border-radius:12px;box-shadow:0 1px 3px rgba(31,35,40,.05)}
+.pmap text{font-family:var(--sans);fill:var(--ink)}
+.pmap .mono{font-family:var(--mono)}
+.pmap .mut{fill:var(--muted)}
+.pmap .phase-box{fill:#fbfcfd;stroke:var(--line);stroke-width:1.5;transition:stroke .15s,filter .15s}
+.pmap a{cursor:pointer}
+.pmap a:hover .phase-box{stroke:var(--accent);filter:drop-shadow(0 2px 9px rgba(9,105,218,.16))}
+.pmap .phase-t{font-weight:700}
+.pmap .amber{fill:var(--gate)}
+.pmap .trunk{stroke:var(--accent);stroke-width:2.5;fill:none;stroke-linecap:round}
+.pmap .gate-d{fill:var(--gate-soft);stroke:var(--gate);stroke-width:1.5}
+.pmap .bug{stroke:var(--warn);stroke-width:2;fill:none;stroke-dasharray:6 5;stroke-linecap:round}
+.pmap .bug-t{fill:var(--warn)}
+.pmap .loop{stroke:var(--violet);stroke-width:1.8;fill:none;stroke-linecap:round}
+.pmap .loop-t{fill:var(--violet)}
+.pmap .update{stroke:var(--accent);stroke-width:2;fill:none;stroke-dasharray:2 3.5;stroke-linecap:round}
+.pmap .update-t{fill:var(--accent)}
+.pmap .band-t{font-weight:700}
+.pmap .band1{fill:#fffbe8;stroke:#e7d9a0}
+.pmap .band2{fill:#edfafb;stroke:#b8e3e6}
+.pmap .band3{fill:#edfaf1;stroke:#b6e2c4}
+.pmap .mbadge{font-family:var(--mono);font-weight:700;letter-spacing:.05em}
+.map-caption{font-size:12px;color:var(--muted);margin:0 2px 8px;text-align:center}
+
+/* ---------- phase-group headings in the detail rail ---------- */
+.pgroup{display:flex;align-items:baseline;gap:11px;margin:24px 0 8px;padding-left:34px;flex-wrap:wrap}
+.pgroup .pl{font:700 12px/1 var(--sans);letter-spacing:.11em;text-transform:uppercase;color:var(--accent)}
+.pgroup .pd{font-size:12px;color:var(--muted)}
+.station.static{cursor:default}
+.station.static:hover{border-color:var(--line);box-shadow:none}
+.chip{display:inline-block;font:600 11px/1 var(--sans);color:var(--accent);background:var(--accent-soft);
+  border:1px solid rgba(9,105,218,.22);border-radius:20px;padding:6px 11px;cursor:pointer;transition:border-color .15s}
+.chip:hover{border-color:var(--accent)}
+
+/* ---------- artifact contract table ---------- */
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px;margin:14px 0}
+th{font:600 11px/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfd}
+td{padding:10px 14px;border-bottom:1px solid #eef1f4;vertical-align:top}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+code{font:12px var(--mono);background:var(--accent-soft);border-radius:4px;padding:1.5px 5px}
+.no{color:var(--warn);font-weight:600}
+.yes{color:var(--ok);font-weight:600}
+
+/* ---------- agent cards ---------- */
+.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:13px;margin:16px 0}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:15px 17px;cursor:pointer;transition:border-color .15s, box-shadow .15s;position:relative}
+.card:hover{border-color:var(--accent);box-shadow:0 2px 10px rgba(9,105,218,.10)}
+.card b{font:650 15px/1.3 var(--sans)}
+.card .role{font-size:12.5px;color:var(--muted);margin-top:3px}
+.card .canonline{margin-top:9px;font:500 10.5px/1.5 var(--mono);color:var(--accent)}
+.card .more{position:absolute;right:13px;top:13px;font-size:11px;color:var(--accent)}
+
+/* ---------- ladder ---------- */
+.ladder{display:flex;flex-direction:column;gap:0;margin:18px 0}
+.rung{background:var(--surface);border:1px solid var(--line);padding:15px 20px;position:relative}
+.rung:first-child{border-radius:10px 10px 0 0}
+.rung:last-child{border-radius:0 0 10px 10px}
+.rung+.rung{border-top:none}
+.rung b{font:650 14.5px/1.3 var(--sans)}
+.rung .tag{font:600 10px/1 var(--mono);letter-spacing:.08em;border-radius:20px;padding:4px 9px;margin-left:8px;text-transform:uppercase}
+.r1 .tag{color:var(--ok);background:var(--ok-soft)}
+.r2 .tag{color:var(--gate);background:var(--gate-soft)}
+.r3 .tag{color:var(--warn);background:var(--warn-soft)}
+.rung p{font-size:12.5px;color:var(--muted);margin-top:5px}
+.rung ul{margin:8px 0 2px 18px;font-size:12.5px;color:var(--ink)}
+.rung li{margin-bottom:3px}
+.metric{display:flex;gap:14px;margin:16px 0;flex-wrap:wrap}
+.stat{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:14px 20px;flex:1;min-width:180px}
+.stat .big{font:700 26px/1.1 var(--serif);color:var(--accent)}
+.stat span{font-size:11.5px;color:var(--muted);display:block;margin-top:3px}
+
+/* ---------- details / disclosure ---------- */
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
+summary{cursor:pointer;padding:13px 18px;font:650 14px/1.4 var(--sans);list-style:none;display:flex;align-items:center;gap:9px}
+summary::-webkit-details-marker{display:none}
+summary .chev{margin-left:auto;color:var(--accent);transition:transform .2s;font-size:12px}
+details[open] summary .chev{transform:rotate(90deg)}
+details .body{padding:2px 18px 16px;border-top:1px solid #eef1f4}
+details table{margin:10px 0 4px;border:none;border-radius:0}
+
+/* ---------- takeaway ---------- */
+.takeaway{background:var(--accent-soft);border:1px solid rgba(9,105,218,.25);border-left:4px solid var(--accent);border-radius:8px;padding:13px 18px;font-size:13.5px;margin:18px 0}
+.pending{background:var(--gate-soft);border:1px solid rgba(154,103,0,.3);border-left:4px solid var(--gate);border-radius:8px;padding:13px 18px;font-size:13.5px;margin:18px 0}
+
+/* ---------- side pane ---------- */
+#overlay{position:fixed;inset:0;background:rgba(31,35,40,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#overlay.on{opacity:1;pointer-events:auto}
+#pane{position:fixed;top:0;right:-560px;width:min(540px,94vw);height:100vh;background:var(--surface);
+  border-left:1px solid var(--line);box-shadow:-12px 0 34px rgba(31,35,40,.12);z-index:50;transition:right .25s ease;overflow-y:auto}
+#pane.on{right:0}
+#pane .inner{padding:34px 30px 60px}
+#pane .close{position:absolute;top:14px;right:16px;border:1px solid var(--line);background:var(--surface);
+  border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px;color:var(--muted)}
+#pane .peyebrow{font:600 10.5px/1 var(--sans);letter-spacing:.13em;text-transform:uppercase;color:var(--accent);margin-bottom:9px}
+#pane h3{font:700 22px/1.25 var(--serif);margin-bottom:9px}
+#pane .plain{font-size:14px;color:var(--ink);margin-bottom:14px}
+#pane .krow{display:grid;grid-template-columns:132px 1fr;gap:8px 12px;font-size:13px;padding:9px 0;border-top:1px solid #eef1f4}
+#pane .krow .k{font:600 11px/1.5 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding-top:1px}
+.foot{margin-top:70px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body><div style="background:#3d3016;color:#e8c96a;border-bottom:1px solid #8a6d1f;padding:10px 24px;font:13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.02em"><strong>Historical snapshot — process as of 2026-07-02.</strong> The pipeline has moved on (task-breakdown rename, per-task Cases: lines, retro loop, Phase-C wiring). The live <code style="background:#2a2210;padding:1px 5px;border-radius:3px">.claude/</code> config is the source of truth; this page is kept for reference only.</div>
+<div class="wrap">
+
+<p class="eyebrow">CRM Backend · Engineering Process · 2026-07-02</p>
+<h1>The SDLC Process</h1>
+<p class="sub">Artifacts, agents, and skills — each with one job, bound to the engineering canon, and enforced mechanically wherever a machine can hold the line. This is a hub: read the map first — one picture of the whole pipeline, its forking lanes and running threads — then zoom into any phase for its detail. The governing principles live in <code>.claude/rules/references/engineering-canon.md</code>; everything below is their consequence.</p>
+
+<!-- ============ 1 · THE MAP ============ -->
+<h2><span class="n">1</span> The pipeline map — one trunk, four lanes, three threads</h2>
+<p class="because">The million-words picture. Four phases run left to right (the <b>trunk</b>); ◆ gates are the only places the pipeline waits for a human. The trunk is the default <b>class-1 extension</b> path — but triage forks four classes onto their own exit ramps: the <b>update</b> majority lane skips concept planning and rejoins the rail at the impact map (delta-stories only), a <b>bug</b> arcs straight to Build, a <b>module-scale / refactor</b> change loops per slice through Design. Beneath the trunk, three <b>threads</b> run continuously across phases. <span class="hint">Click a phase block to zoom: A opens the requirement-phase detail; B / C / D jump to their detail below.</span></p>
+
+<svg class="pmap" viewBox="0 0 1004 500" role="img" aria-label="SDLC pipeline map: four phase trunk with update, bug, and module-scale/refactor lanes and three cross-phase threads">
+  <defs>
+    <marker id="bugArrow" markerWidth="9" markerHeight="9" refX="6.5" refY="3" orient="auto"><path d="M0,0 L6.5,3 L0,6 Z" fill="#cf222e"/></marker>
+    <linearGradient id="alt" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#8250df"/>
+      <stop offset="0.36" stop-color="#0969da"/>
+      <stop offset="0.7" stop-color="#1b7c83"/>
+      <stop offset="1" stop-color="#1a7f37"/>
+    </linearGradient>
+  </defs>
+
+  <!-- legend -->
+  <line class="trunk" x1="14" y1="23" x2="40" y2="23"/>
+  <text x="45" y="27" font-size="10.5">extension trunk (class 1)</text>
+  <line class="update" x1="188" y1="23" x2="214" y2="23"/>
+  <text x="219" y="27" font-size="10.5">update lane (class 2)</text>
+  <line class="bug" x1="360" y1="23" x2="386" y2="23"/>
+  <text x="391" y="27" font-size="10.5">bug arc (3)</text>
+  <text x="470" y="27" font-size="10.5" fill="#8250df">↻</text>
+  <text x="484" y="27" font-size="10.5">module-scale / refactor loop (4)</text>
+  <text x="730" y="27" font-size="10.5" fill="#9a6700">◆</text>
+  <text x="744" y="27" font-size="10.5">human gate</text>
+
+  <!-- gate captions -->
+  <text x="242" y="52" text-anchor="middle" font-size="10" fill="#9a6700" font-weight="700">◆ G1 · requirements approved (1a PRD · 1b stories — see Phase A)</text>
+  <text x="776" y="52" text-anchor="middle" font-size="10.5" fill="#9a6700" font-weight="700">◆ G4 · commit + push</text>
+
+  <!-- trunk connectors + gates -->
+  <line class="trunk" x1="222" y1="108" x2="262" y2="108"/>
+  <line class="trunk" x1="486" y1="108" x2="510" y2="108"/>
+  <line class="trunk" x1="756" y1="108" x2="796" y2="108"/>
+  <polygon class="gate-d" points="242,94 256,108 242,122 228,108"/>
+  <text x="242" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#9a6700">1</text>
+  <polygon class="gate-d" points="776,94 790,108 776,122 762,108"/>
+  <text x="776" y="112" text-anchor="middle" font-size="11" font-weight="700" fill="#9a6700">4</text>
+
+  <!-- phase A -->
+  <a href="requirement-phase.html">
+    <rect class="phase-box" x="14" y="64" width="208" height="88" rx="9"/>
+    <text class="phase-t" x="118" y="85" text-anchor="middle" font-size="13">A · REQUIREMENT</text>
+    <text class="mut" x="118" y="101" text-anchor="middle" font-size="10.5">concept → contract</text>
+    <text class="mut mono" x="118" y="121" text-anchor="middle" font-size="9.5">ground · triage ⑂ · ideate¹ · LOCK¹</text>
+    <text class="mut mono" x="118" y="137" text-anchor="middle" font-size="9.5">PRD¹ ◆1a¹ · flows ✓ · stories → ◆1b</text>
+  </a>
+
+  <!-- update lane (class 2, majority): forks at A's triage, skips ideate/LOCK/PRD, re-enters A at the flows-patch/delta-stories micro-steps, then rides the trunk through G1 -->
+  <path class="update" d="M118,152 C140,163 178,163 200,152"/>
+  <path d="M200,144 l4,8 l-8,0 Z" fill="#0969da"/>
+  <text class="update-t" x="206" y="164" font-size="10" font-weight="700">2 · update (majority) — flows-patch + delta-stories only</text>
+
+  <!-- phase B -->
+  <a href="design-phase.html">
+    <rect class="phase-box" x="262" y="64" width="224" height="88" rx="9"/>
+    <text class="phase-t" x="374" y="85" text-anchor="middle" font-size="13">B · DESIGN</text>
+    <text x="374" y="101" text-anchor="middle" font-size="10.5">entry (depth) → blueprint* → ADR → tasks</text>
+    <text class="amber" x="374" y="118" text-anchor="middle" font-size="10.5">◆ G2 architecture · ◆ G3 plan</text>
+    <text class="mut" x="374" y="137" text-anchor="middle" font-size="10.5" font-style="italic">entity-level</text>
+  </a>
+  <path class="loop" d="M470,72 a7,7 0 1 1 -5,-2"/>
+  <path d="M463,64 l3,6 l-6,0 Z" fill="#8250df"/>
+
+  <!-- phase C -->
+  <a href="build-phase.html">
+    <rect class="phase-box" x="510" y="64" width="246" height="88" rx="9"/>
+    <text class="phase-t" x="633" y="85" text-anchor="middle" font-size="13">C · BUILD &amp; VERIFY</text>
+    <text x="633" y="101" text-anchor="middle" font-size="10.5">per slice: red → green → refactor</text>
+    <text x="633" y="118" text-anchor="middle" font-size="10.5">review per task · security*</text>
+    <text class="mut" x="633" y="137" text-anchor="middle" font-size="10.5" font-style="italic">code-level</text>
+  </a>
+
+  <!-- phase D -->
+  <a href="#phase-d">
+    <rect class="phase-box" x="796" y="64" width="196" height="88" rx="9"/>
+    <text class="phase-t" x="894" y="85" text-anchor="middle" font-size="13">D · SHIP</text>
+    <text x="894" y="101" text-anchor="middle" font-size="10.5">promote-to-envs</text>
+    <text class="mut" x="894" y="118" text-anchor="middle" font-size="10.5">one checklist</text>
+  </a>
+
+  <!-- bug lane: forks at A's triage, arcs under the trunk, re-enters at C -->
+  <circle cx="118" cy="128" r="3" fill="#cf222e"/>
+  <path class="bug" d="M118,142 L118,152"/>
+  <path class="bug" d="M118,152 C150,196 440,198 510,132" marker-end="url(#bugArrow)"/>
+  <text class="bug-t" x="30" y="212" font-size="9.5">bug lane — repro + failing test + root-cause; skips concept &amp; design (blast-radius dirs still declared — feeds scope-drift check)</text>
+
+  <!-- module-scale / refactor lane caption -->
+  <text class="loop-t" x="262" y="176" font-size="10.5">↻ module-scale → /design-module — per-slice blueprint→ADR→plan loop, one slice in flight</text>
+  <text class="loop-t" x="262" y="232" font-size="9.5">class 4 refactor boards with a two-sided impact map (before→after module graph) + parity inventory — no stories, ADR first</text>
+
+  <g transform="translate(0,40)">
+  <!-- thread 1 · Module Impact Map (A→C) -->
+  <rect class="band1" x="14" y="222" width="742" height="42" rx="8"/>
+  <line x1="18" y1="230" x2="18" y2="256" stroke="#9a6700" stroke-width="3" stroke-linecap="round"/>
+  <text class="band-t" x="30" y="240" font-size="11.5">Module Impact Map</text>
+  <rect x="152" y="230" width="64" height="14" rx="7" fill="#fff8c5" stroke="rgba(154,103,0,.32)"/>
+  <text class="mbadge" x="184" y="240" text-anchor="middle" font-size="9" fill="#9a6700">PROPOSED</text>
+  <text class="mut" x="30" y="257" font-size="10.5">born in A2's audit (Δ on the module graph) · seeds B (blueprint / ADR) · returns in C as the scope-drift check: diff ⊆ declared modules</text>
+
+  <!-- thread 2 · feature-context decision cards (A→C) -->
+  <rect class="band2" x="14" y="272" width="742" height="42" rx="8"/>
+  <line x1="18" y1="280" x2="18" y2="306" stroke="#1b7c83" stroke-width="3" stroke-linecap="round"/>
+  <text class="band-t" x="30" y="290" font-size="11.5">feature-context decision cards</text>
+  <rect x="222" y="280" width="76" height="14" rx="7" fill="#d6f3f5" stroke="rgba(27,124,131,.3)"/>
+  <text class="mbadge" x="260" y="290" text-anchor="middle" font-size="9" fill="#1b7c83">CONVENTION</text>
+  <text class="mut" x="30" y="307" font-size="10.5">concept card (A) · design cards (B) · task ticks (C) — read by the tick-evidence hook as ✔ artifacts</text>
+
+  <!-- thread 3 · Enforcement ladder (B→C) -->
+  <rect class="band3" x="262" y="322" width="494" height="42" rx="8"/>
+  <line x1="266" y1="330" x2="266" y2="356" stroke="#1a7f37" stroke-width="3" stroke-linecap="round"/>
+  <text class="band-t" x="278" y="340" font-size="11.5">Enforcement ladder (hooks)</text>
+  <rect x="458" y="330" width="58" height="14" rx="7" fill="#dafbe1" stroke="rgba(26,127,55,.3)"/>
+  <text class="mbadge" x="487" y="340" text-anchor="middle" font-size="9" fill="#1a7f37">SHIPPED</text>
+  <text class="mut" x="278" y="357" font-size="10.5">C1–C6 ordering · tick-evidence · dead-contract at plan (B) · quality-gate · ruff per edit (C)</text>
+
+  <!-- altitude ladder -->
+  <text class="mut mono" x="14" y="386" font-size="10">ALTITUDE</text>
+  <text class="mut" x="756" y="386" text-anchor="end" font-size="10">drops left → right</text>
+  <rect x="14" y="392" width="742" height="13" rx="6.5" fill="url(#alt)" opacity="0.9"/>
+  <line class="mut" x1="90" y1="405" x2="90" y2="411" stroke="#59636e"/>
+  <line class="mut" x1="285" y1="405" x2="285" y2="411" stroke="#59636e"/>
+  <line class="mut" x1="486" y1="405" x2="486" y2="411" stroke="#59636e"/>
+  <line class="mut" x1="690" y1="405" x2="690" y2="411" stroke="#59636e"/>
+  <text x="90" y="424" text-anchor="middle" font-size="10.5">concept · JTBD</text>
+  <text x="285" y="424" text-anchor="middle" font-size="10.5">planning · module</text>
+  <text x="486" y="424" text-anchor="middle" font-size="10.5">design · entity</text>
+  <text x="690" y="424" text-anchor="middle" font-size="10.5">build · code</text>
+  <text class="mut" x="385" y="446" text-anchor="middle" font-size="10.5" font-style="italic">the audit is module-altitude requirement work (which neighbourhoods) · design begins where entities begin</text>
+  </g>
+</svg>
+<p class="map-caption">⑂ at triage, four classes pick their exit ramps — see the Phase A zoom · ¹ = class-1-only micro-steps (the update lane skips them: no concept planning, delta-stories only) · * blueprint is optional in Phase B for small, well-understood extensions · security review in C is auto-triggered by sensitive paths</p>
+
+<div class="takeaway"><b>Four gates, everything else auto-chains.</b> Between gates, sub-decisions are announce-and-execute — the pipeline never serially round-trips a human for choices an approved plan already implies. The map is the hub; the stations below and the phase zooms (<a href="requirement-phase.html">A · requirement</a> · <a href="design-phase.html">B · design</a> · <a href="build-phase.html">C · build &amp; verify</a>) are the spokes.</div>
+
+<!-- ---- Phase detail rail (zoom targets) ---- -->
+<div class="rail">
+  <div class="pgroup" id="phase-a"><span class="pl">Phase A · Requirement</span><span class="pd">concept → contract · manager-owned, capability altitude · full detail on the Phase A zoom</span></div>
+  <div class="station static"><div class="row"><b>Phase A · Requirement</b><span class="who">manager</span><span class="skl">/intake-requirement · /write-prd · /write-user-flows · /write-user-stories</span></div>
+    <p>Thin human intent becomes a scoped, falsifiable set of stories across eight stations, split at concept lock: ground → triage → ideate → <b>LOCK</b> → PRD ◆1a → flows ✓ → stories → ◆1b. Three artifacts leave the phase — the <b>PRD</b> (broad entry contract), the <b>user flows</b>, and the <b>user stories + acceptance criteria</b> — reviewed on one living HTML page that stays alive until delivery. Code-level depth (impact analysis, escalation, scope fence) belongs to Phase B. <a href="requirement-phase.html">full 8-station detail ›</a></p>
+    <div style="margin-top:8px;display:flex;gap:8px;flex-wrap:wrap"><span class="chip" data-pane="prd">PRD contract ›</span><span class="chip" data-pane="stories">stories contract ›</span></div>
+  </div>
+  <div class="gate"><span class="sig">GATE 1 · requirements approved</span></div>
+
+  <div class="pgroup" id="phase-b"><span class="pl">Phase B · Design</span><span class="pd">entry (depth: deep read · T1–T6 · fence) → blueprint* → ADR → tasks · architect · entity-level altitude · <a href="design-phase.html">full station detail + open forks ›</a></span></div>
+  <div class="station" data-pane="blueprint"><div class="row"><b>Module Blueprint</b><span class="who">architect</span><span class="skl">/module-blueprint · /design-module</span></div><p>The model — logical layers, entities, exposed interface, behaviours. Interactive HTML, confirmed pass-by-pass. Optional for small changes.</p><span class="more">contract ›</span></div>
+  <div class="station" data-pane="adr"><div class="row"><b>ADR</b><span class="who">architect</span><span class="skl">/create-adr</span></div><p>Decisions and their WHY — trade-offs, failure modes, extension cost. Never a task log, never a signature dump.</p><span class="more">contract ›</span></div>
+  <div class="gate"><span class="sig">GATE 2 · architecture approved</span></div>
+  <div class="station" data-pane="tasks"><div class="row"><b>tasks-*.md</b><span class="who">architect</span><span class="skl">/task-breakdown</span></div><p>The breakdown and the order — outside-in slices, machine-checked. The ONLY home of build sequence.</p><span class="more">contract ›</span></div>
+  <div class="gate"><span class="sig">GATE 3 · plan approved</span></div>
+
+  <div class="pgroup" id="phase-c"><span class="pl">Phase C · Build &amp; Verify</span><span class="pd">per slice, test-first · developer + reviewer · security* auto-triggered · <a href="build-phase.html">full station detail + decision cards ›</a></span></div>
+  <div class="station" data-pane="code"><div class="row"><b>Code + tests, per slice</b><span class="who">developer</span><span class="skl">/dev-loop · /write-interactor</span></div><p>Red → green → refactor, outside-in: the slice's door first against stubs, then each collaborator to its derived contract, storage last.</p><span class="more">contract ›</span></div>
+  <div class="station" data-pane="review"><div class="row"><b>Review findings</b><span class="who">reviewer · security*</span><span class="skl">/review-pr · /self-review-checklist</span></div><p>Per task, fresh eyes, findings only. Critical/High auto-route back to the developer — no human prompt.</p><span class="more">contract ›</span></div>
+  <div class="gate"><span class="sig">GATE 4 · commit + push (one batched gate per plan)</span></div>
+
+  <div class="pgroup" id="phase-d"><span class="pl">Phase D · Ship</span><span class="pd">promote to envs · manager → developer · one checklist question</span></div>
+  <div class="station" data-pane="promote"><div class="row"><b>Env promotion PRs</b><span class="who">manager → developer</span><span class="skl">/promote-to-envs</span></div><p>One checklist question, then mechanical: per-env branches, merges, CodeCommit PRs.</p><span class="more">contract ›</span></div>
+</div>
+
+<!-- ============ 2 · ARTIFACT SEPARATION ============ -->
+<h2><span class="n">2</span> Artifact separation — one job each, boundaries checked</h2>
+<p class="because">Today's third correction round, generalized: every artifact answers exactly one question. Content that answers a different artifact's question is a leak — and each boundary has a check.</p>
+<table>
+  <tr><th>Artifact</th><th>Its one question</th><th>Must never contain</th><th>Boundary check</th></tr>
+  <tr><td><b>PRD</b></td><td>What problem, for whom, why now?</td><td>Solutions, schemas, effort</td><td>manager review at Gate 1</td></tr>
+  <tr><td><b>User stories</b></td><td>What does the actor do, and how do we know it works?</td><td>Implementation approach</td><td>INVEST shape; pre-gate scope questions</td></tr>
+  <tr><td><b>Blueprint</b></td><td>What is the model — layers, entities, the door?</td><td>Package names as design output; build order</td><td>exemplar-aligned skill structure</td></tr>
+  <tr><td><b>ADR</b></td><td>Why is the system shaped this way?</td><td><span class="no">Task lists · build order · signatures</span> — phasing = scope boundaries only</td><td>Name Replacement Test (hard check); pattern-name ban</td></tr>
+  <tr><td><b>tasks-*.md</b></td><td>What exactly, in what order?</td><td><span class="no">Rationale</span> — link <code>ADR §N</code> instead</td><td><code>check-task-ordering.py</code> C1–C3 (hook); Hard Checks section</td></tr>
+  <tr><td><b>Code + tests</b></td><td>Does it behave as the acceptance criteria say?</td><td>Undocumented deviation from the plan (halt + correction protocol instead)</td><td>quality-gate + ruff hooks; per-task review</td></tr>
+</table>
+
+<!-- ============ 3 · AGENTS ============ -->
+<h2><span class="n">3</span> Agents — who carries which part of the canon</h2>
+<p class="because">Each agent is strong in the slice of the canon its stage needs — the canon is carried at the point of decision, not recited everywhere. <span class="hint">Tap a card for mission, doctrine focus, and learning loop.</span></p>
+<div class="cards">
+  <div class="card" data-pane="a_manager"><b>manager</b><div class="role">Owns the WHAT — requirements → stories; drives the pipeline between gates</div><div class="canonline">use cases · INVEST · YAGNI-at-scope</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_architect"><b>architect</b><div class="role">Stories → blueprint, ADR, ordered plan; judged by cost-of-next-change</div><div class="canonline">CA dep-rule · SOLID · SDP/SAP · Walking Skeleton</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_developer"><b>developer</b><div class="role">Executes the dev loop per slice, outside-in, test-first</div><div class="canonline">GOOS · red-green-refactor · DIP · Demeter</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_reviewer"><b>reviewer</b><div class="role">Fresh-eyes invariant check; findings, never fixes</div><div class="canonline">SDP/SAP (item 10) · ISP (item 11) · LSP</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_security"><b>security</b><div class="role">Assume-breach on sensitive flows; tenancy invariant guardian</div><div class="canonline">OWASP · blast-radius</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_scout"><b>scout</b><div class="role">Runs the feature on gamma as a real user — the outermost check</div><div class="canonline">use-case ground truth, end-to-end</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_testwriter"><b>test-writer</b><div class="role">Tests assert the consumer's contract, not internals</div><div class="canonline">GOOS mocks · AAA · success+failure paths</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_dhruva"><b>dhruva</b><div class="role">System accelerator — owns the config ecosystem and the enforcement ladder</div><div class="canonline">promote prose → checks · knowledge ownership</div><span class="more">›</span></div>
+  <div class="card" data-pane="a_domain"><b>fees-agent · tdr-agent</b><div class="role">Domain experts consulted at any stage; read-only</div><div class="canonline">domain invariants as local canon</div><span class="more">›</span></div>
+</div>
+
+<!-- ============ 4 · SKILLS ============ -->
+<h2><span class="n">4</span> Skills — each step's procedure, with its hard checks</h2>
+<p class="because">Skills are workflows that fire at the authoring moment — each transforms one artifact into the next and runs its own gate before handing off.</p>
+<details><summary>📋 Requirements &amp; design skills <span class="chev">▸</span></summary><div class="body">
+<table>
+  <tr><th>Skill</th><th>Input → Output</th><th>Hard checks</th><th>Canon bound here</th></tr>
+  <tr><td><code>write-prd</code></td><td>idea → PRD</td><td>codebase grounding before writing</td><td>use cases, YAGNI</td></tr>
+  <tr><td><code>intake-requirement</code></td><td>raw ask → triaged class → locked concept → broad PRD ◆1a → flows ✓ → stories ◆1b → dispatch</td><td>completeness pre-check; pre-gate scope questions; no code reading in Phase A</td><td>INVEST / vertical slicing</td></tr>
+  <tr><td><code>write-user-flows</code> <em>(proposed)</em></td><td>finalized PRD → flows.md (one journey per actor, diagram-first)</td><td>derive from finalized PRD only; checkpoint before stories</td><td>use cases first</td></tr>
+  <tr><td><code>write-user-stories</code></td><td>confirmed flows → role-scoped stories + Given/When/Then AC (or class-2 delta-stories)</td><td>derive from confirmed flows only; confirmed-vs-assumed provenance</td><td>INVEST / vertical slicing</td></tr>
+  <tr><td><code>module-blueprint</code></td><td>scope → interactive model report</td><td>exemplar alignment (pinned commit)</td><td>outside-in reading; consumer-owns-contract</td></tr>
+  <tr><td><code>design-module</code></td><td>module scope → blueprint→ADR→plan per slice</td><td><b>Step-0 behavior-parity inventory</b> before any design; no code until slice design locked</td><td>Walking Skeleton, slicing</td></tr>
+  <tr><td><code>create-adr</code></td><td>blueprint/stories → ADR</td><td><b>Name Replacement Test</b>; pattern-name ban; no build-order content</td><td>artifact separation</td></tr>
+  <tr><td><code>task-breakdown</code></td><td>ADR → tasks-*.md</td><td><b>Hard Checks section</b>; no restated rationale; ordering machine-checked</td><td>outside-in derivation, DIP</td></tr>
+</table></div></details>
+<details><summary>🔨 Build &amp; verify skills <span class="chev">▸</span></summary><div class="body">
+<table>
+  <tr><th>Skill</th><th>Input → Output</th><th>Hard checks</th><th>Canon bound here</th></tr>
+  <tr><td><code>dev-loop</code></td><td>one task → shipped slice increment</td><td>non-skippable stages; schema-regen check; commit batched to end-of-plan</td><td>red-green-refactor; no batching; no debt forwarding</td></tr>
+  <tr><td><code>write-interactor</code></td><td>use case → interactor + derived interface + tests</td><td>design proposed before code; interactor invariants</td><td>SRP, DIP, tell-don't-ask</td></tr>
+  <tr><td><code>interactor-test-writer</code></td><td>interactor → unit tests</td><td>case list approved first; autospec mocks; AAA</td><td>GOOS: test the contract</td></tr>
+  <tr><td><code>self-review-checklist</code></td><td>changed files → pass/fail into review</td><td>memory-driven sweep of every changed .py</td><td>review invariants, pre-flighted</td></tr>
+  <tr><td><code>review-pr</code></td><td>diff → severity-ranked findings</td><td>items 10 (dependency direction) + 11 (dead contracts)</td><td>SDP/SAP, ISP as pass/fail</td></tr>
+  <tr><td><code>promote-to-envs</code></td><td>pushed branch → env PRs</td><td>canonical-five branch validation</td><td>none — deliberately mechanical</td></tr>
+</table></div></details>
+
+<!-- ============ 5 · ENFORCEMENT ============ -->
+<h2><span class="n">5</span> The enforcement ladder — where principles actually live</h2>
+<p class="because">Proven three times in one day: every fix that stuck moved a principle DOWN this ladder. The ladder is the answer to "how do I test that the agents follow the process."</p>
+<div class="ladder">
+  <div class="rung r1"><b>Rung 1 — Hooks</b><span class="tag">deterministic</span>
+    <p>Fire on tool events; cannot be rationalized past. The bottom of the ladder is the top of reliability.</p>
+    <ul>
+      <li><code>quality-gate.sh</code> — cross-app imports (CA dependency rule) · bare except · logging in interactors · property-vs-method no-op · configio row-scope writes</li>
+      <li><code>check-task-ordering.py</code> — C1–C6: no storage parent before consuming interactors · no storage sub-task before the slice's interactor · no impl before interface · door-before-engines · level-N ordering · slice-naming</li>
+      <li><code>check-tick-evidence.py</code> — a task tick requires its ✔ artifact · <code>check-dead-contracts.py</code> — every interface/port method requires an interactor call site</li>
+      <li><code>ruff-check.sh</code> · <code>preflight-check.sh</code> · <code>validate-config.sh</code></li>
+    </ul></div>
+  <div class="rung r2"><b>Rung 2 — Skill hard-checks</b><span class="tag">authoring-time</span>
+    <p>Run at the moment the artifact is written: Name Replacement Test (ADR) · Hard Checks section (plan) · Step-0 parity inventory (design-module) · memory-driven self-review sweep · branch validation (promote).</p></div>
+  <div class="rung r3"><b>Rung 3 — Persona prose</b><span class="tag">judgment</span>
+    <p>Reviewer items 10/11 · the architect's extension-cost KPI · rules' WHY sections · agent memory. <b>Prose is where a principle waits for promotion, not where it lives permanently.</b></p></div>
+</div>
+<div class="metric">
+  <div class="stat"><div class="big">6 / 15</div><span>canon principles mechanically enforced today</span></div>
+  <div class="stat"><div class="big">9 / 15</div><span>canon principles mechanically enforced (shipped 2026-07-02)</span></div>
+  <div class="stat"><div class="big">0 lines</div><span>always-on context cost — canon loads on demand, checks are hooks</span></div>
+</div>
+<details><summary>⚙️ The three checks (shipped 2026-07-02) <span class="chev">▸</span></summary><div class="body">
+<table>
+  <tr><th>Check</th><th>What it mechanizes</th><th>Correction round it caught</th></tr>
+  <tr><td><b>Ordering-lint v2</b> (C4 door-before-engines, C5 level-N)</td><td>Outside-in build order: no task at level N+1 before its level-N consumer</td><td>Round 2 — "engines before the door"</td></tr>
+  <tr><td><b>Dead-contract check</b></td><td>Every <code>storage_interfaces/</code> and <code>ports/</code> ABC method must have an interactor call site</td><td>Round 1 — table-shaped interfaces (promotes reviewer item 11 to a lint)</td></tr>
+  <tr><td><b>Slice-naming check</b> (C6)</td><td>Task titles must be verb + domain outcome; layer-noun titles rejected</td><td>Round 1, at the moment the plan was written</td></tr>
+</table></div></details>
+
+<!-- ============ 6 · CANON BINDING ============ -->
+<h2><span class="n">6</span> The canon — which principle binds at which stage</h2>
+<p class="because">Names are lookup keys in the <em>process</em>, never decoration in artifacts (the ADR pattern-name ban stays). Full entries live in the proposed on-demand reference <code>rules/references/engineering-canon.md</code>.</p>
+<details open><summary>📚 Stage-binding map — 15 principles <span class="chev">▸</span></summary><div class="body">
+<table>
+  <tr><th>Principle</th><th>Plan</th><th>Breakdown</th><th>Impl</th><th>Review</th><th>Enforcement today</th></tr>
+  <tr><td>SRP (Martin)</td><td>●</td><td>●</td><td>●</td><td>●</td><td>prose</td></tr>
+  <tr><td>OCP (Meyer/Martin)</td><td>●</td><td></td><td>●</td><td>●</td><td>prose — architect's extension-cost KPI</td></tr>
+  <tr><td>LSP (Liskov)</td><td></td><td></td><td>●</td><td>●</td><td>prose</td></tr>
+  <tr><td>ISP (Martin)</td><td>●</td><td>●</td><td></td><td>●</td><td class="yes">check-dead-contracts.py hook</td></tr>
+  <tr><td>DIP (Martin)</td><td>●</td><td>●</td><td>●</td><td>●</td><td class="yes">quality-gate grep · ordering C3</td></tr>
+  <tr><td>SDP/SAP (component)</td><td>●</td><td></td><td></td><td>●</td><td class="yes">reviewer item 10 · quality-gate</td></tr>
+  <tr><td>CCP/CRP (component)</td><td>●</td><td></td><td></td><td>●</td><td>prose</td></tr>
+  <tr><td>CA dependency rule</td><td>●</td><td></td><td>●</td><td>●</td><td class="yes">quality-gate cross-app grep</td></tr>
+  <tr><td>Outside-in TDD (GOOS)</td><td></td><td>●</td><td>●</td><td></td><td class="yes">ordering C1/C2/C4/C5 (hooks)</td></tr>
+  <tr><td>Red-green-refactor (Beck)</td><td></td><td></td><td>●</td><td></td><td class="yes">dev-loop stages (skill hard-order, shipped)</td></tr>
+  <tr><td>Walking Skeleton (Cockburn)</td><td>●</td><td>●</td><td></td><td></td><td>prose — design-module slice-first</td></tr>
+  <tr><td>Vertical slicing / INVEST</td><td></td><td>●</td><td></td><td></td><td class="yes">C6 slice-naming lint</td></tr>
+  <tr><td>YAGNI (Beck)</td><td>●</td><td>●</td><td>●</td><td>●</td><td>prose — create-adr exclusion list</td></tr>
+  <tr><td>Law of Demeter</td><td></td><td></td><td>●</td><td>●</td><td>prose — clean-code.md</td></tr>
+  <tr><td>Tell-don't-ask / DRY</td><td></td><td>●</td><td>●</td><td>●</td><td>prose — rich-domain-models.md (scoped) · clean-code.md</td></tr>
+</table></div></details>
+
+<div class="takeaway"><b>Canon package accepted &amp; implemented — 2026-07-02.</b> ① <code>engineering-canon.md</code> live (on-demand reference) · ② ordering-lint v2 (C4 door-before-engines, C5 level-N, C6 slice-naming) + tick-evidence + dead-contract hooks wired · ③ dev-loop flipped to test-first (red-green-refactor) · ④ write-prd input contract landed (Fed By + NO-INVENTION + Actors/Flows). Remaining: architect rewrites the F1 plan outside-in.</div>
+
+<p class="foot">Prepared jointly: architect (process, artifacts, doctrine) + dhruva (agents, skills, enforcement, knowledge ownership).
+Sources: <code>.claude/proposals/engineering-canon-proposal.md</code> · <code>process-report-dhruva-sections.md</code> · today's three correction rounds (REF-001).
+Everything marked <em>proposed</em> awaits Gate approval; all else is live config.</p>
+</div>
+
+<!-- ---------- pane ---------- -->
+<div id="overlay"></div>
+<aside id="pane"><button class="close" aria-label="close">✕</button><div class="inner" id="paneBody"></div></aside>
+
+<script>
+const PANE={
+ prd:{ey:"artifact · Phase A",t:"PRD — entry contract",p:"A transformation, never a creation: raw human intent in, structured contract out. The full input contract and NO-INVENTION rule live on the Phase A zoom.",rows:[["Its one job","Problem · target users · success criteria · constraints · out-of-scope — the WHAT-seeds and the envelope around them"],["Consumer","manager (primary — /intake-requirement) · architect (read-only sole-witness sections: Out-of-Scope, Constraints, Terminology, Error Scenarios)"],["Full detail","requirement-phase.html — the Phase A zoom (Fed-by inputs, contract, section fate)"]]},
+ stories:{ey:"artifact · Phase A",t:"User stories + acceptance criteria",p:"The scope, sliced into caller-nameable use cases with testable acceptance criteria. Pre-gate ambiguities are surfaced as questions — never resolved silently.",rows:[["Its one job","Actor + behaviour + outcome per story; acceptance criteria in domain vocabulary (canonical — code must reuse these exact terms)"],["Consumer","architect (blueprint/ADR) · scout (gamma test plan ground truth)"],["Full detail","requirement-phase.html — the Phase A zoom"]]},
+ blueprint:{ey:"artifact · the model",t:"Module Blueprint",p:"Interactive HTML read outside-in: the model (layers + entities, one picture) → the exposed interface (the door) → the behaviours. Confirmed pass-by-pass before the ADR. Optional for small, well-understood changes.",rows:[["Contains","Logical layers · entity taxonomy · one-door interface · L2 deep dives ONLY for decision-heavy engines (no decision cards → no deep dive)"],["Never contains","Package names as design output · build order · code"],["Consumer","user (confirmation) · ADR (decision cards feed it)"],["Checked by","module-blueprint skill structure, pinned to the workflow-engine exemplar"]]},
+ adr:{ey:"artifact · the WHY",t:"ADR",p:"Key architectural decisions with their reasoning — context, trade-offs, failure handling, extension cost. A record a future engineer reads to understand why the system is shaped this way.",rows:[["Contains","Decisions + rationale · rejected alternatives · failure modes · Extension Cost per confirmed change axis · phase boundaries (scope only)"],["Never contains","Task lists · build order · signatures · DTO shapes · pattern-name decoration (per the hard ban)"],["Consumer","task-breakdown · reviewer · future engineers"],["Checked by","Name Replacement Test (hard check) · exclusion list · Gate 2"]]},
+ tasks:{ey:"artifact · the ORDER",t:"tasks-*.md",p:"The breakdown: outside-in use-case slices, each task atomic and self-checkable. The ONLY home of build sequence — rationale lives in the ADR, linked by section.",rows:[["Contains","Slices as caller-nameable behaviours · per-slice descent (door → contracts → providers → storage) · per-task validation (✔) · file map"],["Never contains","Rationale (link ADR §N) · decisions"],["Consumer","developer (dev-loop) · manager (progress tracking)"],["Checked by","check-task-ordering.py C1–C3 (hook, fires on write) · Hard Checks in /task-breakdown · Gate 3"]]},
+ code:{ey:"artifact · the PROOF",t:"Code + tests, per slice",p:"Built outside-in and test-first: the slice's failing acceptance-shaped test against stubs, then each collaborator to its derived contract, storage implementations last. The build re-verifies the design at every level.",rows:[["Contains","Interactor whose main method reads as the story · consumer-derived interfaces · tests at every level (success + failure paths)"],["Never contains","Workarounds for wrong plans (halt + Design Correction Protocol) · speculative contract methods"],["Consumer","reviewer · the next slice"],["Checked by","quality-gate + ruff hooks (every edit) · self-review · independent review per task"]]},
+ review:{ey:"artifact · the VERDICT",t:"Review findings",p:"Structured findings by severity from fresh eyes, per task. Critical/High auto-route to the developer and back — the loop never asks a human 'should I fix these?'.",rows:[["Contains","Severity-ranked findings with file:line + violated rule/ADR section · APPROVED or CHANGES REQUESTED"],["Never contains","Fixes (reviewer never edits) · re-litigated approved decisions (intentional deviations live in reviewer memory)"],["Consumer","developer (fix cycle) · commit gate"],["Checked by","reviewer checklist incl. items 10 (dependency direction) + 11 (dead contracts)"]]},
+ promote:{ey:"artifact · the RELEASE",t:"Env promotion PRs",p:"After the batched commit+push gate: ONE checklist question (which of the five canonical env branches), then the mechanics run without further prompts.",rows:[["Contains","Per-env integration branch · merge · CodeCommit PR (table: target, PR id, URL)"],["Never contains","tg-bn-prod (prod promotion is a separate release step)"],["Consumer","env owners"],["Checked by","canonical-five branch validation (unknown branch = hard error)"]]},
+ a_manager:{ey:"agent · the WHAT",t:"manager",p:"Feature orchestrator: requirements → user stories, feature tracking, context switching; drives the pipeline between gates as the top-level session.",rows:[["Doctrine focus","Slice scope into caller-nameable use cases; pre-gate interpretations are QUESTIONS, never silent defaults"],["Canon carried","Use cases (Jacobson) · INVEST · YAGNI at scope time"],["Learning loop","agent-memory/manager/MEMORY.md"]]},
+ a_architect:{ey:"agent · the HOW",t:"architect",p:"Turns approved stories into blueprints, ADRs, schemas, and dependency-ordered plans. KPI: the cost of the next likely change.",rows:[["Doctrine focus","Build order = derivation order = outside-in; strict artifact separation; design effort ∝ decision density"],["Canon carried","CA dependency rule · SRP/OCP/ISP/DIP · SDP/SAP · CCP/CRP · Walking Skeleton · YAGNI"],["Learning loop","agent-memory/architect/MEMORY.md — today's ordering + separation lessons already recorded"]]},
+ a_developer:{ey:"agent · the BUILD",t:"developer",p:"Executes the dev loop per task: implement → verify → test → self-review → independent review → integrate. Halts and reports when the plan is wrong — never works around it.",rows:[["Doctrine focus","Consumer owns the contract at every seam; the interactor DEMANDS its storage interface, never inherits a pre-built one"],["Canon carried","Outside-in TDD (GOOS) · red-green-refactor (pending dev-loop flip) · DIP · Law of Demeter · tell-don't-ask · DRY"],["Learning loop","agent-memory/developer/MEMORY.md"]]},
+ a_reviewer:{ey:"agent · the NET",t:"reviewer",p:"Independent fresh-eyes review after self-review passes. Findings only — never fixes. The post-hoc net for everything the hooks can't see.",rows:[["Doctrine focus","Items 10 (dependency direction: engines define ports, arrows point apps→engine) and 11 (dead storage contracts) are the doctrine's review-side enforcement"],["Canon carried","SDP/SAP · ISP · LSP · clean-code invariants"],["Learning loop","agent-memory/reviewer/MEMORY.md — includes architect-flagged intentional deviations so they aren't re-flagged"]]},
+ a_security:{ey:"agent · the SHIELD",t:"security",p:"Deep analysis on sensitive flows (iam, payments, razorpay, bps, tdr) — auto-triggered by path. Assume-breach posture.",rows:[["Doctrine focus","The tenancy invariant: writes bind to the AUTHORISED scope, never a CSV-row scope — the bug class that shipped three times"],["Canon carried","OWASP · blast-radius thinking (canon-adjacent)"],["Learning loop","agent-memory/security/MEMORY.md"]]},
+ a_scout:{ey:"agent · the FIELD TEST",t:"scout",p:"Runs the feature on gamma exactly as an end user would — real GraphQL, PG/DDB/S3 read-backs. Manual invocation; not in the auto-chain.",rows:[["Doctrine focus","Acceptance criteria are ground truth — the outermost outside-in verification, catching what unit tests structurally cannot"],["Canon carried","Use-case ground truth · the Walking Skeleton verified at runtime"],["Learning loop","findings route to developer/manager"]]},
+ a_testwriter:{ey:"agent · the PROOF-WRITER",t:"test-writer",p:"Writes unit and integration tests for developer output when delegated.",rows:[["Doctrine focus","Tests assert the CONSUMER'S contract — autospec'd interfaces, exact-kwargs assertions — never implementation internals"],["Canon carried","GOOS mock-the-collaborator · AAA discipline · success + failure paths per method"],["Learning loop","via developer/reviewer memory through the skills"]]},
+ a_dhruva:{ey:"agent · the SYSTEM",t:"dhruva",p:"The pole star — designs the agent/skill/rule ecosystem, audits config, owns memory hygiene and the enforcement ladder.",rows:[["Doctrine focus","Push every principle DOWN the ladder: prose that failed twice becomes a check; knowledge lives in exactly one home"],["Canon carried","The ladder itself · knowledge-ownership discipline · context-budget economics"],["Learning loop","agent-memory/dhruva/MEMORY.md"]]},
+ a_domain:{ey:"agents · the EXPERTS",t:"fees-agent · tdr-agent",p:"Domain experts consulted by manager/architect/developer as nested sub-agents. Read-only; they answer, they never build.",rows:[["Doctrine focus","Validate domain invariants (payment lifecycle, TDR balance/purity) at whichever stage consults them; their answers are synthesized into the caller's artifact, not pasted"],["Canon carried","Domain invariants as the LOCAL canon"],["Learning loop","project-scoped memory (frontmatter)"]]}
+};
+const pane=document.getElementById('pane'),overlay=document.getElementById('overlay'),body=document.getElementById('paneBody');
+function openPane(k){const d=PANE[k];if(!d)return;
+ body.innerHTML=`<p class="peyebrow">${d.ey}</p><h3>${d.t}</h3><p class="plain">${d.p}</p>`+
+  d.rows.map(r=>`<div class="krow"><div class="k">${r[0]}</div><div>${r[1]}</div></div>`).join('');
+ pane.classList.add('on');overlay.classList.add('on');}
+function closePane(){pane.classList.remove('on');overlay.classList.remove('on');}
+document.querySelectorAll('[data-pane]').forEach(el=>el.addEventListener('click',()=>openPane(el.dataset.pane)));
+overlay.addEventListener('click',closePane);
+pane.querySelector('.close').addEventListener('click',closePane);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePane();});
+</script>
+</body>
+</html>

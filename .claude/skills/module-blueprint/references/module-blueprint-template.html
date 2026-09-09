@@ -1,0 +1,727 @@
+<!DOCTYPE html>
+<!--
+  ============================================================================
+  MODULE BLUEPRINT TEMPLATE  (self-contained · inline CSS+JS · zero deps)
+  ----------------------------------------------------------------------------
+  An interactive, logic-first design report the architect produces in Phase 1.
+  Derived inside-out (nouns -> verbs -> home each -> layers emerge) but READ
+  outside-in, in three passes:
+        Pass 1  The model             logical layers + entities · ONE picture
+        Pass 2  The exposed interface the module's public API · one door per use case
+        Pass 3  Behaviours            the verbs behind the door · grouped by layer
+  Plus an OPTIONAL L2 zoom — a full-screen deep-dive PER DECISION-HEAVY ENGINE
+  (ordered class map + decision cards), opened from that engine's layer pane.
+  Zoom levels, not scroll: L0 = this page · L1 = side panes · L2 = the deep dives.
+  EARN IT — CRUD/pass-through/plumbing layers never get one; no decision cards, no deep dive.
+
+  Canonical exemplar to match:
+        workflow_engine/docs/design/workflow-engine-design-walkthrough.html
+
+  HOW TO FILL (do NOT touch the CSS or JS engine — only the marked zones):
+    1. Replace every  {{...}}  token and every  <!-- FILL: ... -->  block.
+    2. LAYERS, NOT FOLDERS. The page names concerns. A package name appears
+       ONLY as a "Projected package" row inside a layer's side pane.
+    3. ONE picture. Every contract / port catalog / meta detail lives behind a
+       click (side pane) or hover (popover) — never as a table beside the diagram.
+    4. Pass 2 is PUBLIC API ONLY. Consumed ports are NOT exposed — they live in
+       the Fact-providers layer pane as a port catalog (see PANE.lfacts).
+    5. Wire jargon:  <span class="term" data-pop="KEY">…</span>  + POPS.KEY.
+    6. Wire a clickable box/chip:  data-pane="KEY"  + PANE.KEY = {...}.
+    7. L2 deep dive (OPTIONAL, per decision-heavy engine): add  dd:"dd-KEY"  to that
+       engine's PANE entry + one <section class="ddview" id="dd-KEY">. A deep dive is
+       TABBED — every tab is a READER QUESTION about THAT engine: How it works ·
+       Add a <plugin> (only for OCP surfaces) · Why this design. The interactor mirror is
+       NOT a tab — it is orchestration content, so it lives in Pass 2 (see item 9).
+       "How it works" is a PHASED NARRATIVE (declare → wire → execute): prose carries the
+       causality, classes/tables/skeletons are in-story exhibits. Delete the placeholder
+       ddview if no engine earns one; delete tabs that don't apply.
+    9. Pass 2 carries the interactor mirror — a collapsed <details> "The composition behind
+       the door — <Interactor>" under the exposed-API table (the main method as annotated code).
+    8. The footer MUST cite the real source files you verified names against.
+
+  THEME = change one :root block. Default is the light GitHub palette.
+  A dark Catppuccin variant is provided below — comment the light one, uncomment it.
+  ============================================================================
+-->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>{{SUBJECT}} · design walkthrough</title>
+<style>
+  /* ---- LIGHT · GitHub tokens (default) ---- */
+  :root{
+    --bg:#f6f8fa;--panel:#ffffff;--panel2:#eef1f5;--ink:#1f2328;--muted:#59636e;
+    --line:#d0d7de;--accent:#0969da;--green:#1a7f37;--amber:#bc5800;--violet:#8250df;
+    --rose:#cf222e;--teal:#0d7d76;--shadow:0 10px 34px rgba(31,35,40,.14)
+  }
+  /* ---- DARK · Catppuccin Mocha (swap: comment the block above, uncomment this) ----
+  :root{
+    --bg:#1e1e2e;--panel:#181825;--panel2:#313244;--ink:#cdd6f4;--muted:#a6adc8;
+    --line:#45475a;--accent:#89b4fa;--green:#a6e3a1;--amber:#fab387;--violet:#cba6f7;
+    --rose:#f38ba8;--teal:#94e2d5;--shadow:0 10px 34px rgba(0,0,0,.45)
+  }
+  ---- end Catppuccin ---- */
+
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--ink);
+    font:15px/1.65 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Arial,sans-serif}
+  .wrap{max-width:940px;margin:0 auto;padding:40px 24px 90px}
+  h1{font-size:27px;margin:0 0 6px;letter-spacing:-.01em}
+  .sub{color:var(--muted);margin:0 0 22px;font-size:15px}
+  code{background:var(--panel2);border:1px solid var(--line);border-radius:4px;padding:1px 6px;
+    font:12.5px "SF Mono",Menlo,Consolas,monospace;color:var(--green)}
+  p{margin:8px 0}
+
+  /* stepper */
+  .stepper{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:8px 0 28px}
+  @media(max-width:700px){.stepper{grid-template-columns:1fr}}
+  .step{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:13px 15px;
+    text-decoration:none;color:inherit;transition:.15s;display:block}
+  .step:hover{border-color:var(--accent);transform:translateY(-2px)}
+  .step .sn{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);font-weight:700}
+  .step .st{font-size:15px;font-weight:700;margin:3px 0 2px}
+  .step .sd{font-size:12px;color:var(--muted)}
+  .step .arw{color:var(--muted);font-size:12px}
+
+  h2{font-size:19px;margin:40px 0 6px;padding-bottom:8px;border-bottom:1px solid var(--line);
+    display:flex;align-items:center;gap:12px}
+  h2 .n{flex:none;width:28px;height:28px;border-radius:9px;background:var(--accent);color:#ffffff;
+    font-size:14px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .because{color:var(--muted);font-size:13px;margin:0 0 14px;font-style:italic}
+
+  /* ---- Pass 1 · the layer-stack diagram (ONE picture) ---- */
+  .ldg{margin:14px 0 20px}
+  .lrow{display:grid;gap:8px}
+  .lrow.split{grid-template-columns:repeat(var(--cols,3),1fr)}
+  @media(max-width:700px){.lrow.split{grid-template-columns:1fr}}
+  .lbox{border:1.5px solid var(--line);border-radius:11px;padding:10px 14px;background:var(--panel);
+    font-weight:700;font-size:13.5px;text-align:center;transition:.15s}
+  .lbox[data-pane]{cursor:pointer}
+  .lbox[data-pane]:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(31,35,40,.10)}
+  .lbox span{display:block;font-weight:400;font-size:11.5px;color:var(--muted);margin-top:2px;line-height:1.4}
+  /* generic layer tints — pick one per layer box (maps to the palette roles) */
+  .l-accent{border-color:rgba(9,105,218,.5);color:var(--accent)}
+  .l-amber{border-color:rgba(188,88,0,.45);color:var(--amber)}
+  .l-teal{border-color:rgba(13,125,118,.5);color:var(--teal)}
+  .l-violet{border-color:rgba(130,80,223,.45);color:var(--violet)}
+  .l-muted{border-color:rgba(87,99,110,.5);color:var(--muted)}
+  .l-subj{border-color:rgba(31,35,40,.55);color:var(--ink)}   /* the subject band, on top */
+  .larr{text-align:center;color:var(--muted);font-size:11px;margin:5px 0}
+  /* entity chips embedded in a layer box (or the edge band) */
+  .ent{display:flex;justify-content:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .echip{display:inline-flex;align-items:center;gap:7px;border:1px solid var(--line);background:var(--panel2);
+    border-radius:9px;padding:5px 13px;font-weight:700;font-size:13px;cursor:pointer;color:inherit;font-family:inherit;transition:.15s}
+  .echip:hover{border-color:var(--accent);transform:translateY(-1px);background:var(--panel)}
+  .echip .ei{font-size:15px}
+  .echip small{font-weight:400;color:var(--muted);font-size:11px}
+  /* the composite edge band — fact providers + external world, one box, dashed divider */
+  .edge{padding:0;overflow:hidden}
+  .edge .inner{padding:10px 14px 9px}
+  .edge .below{border-top:1.5px dashed rgba(87,99,110,.55);background:rgba(31,35,40,.03);padding:9px 14px 12px;font-weight:400}
+  .edge .boundary{font-size:10.5px;color:var(--muted);letter-spacing:.05em;text-transform:uppercase;margin:0 0 8px}
+
+  /* popover terms */
+  .term{border-bottom:1.5px dotted var(--amber);color:var(--amber);cursor:help;font-weight:600}
+  #pop{position:fixed;z-index:60;max-width:290px;background:var(--panel);border:1px solid var(--amber);
+    border-radius:10px;padding:11px 14px;font-size:12.5px;line-height:1.5;color:var(--ink);
+    box-shadow:var(--shadow);display:none}
+  #pop .pt{color:var(--amber);font-weight:800;font-size:11px;letter-spacing:.05em;text-transform:uppercase;margin:0 0 4px}
+
+  /* ---- Pass 3 · behaviours (details / progressive reveal, grouped by layer) ---- */
+  .eg2{border:1.5px dashed var(--line);border-radius:15px;padding:8px 10px 9px;margin:12px 0;background:rgba(31,35,40,.015)}
+  .eg2 .gl{font-size:10px;font-weight:800;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:2px 0 4px;padding-left:4px}
+  .eg2 .gl b{color:var(--accent)}
+  .eg2 details{margin:7px 0}
+  details{background:var(--panel);border:1px solid var(--line);border-radius:12px;margin:9px 0;overflow:hidden}
+  details[open]{border-color:var(--accent)}
+  summary{cursor:pointer;padding:14px 16px;font-weight:600;font-size:14.5px;list-style:none;display:flex;
+    align-items:center;gap:11px;user-select:none}
+  summary::-webkit-details-marker{display:none}
+  summary .em{font-size:18px}
+  summary .chev{margin-left:auto;color:var(--muted);transition:.2s}
+  details[open] summary .chev{transform:rotate(90deg);color:var(--accent)}
+  .verbs{padding:4px 16px 15px;border-top:1px solid var(--line)}
+  .verb{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px dashed var(--line)}
+  .verb:last-child{border-bottom:0}
+  .verb .sig{font:12.5px "SF Mono",Menlo,Consolas,monospace;color:var(--muted);flex:none}
+  .verb .dsc{font-size:13px;color:var(--muted)}
+  .verb .tags{margin-left:auto;flex:none;display:flex;gap:5px}
+  .tag{display:inline-block;font-size:9.5px;font-weight:700;padding:2px 8px;border-radius:999px;white-space:nowrap}
+  /* tag palette — rename/recolour clusters to fit the subject's responsibility model */
+  .t-now{background:rgba(9,105,218,.16);color:var(--accent);border:1px solid rgba(9,105,218,.4)}
+  .t-later{background:rgba(130,80,223,.15);color:var(--violet);border:1px solid rgba(130,80,223,.45)}
+  .t-cfg{background:rgba(87,99,110,.12);color:var(--muted);border:1px solid rgba(87,99,110,.3)}
+  .t-decide{background:rgba(13,125,118,.15);color:var(--teal);border:1px solid rgba(13,125,118,.45)}
+  .t-exec{background:rgba(130,80,223,.13);color:var(--violet);border:1px solid rgba(130,80,223,.4)}
+  .clegend{font-size:12.5px;color:var(--muted);margin:0 0 14px;display:flex;flex-wrap:wrap;gap:6px 14px}
+  .clegend b{color:var(--ink)}
+
+  /* key-insight callout */
+  .fault{background:linear-gradient(160deg,rgba(26,127,55,.12),rgba(26,127,55,.03));border:1px solid var(--line);
+    border-left:3px solid var(--green);border-radius:12px;padding:15px 18px;margin:16px 0}
+  .fault b{color:var(--green)}
+
+  /* tables (Pass 2 · exposed interface) */
+  table{width:100%;border-collapse:collapse;font-size:13px;margin:10px 0}
+  th,td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{color:var(--ink);background:var(--panel2);font-size:11.5px;letter-spacing:.04em;text-transform:uppercase}
+  td code{font-size:11.5px}
+  .when{font-size:10px;font-weight:800;padding:2px 7px;border-radius:999px}
+  .w-now{background:rgba(9,105,218,.16);color:var(--accent);border:1px solid rgba(9,105,218,.4)}
+  .w-later{background:rgba(130,80,223,.15);color:var(--violet);border:1px solid rgba(130,80,223,.45)}
+  .prod{font-size:11px;color:var(--muted)}
+
+  .takeaway{background:var(--panel);border:1px solid var(--line);border-radius:11px;padding:13px 16px;margin:9px 0;font-size:13.5px}
+  .takeaway b{color:var(--accent)}
+
+  /* side pane */
+  #ov{position:fixed;inset:0;background:rgba(31,35,40,.34);backdrop-filter:blur(2px);z-index:50;opacity:0;pointer-events:none;transition:.22s}
+  #ov.on{opacity:1;pointer-events:auto}
+  #pane{position:fixed;top:0;right:0;height:100%;width:min(460px,92vw);background:var(--panel);
+    border-left:1px solid var(--line);box-shadow:var(--shadow);z-index:51;
+    transform:translateX(100%);transition:.28s cubic-bezier(.4,0,.2,1);overflow-y:auto;padding:26px 26px 60px}
+  #pane.on{transform:translateX(0)}
+  #pane .close{position:absolute;top:16px;right:18px;background:var(--panel2);border:1px solid var(--line);
+    color:var(--muted);border-radius:8px;width:32px;height:32px;font-size:17px;cursor:pointer}
+  #pane .close:hover{color:var(--ink);border-color:var(--accent)}
+  #pane .peyebrow{font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--accent);margin:0 0 4px}
+  #pane h3{margin:0 0 12px;font-size:21px}
+  #pane .plain{background:var(--panel2);border-radius:10px;padding:13px 15px;margin:0 0 14px;font-size:14.5px}
+  #pane .analogy{border-left:3px solid var(--teal);padding:6px 0 6px 13px;color:var(--teal);font-size:13.5px;font-style:italic;margin:0 0 14px}
+  #pane .row{margin:0 0 13px}
+  #pane .row .k{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--muted);margin:0 0 3px}
+  #pane .row .v{font-size:13.5px}
+
+  /* ---- L2 · deep-dive views (engine internals — one per decision-heavy engine) ----
+     A full-screen in-page zoom, opened from a layer pane's "Deep dive" button.
+     EARN IT: only decision-heavy engines get one — no decision cards, no deep dive. */
+  .ddview{position:fixed;inset:0;z-index:55;background:var(--bg);overflow-y:auto;display:none}
+  .ddview.on{display:block}
+  .ddwrap{max-width:940px;margin:0 auto;padding:26px 24px 90px}
+  .ddcrumb{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent);cursor:pointer;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:6px 14px;font-weight:600;font-family:inherit}
+  .ddcrumb:hover{border-color:var(--accent)}
+  .ddband{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+    padding:3px 11px;border-radius:999px;margin-left:10px;vertical-align:2px}
+  /* one tint per engine band — reuse the layer tints */
+  .band-teal{background:rgba(13,125,118,.12);color:var(--teal);border:1px solid rgba(13,125,118,.4)}
+  .band-violet{background:rgba(130,80,223,.12);color:var(--violet);border:1px solid rgba(130,80,223,.4)}
+  /* the class map is a FLOW, not a grid — it reuses the Pass-1 layer-diagram grammar
+     (.ldg/.lrow/.lrow.two/.larr), so the arrows carry the run sequence. */
+  .lrow.two{grid-template-columns:1fr 1fr}
+  @media(max-width:700px){.lrow.two{grid-template-columns:1fr}}
+  /* DTO footer on a producing class card — dashed "→ produces …" strip */
+  .dtoout{margin-top:9px;border:1.5px dashed rgba(9,105,218,.35);border-radius:8px;padding:5px 10px;
+    font-size:11.5px;color:var(--muted);background:rgba(9,105,218,.035)}
+  .dtoout b{color:var(--accent);font-family:"SF Mono",Menlo,Consolas,monospace;font-size:11px}
+  .cls{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 15px 11px;position:relative}
+  .cls .num{position:absolute;top:-10px;left:13px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;
+    width:21px;height:21px;border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .cls .num.teal{background:var(--teal)}.cls .num.violet{background:var(--violet)}
+  .cls h4{margin:0 0 4px;font-size:13.5px;font-family:"SF Mono",Menlo,Consolas,monospace}
+  .cls .pur{font-size:12.5px;color:var(--muted);margin:0 0 6px;line-height:1.5}  /* ONE line of purpose — two lines means two classes */
+  .cls details{border:none;background:transparent;margin:0;overflow:visible}
+  .cls summary{padding:2px 0;font-size:11.5px;color:var(--accent);font-weight:600}
+  .cls .mrow{font:11.5px "SF Mono",Menlo,Consolas,monospace;color:var(--muted);padding:4px 0;border-bottom:1px dashed var(--line)}
+  .cls .mrow:last-child{border-bottom:0}
+  .cls .mrow i{font-style:normal;color:var(--muted);font-family:-apple-system,sans-serif}
+  .cls.dto{border-style:dashed;background:rgba(9,105,218,.035)}  /* DTO card — dashed, tagged, inline where produced */
+  .cls.dto .dtag{position:absolute;top:-9px;left:13px;background:var(--muted);color:#fff;font-size:9.5px;font-weight:800;
+    letter-spacing:.05em;padding:2px 8px;border-radius:6px}
+  /* decision cards — one per open design question · the mini-ADRs that feed the real ADR */
+  .dcards{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin:14px 0}
+  @media(max-width:700px){.dcards{grid-template-columns:1fr}}
+  .dcard{background:var(--panel);border:1px solid var(--line);border-left:3px solid var(--amber);border-radius:12px;padding:12px 15px}
+  .dcard .q{font-weight:700;font-size:13.5px;margin:0 0 7px}
+  .dcard .chosen{font-size:12.5px;color:var(--green);font-weight:700;margin:0 0 5px}
+  .dcard .why{font-size:12px;color:var(--muted);line-height:1.55;margin:0}
+  .ddh3{font-size:14.5px;margin:26px 0 4px;font-weight:700}
+  .ddh3 .prod{margin-left:8px}
+
+  /* ---- deep-dive tabs — one pill per question the reader has (machine / interactor / add-a-X / decisions) ---- */
+  .ddtabs{display:flex;gap:8px;margin:20px 0 14px;flex-wrap:wrap;border-bottom:1px solid var(--line);padding-bottom:12px}
+  .ddtab{background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 16px;font-size:13px;
+    font-weight:600;color:var(--muted);cursor:pointer;font-family:inherit;transition:.15s}
+  .ddtab:hover{border-color:var(--accent);color:var(--ink)}
+  .ddtab.on{background:var(--accent);border-color:var(--accent);color:#fff}
+  .ddpanel{display:none}
+  .ddpanel.on{display:block}
+
+  /* annotated interactor code — the main method rendered as code; each step chipped with the layer it calls.
+     The code IS the Pass-1 diagram, top-to-bottom, diffable in review. */
+  .codebox{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:14px 16px;margin:12px 0;overflow-x:auto}
+  .codeline{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:3.5px 0;
+    font:12px "SF Mono",Menlo,Consolas,monospace;color:var(--ink);white-space:pre}
+  .codeline .cmt{color:var(--muted)}
+  .codeline .kw{color:var(--rose)}
+  .codeline .fn{color:var(--violet)}
+  .lchip{flex:none;font-size:9.5px;font-weight:800;padding:2px 9px;border-radius:999px;white-space:nowrap;font-family:-apple-system,sans-serif}
+  /* one chip tint per logical layer — match the Pass-1 layer tints */
+  .ch-facts{background:rgba(87,99,110,.12);color:var(--muted);border:1px solid rgba(87,99,110,.3)}
+  .ch-auth{background:rgba(188,88,0,.12);color:var(--amber);border:1px solid rgba(188,88,0,.35)}
+  .ch-guard{background:rgba(13,125,118,.14);color:var(--teal);border:1px solid rgba(13,125,118,.4)}
+  .ch-tl{background:rgba(130,80,223,.13);color:var(--violet);border:1px solid rgba(130,80,223,.4)}
+  .ch-orch{background:rgba(9,105,218,.12);color:var(--accent);border:1px solid rgba(9,105,218,.35)}
+  .ch-none{background:transparent;color:transparent;border:none}
+
+  /* extension recipe — numbered steps for the "add a <plugin>" walkthrough */
+  .steps{counter-reset:st;margin:12px 0}
+  .stp{position:relative;padding:10px 14px 10px 44px;background:var(--panel);border:1px solid var(--line);border-radius:11px;margin:8px 0}
+  .stp::before{counter-increment:st;content:counter(st);position:absolute;left:13px;top:12px;width:21px;height:21px;
+    border-radius:7px;background:var(--accent);color:#fff;font-size:11px;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .stp b{font-size:13.5px}
+  .stp p{font-size:12.5px;color:var(--muted);margin:3px 0 0;line-height:1.5}
+
+  /* extension receipt — the OCP claim as an invoice: ✚ create / ✎ extend-only-if / 🔒 never-touch.
+     If the never-touch column shrinks in a future change, the design regressed. */
+  .receipt{display:grid;grid-template-columns:1fr 1fr 1fr;gap:12px;margin:14px 0}
+  @media(max-width:760px){.receipt{grid-template-columns:1fr}}
+  .rcol{border-radius:12px;padding:12px 15px;border:1px solid var(--line);background:var(--panel)}
+  .rcol .rh{font-size:11px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px}
+  .rcol.create{border-top:3px solid var(--green)}.rcol.create .rh{color:var(--green)}
+  .rcol.extend{border-top:3px solid var(--amber)}.rcol.extend .rh{color:var(--amber)}
+  .rcol.locked{border-top:3px solid var(--line)}.rcol.locked .rh{color:var(--muted)}
+  .rcol .ri{font-size:12.5px;padding:4px 0;border-bottom:1px dashed var(--line);line-height:1.45}
+  .rcol .ri:last-child{border-bottom:0}
+  .rcol.locked .ri{color:var(--muted)}
+
+  .foot{color:var(--muted);font-size:12px;margin-top:42px;padding-top:16px;border-top:1px solid var(--line)}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>{{SUBJECT}} · design walkthrough</h1>
+<p class="sub">Three passes, outside-in: <b>the model → the door (public API) → the verbs behind it</b>.</p>
+
+<div class="stepper">
+  <a class="step" href="#p1"><div class="sn">Pass 1</div><div class="st">The model</div><div class="sd">layers &amp; entities, one picture · <span class="arw">tap a chip ↗</span></div></a>
+  <a class="step" href="#p2"><div class="sn">Pass 2</div><div class="st">The exposed interface</div><div class="sd">the module's public API</div></a>
+  <a class="step" href="#p3"><div class="sn">Pass 3</div><div class="st">Behaviours</div><div class="sd">the verbs each owns · <span class="arw">expand a row ▸</span></div></a>
+</div>
+
+<!-- ============================ PASS 1 · THE MODEL ============================ -->
+<h2 id="p1"><span class="n">1</span> The model — {{N}} layers, {{M}} concepts, one picture</h2>
+<p class="because">Layers answer <b>“who does what”</b>; entities answer <b>“what are we talking about”</b>. One picture places each concept where it lives. Tap a <b>chip</b> for an entity's scope · tap a <b>box</b> for a layer's contract.</p>
+
+<!-- FILL the diagram, top-to-bottom in call order:
+     · the SUBJECT band on top (the one entity every layer answers a question about)
+     · each logical layer as an .lbox[data-pane] — pick a tint class (.l-accent/.l-amber/.l-teal/.l-violet/.l-muted)
+       embed engine-anchored entities as .echip inside their layer box; no-entity layers have no chip
+     · the COMPOSITE EDGE BAND at the bottom: fact providers (top half) + external world / core entities (below the
+       dashed divider). Core entities render as .echip inside the .below half.
+     · put layers side-by-side in a <div class="lrow split" style="--cols:N"> when they are peers called together. -->
+<div class="ldg">
+
+  <!-- the subject -->
+  <div class="lrow"><div class="lbox l-subj">
+    <div class="ent" style="margin:0 0 5px"><button class="echip" data-pane="subject"><span class="ei">{{emoji}}</span>{{Subject}} <small>the subject</small></button></div>
+    <span>{{one line: every layer below answers one question about it}}</span>
+  </div></div>
+
+  <div class="larr">▼ one use case at a time</div>
+
+  <!-- top orchestration layer (no entity) -->
+  <div class="lrow"><div class="lbox l-accent" data-pane="lorch">{{Orchestration}}<span>{{runs the use case — asks the layers below in order · decides nothing itself · no entity}}</span></div></div>
+
+  <div class="larr">▼ calls</div>
+
+  <!-- peer layers, called together -->
+  <div class="lrow split" style="--cols:3">
+    <div class="lbox l-amber" data-pane="lauth">{{Authorization}}<span>{{may this principal attempt it? · no entity}}</span></div>
+    <div class="lbox l-teal" data-pane="lengineA">{{Engine A}}<span>{{the question it answers}}</span><div class="ent"><button class="echip" data-pane="entA"><span class="ei">{{emoji}}</span>{{EntityA}}</button></div></div>
+    <div class="lbox l-violet" data-pane="lengineB">{{Engine B}}<span>{{the question it answers}}</span><div class="ent"><button class="echip" data-pane="entB"><span class="ei">{{emoji}}</span>{{EntityB}}</button></div></div>
+  </div>
+
+  <div class="larr">▼ every question is answered over facts, through <span class="term" data-pop="port">ports</span></div>
+
+  <!-- the composite edge band -->
+  <div class="lrow"><div class="lbox l-muted edge" data-pane="lfacts">
+    <div class="inner">{{Fact providers}}<span>{{the ports the module needs — <b>defined</b> here as interfaces, <b>implemented by the producers</b>, injected at the edge. The module imports no other app; other apps appear only as implementations of these ports}}</span></div>
+    <div class="below">
+      <div class="boundary">⇅ reads, never writes — the app boundary · below lives outside <code>{{module}}</code></div>
+      <div class="ent" style="margin:0 0 6px"><button class="echip" data-pane="coreA"><span class="ei">{{emoji}}</span>{{CoreEntityA}}</button><button class="echip" data-pane="coreB"><span class="ei">{{emoji}}</span>{{CoreEntityB}}</button></div>
+      <span style="display:block;font-size:11.5px;color:var(--muted);line-height:1.45"><b>Core entities</b> — read-only, never managed · live in <code>{{owning_app}}</code> alongside {{other apps}}</span>
+    </div>
+  </div></div>
+
+</div>
+
+<!-- ============================ PASS 2 · THE EXPOSED INTERFACE ============================ -->
+<h2 id="p2"><span class="n">2</span> The exposed interface — what the module offers the outside world</h2>
+<p class="because">One door per use case — a method exists <b>only</b> because a composed behaviour needs it. What the module <em>consumes</em> is not exposed: those <span class="term" data-pop="port">ports</span> live with the Fact providers layer (tap its box in Pass 1).</p>
+
+<table>
+  <tr><th>Composed behaviour</th><th>Exposed method</th><th>When</th></tr>
+  <!-- FILL: one row per PUBLIC method, traced to the behaviour it composes. Do NOT list consumed ports here. -->
+  <tr><td><b>{{UseCaseName}}</b><br><span class="prod">{{how it composes the Pass-3 verbs}}</span></td><td><code>{{public_method(args) -> ReturnType}}</code></td><td><span class="when w-now">NOW</span></td></tr>
+  <tr><td>{{AnotherUseCase}}<br><span class="prod">{{one line}}</span></td><td><code>{{method(args) -> ReturnType}}</code></td><td><span class="when w-later">LATER</span></td></tr>
+</table>
+<div class="takeaway"><b>{{Feature N is one public method.}}</b> <!-- FILL: the payoff — everything else internal, one door in, plug-ins behind it. --></div>
+
+<!-- THE INTERACTOR MIRROR lives HERE (orchestration content, not an engine deep-dive tab):
+     a collapsed <details> rendering the exposed use case's main method as annotated code. Each step
+     line is chipped (.lchip ch-*) with the colour of the layer it calls — the code IS the Pass-1
+     diagram read top-to-bottom, diffable against real code in review. One disclosure per exposed
+     use case that composes multiple layers; skip for trivial pass-through methods. -->
+<details><summary><span class="em">🔩</span> The composition behind the door — <code>{{TheInteractor}}</code> <span style="font-size:11px;color:var(--muted);font-weight:400;margin-left:6px">its main method IS the Pass-1 diagram, read top-to-bottom</span><span class="chev">▸</span></summary>
+  <div class="verbs" style="padding-top:10px">
+  <div class="codebox" style="border:none;padding:2px 0;margin:4px 0">
+    <div class="codeline"><span><span class="kw">class</span> <span class="fn">{{TheInteractor}}</span>:</span></div>
+    <div class="codeline"><span>    <span class="kw">def</span> <span class="fn">__init__</span>(self, {{ports}}):  <span class="cmt"># abstract ports, constructor-injected</span></span></div>
+    <div class="codeline"><span> </span></div>
+    <div class="codeline"><span>    <span class="kw">def</span> <span class="fn">{{the_use_case}}</span>(self, {{args}}) → {{ReturnDTO}}:</span></div>
+    <div class="codeline"><span>        {{facts = self._gather_facts(...)}}</span><span class="lchip ch-facts">fact providers</span></div>
+    <div class="codeline"><span>        {{self._authorize(...)}}</span><span class="lchip ch-auth">authorization</span></div>
+    <div class="codeline"><span>        {{result = self._run_engine(...)}}</span><span class="lchip ch-guard">{{engine}}</span></div>
+    <div class="codeline"><span>        <span class="kw">return</span> {{self._assemble(...)}}</span><span class="lchip ch-orch">orchestration</span></div>
+  </div>
+  <p style="font-size:12.5px;color:var(--muted);margin:6px 0 4px">FILL: each step carries the colour of the layer it calls — the model diagram as code, diffable in review. House rules it obeys: constructor-injected <em>abstract</em> ports · one public method per interactor · DTO-only in/out · zero Django imports.</p>
+  </div></details>
+
+<!-- ============================ PASS 3 · BEHAVIOURS ============================ -->
+<h2 id="p3"><span class="n">3</span> Behaviours — the verbs each entity owns</h2>
+<p class="because"><!-- FILL: why behaviours cluster into responsibilities with different owners; which cluster is this module's OWN domain. Expand each entity. --></p>
+<div class="clegend">
+  <!-- FILL: define the tag clusters for THIS subject. Rename/recolour to fit its responsibility model. Example: -->
+  <span><span class="tag t-cfg">Config</span> read/write the definition — host owns, module validates</span>
+  <span><span class="tag t-decide">Decide</span> evaluate / resolve — <b>module owns, read-only</b></span>
+  <span><span class="tag t-exec">Execute</span> perform the write — host writes, module decides</span>
+</div>
+
+<!-- FILL: one .eg2 group per layer-group, in the SAME order as the taxonomy:
+     core entities · the subject · each engine. One <details> per entity, one .verb row per behaviour. -->
+
+<div class="eg2"><p class="gl"><b>Core entities</b> · read-only, never managed</p>
+<details><summary><span class="em">{{emoji}}</span> {{CoreEntityA}} <span class="chev">▸</span></summary>
+  <div class="verbs">
+    <div class="verb"><span class="sig">{{method(args)}}</span><span class="dsc">{{what it does}} · <span style="opacity:.7">{{producer}}</span></span><span class="tags"><span class="tag t-cfg">Config</span><span class="tag t-now">now</span></span></div>
+  </div></details>
+</div>
+
+<div class="eg2"><p class="gl"><b>The subject</b> · every layer works on it</p>
+<details open><summary><span class="em">{{emoji}}</span> {{Subject}} <span class="chev">▸</span></summary>
+  <div class="verbs">
+    <div class="verb"><span class="sig">{{single_verb(item, subject, principal)}}</span><span class="dsc">{{singular question — homed on the subject}} · <span style="opacity:.7">{{producer}}</span></span><span class="tags"><span class="tag t-decide">Decide</span><span class="tag t-now">now</span></span></div>
+    <div class="verb"><span class="sig">{{write_verb(...)}}</span><span class="dsc">note a <span class="term" data-pop="EXAMPLE">jargon term</span> inline like this · <span style="opacity:.7">{{host executes, module decides}}</span></span><span class="tags"><span class="tag t-exec">Execute</span><span class="tag t-later">later</span></span></div>
+  </div></details>
+</div>
+
+<div class="eg2"><p class="gl"><b>{{Engine A}}</b></p>
+<details><summary><span class="em">{{emoji}}</span> {{EntityA}} <span class="chev">▸</span></summary>
+  <div class="verbs">
+    <div class="verb"><span class="sig">{{the_only_verb(context)}}</span><span class="dsc">{{the single contract verb}} · <span style="opacity:.7">{{producer}}</span></span><span class="tags"><span class="tag t-decide">Decide</span><span class="tag t-now">now</span></span></div>
+  </div></details>
+</div>
+
+<div class="fault">
+  <b><!-- FILL: the single key insight of the design. --></b> <!-- e.g. "Only the Decide cluster is this module's own; Config and Execute stay with the host app — which is why Feature 1 ships without a single write." -->
+</div>
+<div class="takeaway"><b>Signature litmus —</b> every behaviour is either <b>definition-time</b> (about the shape — no item in the signature, cacheable) or <b>item-time</b> (a decision about one item — item always present, usually inside a <code>context</code>). A signature that fits neither cleanly is conflating two behaviours.</div>
+
+<p class="foot">
+  <!-- FILL: subject · feature/phase · the three-pass line. -->
+  {{SUBJECT}} · {{feature/phase}} · the model (layers + entities) → the exposed interface → behaviours.<br>
+  <!-- ANTI-HALLUCINATION: cite the REAL source files whose names/fields/enums were verified. -->
+  Enums/models verified against <code>{{path/to/source.py}}</code> &amp; <code>{{path/to/enums.py}}</code>.
+  {{module}} method/type names are proposed until <code>/task-breakdown</code>. Design only — no code.
+</p>
+
+</div>
+
+<!-- ============================ L2 · DEEP-DIVE VIEW (engine internals) ============================
+     ONE <section class="ddview"> per DECISION-HEAVY engine — NOT per layer. Earn it:
+       · CRUD, pass-through reads, and no-entity plumbing layers NEVER get one.
+       · An engine earns a deep dive only if it has real design decisions (decision cards).
+         No decision cards → delete the section; the layer pane is enough.
+     Wire it: give the layer's PANE entry a  dd:"dd-KEY"  field (see PANE.lengineA below).
+     The section id MUST match that dd: value. Copy this block per qualifying engine — and
+     give every id inside (tab data-tab + panel id) a per-engine prefix so multiple deep dives don't collide.
+
+     A deep dive is TABBED — every tab is a READER QUESTION about THIS engine (coherence rule):
+       · How it works        — a PHASED NARRATIVE (always): prose carries the causality, classes/tables are exhibits
+       · Add a <plugin>      — the extension recipe + receipt (only for an OCP surface)
+       · Why this design      — the decision cards (always — this is why the engine earned a deep dive)
+     The interactor mirror is NOT a tab — it is orchestration, so it lives in Pass 2. A tab you can't
+     name as a question about THIS engine is misplaced content. Delete any tab that doesn't apply;
+     keep "How it works" + "Why this design" at minimum. -->
+<section class="ddview" id="dd-engineA"><div class="ddwrap">
+  <button class="ddcrumb" onclick="closeDD()">← {{module}}</button><span class="ddband band-teal">engine internals</span>
+  <h2 style="margin-top:22px">{{Engine A}} — internals</h2>
+  <div class="ddtabs">
+    <button class="ddtab on" data-tab="a-machine">How it works</button>
+    <button class="ddtab" data-tab="a-extend">Add a {{plugin}}</button>
+    <button class="ddtab" data-tab="a-decisions">Why this design</button>
+  </div>
+
+  <!-- TAB 1 · HOW IT WORKS — a PHASED NARRATIVE, not a card gallery. Open with ONE line naming the
+       phases (declare → wire → execute). Then per phase: a .ddh3 "Phase N · Title — subtitle" + a
+       2-4 sentence PROSE paragraph that CARRIES THE CAUSALITY ("to exist it registers…; from that
+       moment it is picked up automatically…"). Classes/tables/skeletons are IN-STORY EXHIBITS,
+       dropped in only where the story needs them — a .codebox contract skeleton, a comparison TABLE
+       of the shipping variants under the one contract, condensed .cls cards for the runtime
+       collaborators (still in the .ldg/.lrow/.larr flow grammar, arrows = run order, NO runline;
+       one-line purpose each — two lines means two classes; a producing class carries a .dtoout).
+       The declare phase closes complete with a .takeaway. Prose first; exhibits second. -->
+  <div class="ddpanel on" id="a-machine">
+  <p class="because">Read it as a story in {{N}} phases: <b>{{declare}}</b> a {{plugin}} → <b>{{wire}}</b> it → <b>{{execute}}</b> the run. Each phase is complete before the next begins.</p>
+
+  <p class="ddh3">Phase 1 · {{Declaring a plugin}} <span class="prod">— {{the contract &amp; the registration}}</span></p>
+  <p style="font-size:13px;line-height:1.65;margin:6px 0">FILL — prose that carries the causality: what the plug-in IS (a single-verb class), how it comes to exist (it registers under a <b>config key</b> via the decorator — the key is the name entities use to opt in), and what happens automatically from that moment (the registry collects it at import; any entity whose config names its key picks it up). Nothing else in the system learns a new one was born.</p>
+  <div class="codebox">
+    <div class="codeline"><span>@register_{{plugin}}(<span style="color:#0a3069">"{{key}}"</span>)   <span class="cmt"># the config key — how {{entities}} opt in</span></span></div>
+    <div class="codeline"><span><span class="kw">class</span> <span class="fn">{{ConcretePlugin}}</span>({{Contract}}):</span></div>
+    <div class="codeline"><span>    <span class="kw">def</span> <span class="fn">evaluate</span>(self, context: {{ContextDTO}}, params: {{ParamsDTO}}) → {{ResultDTO}}:</span></div>
+    <div class="codeline"><span>        ...   <span class="cmt"># read facts from the shared context · return the verdict</span></span></div>
+  </div>
+  <p style="font-size:12.5px;color:var(--muted);margin:8px 0 2px">FILL — how the shipping variants fit the SAME contract, one table, zero special cases:</p>
+  <table>
+    <tr><th>{{Plugin}}</th><th>Config key</th><th>Params</th><th>Facts it reads</th><th>{{Verdict when}}</th></tr>
+    <tr><td>{{VariantA}}</td><td><code>{{key}}</code></td><td>{{params}}</td><td>{{facts}}</td><td>{{condition}}</td></tr>
+  </table>
+  <div class="takeaway"><b>That completes the {{plugin}} aspect.</b> Everything below is machinery that runs them — no later phase changes what a {{plugin}} is.</div>
+
+  <p class="ddh3">Phase 2 · {{Wiring}} <span class="prod">— {{how an entity opts in}}</span></p>
+  <p style="font-size:13px;line-height:1.65;margin:6px 0">FILL — prose: entities never import {{plugin}}s; the entity's <em>validated</em> config names keys + params, and a binder reads that config to produce one binding (key · params) per named plug-in — that is the automatic pickup. A key nobody registered fails safe/loudly (a typo can never open the gate). The binding is one-way — entity → {{plugin}}, never back — which is what keeps {{plugin}}s reusable.</p>
+
+  <p class="ddh3">Phase 3 · {{Execution}} <span class="prod">— {{the run}}</span></p>
+  <p style="font-size:13px;line-height:1.65;margin:6px 0">FILL — prose: orchestration calls the engine once per batch; the facts were fetched <b>once</b> into an immutable context (the anti-N+1 move) shared by every plug-in; the engine folds every result into one output DTO — one object, two readers, zero drift.</p>
+  <!-- runtime collaborators as an EXHIBIT — condensed .cls cards in the flow grammar (no numbers needed here) -->
+  <div class="ldg" style="margin-top:10px">
+    <div class="lrow two">
+      <div class="cls"><h4>{{ContextBuilder}}</h4><p class="pur">FILL: fetches facts once through the ports → the single immutable snapshot every plug-in reads. A new fact extends the builder + a port, never a plug-in.</p></div>
+      <div class="cls"><h4>{{Engine}}</h4><p class="pur">FILL: the only entry point — orchestrates, owns zero domain rules of its own; never fetches, never does the foreign math.</p></div>
+    </div>
+  </div>
+  </div>
+
+  <!-- NOTE · THE INTERACTOR MIRROR IS NOT A DEEP-DIVE TAB. It is orchestration content — the
+       composition behind the exposed door — so it lives in PASS 2 as a collapsed <details>
+       "The composition behind the door — <Interactor>" under the exposed-API table, NOT here.
+       An engine deep dive answers only questions ABOUT THAT ENGINE. See SKILL.md "Coherence rule". -->
+
+  <!-- TAB 2 · ADD A <PLUGIN> — the extension recipe for an OCP surface: numbered steps + a code
+       skeleton + the RECEIPT. The receipt turns the OCP claim into an invoice — if the 🔒 never-touch
+       column shrinks in a future change, the design regressed. Delete this panel + tab for non-OCP engines. -->
+  <div class="ddpanel" id="a-extend">
+  <p class="because">FILL: the extension the refactor is priced by — adding a {{plugin}} without surgery. The steps show what you write; the receipt shows exactly what you touch.</p>
+  <div class="steps">
+    <div class="stp"><b>{{Write the plugin — one new file}}</b><p>FILL: implement the single verb, declare the config key via the decorator. The registry discovers it at import; nothing else learns it exists.</p></div>
+    <div class="stp"><b>{{Missing a fact? Extend the snapshot, not the plugin}}</b><p>FILL: add the field to the context + builder + one read port. Skip when the fact already exists.</p></div>
+    <div class="stp"><b>{{Opt in via config}}</b><p>FILL: the entity carries the key in its validated config — the binder picks it up.</p></div>
+    <div class="stp"><b>{{Test it without a database}}</b><p>FILL: stub a context, assert success + failure paths. Pure-python unit test.</p></div>
+  </div>
+  <div class="codebox">
+    <div class="codeline"><span>@register_{{plugin}}(<span style="color:var(--teal)">"{{key}}"</span>)</span></div>
+    <div class="codeline"><span><span class="kw">class</span> <span class="fn">{{NewPlugin}}</span>({{Contract}}):</span></div>
+    <div class="codeline"><span>    <span class="kw">def</span> <span class="fn">evaluate</span>(self, context: {{ContextDTO}}, params: {{ParamsDTO}}) → {{ResultDTO}}:</span></div>
+    <div class="codeline"><span>        <span class="kw">return</span> {{ResultDTO}}.{{passed_or_blocked}}(...)</span></div>
+  </div>
+  <div class="receipt">
+    <div class="rcol create"><p class="rh">✚ you create</p>
+      <div class="ri"><code>{{plugin_file.py}}</code></div>
+      <div class="ri"><code>{{test_plugin.py}}</code></div>
+      <div class="ri">{{params DTO (if it takes params)}}</div></div>
+    <div class="rcol extend"><p class="rh">✎ you extend — only if a fact is missing</p>
+      <div class="ri">{{ContextDTO}} + builder (one field)</div>
+      <div class="ri">one read port in fact providers</div></div>
+    <div class="rcol locked"><p class="rh">🔒 you never touch</p>
+      <div class="ri">{{Engine}}</div>
+      <div class="ri">{{Binder}} · {{Registry}}</div>
+      <div class="ri">the interactor · the GraphQL layer</div></div>
+  </div>
+  <div class="takeaway"><b>Extension cost:</b> {{1 new file (+ 1 test). Zero core edits.}} That's the OCP payoff, priced.</div>
+  </div>
+
+  <!-- TAB 3 · WHY THIS DESIGN — the decision cards. one per open design question · ✓ chosen answer ·
+       why + consequence. These are mini-ADRs — they feed /create-adr. If you can't fill even one,
+       this engine did NOT earn a deep dive: delete the whole <section class="ddview">.
+       For a centralized OCP surface, include the two invariants: plug-ins hold gating policy not
+       domain math (compute a foreign value → new port, not a fatter plug-in), and the ports are
+       implemented by the producers (so the engine imports zero apps). -->
+  <div class="ddpanel" id="a-decisions">
+  <p class="because">Each card is a mini-ADR — scan the ✓ lines to review; veto any and the design adjusts before code exists.</p>
+  <div class="dcards">
+    <div class="dcard"><p class="q">{{The design question, as a question}}</p>
+      <p class="chosen">✓ {{the chosen answer}}</p>
+      <p class="why">FILL: why this over the alternative, and the CONSEQUENCE it locks in.</p></div>
+    <div class="dcard"><p class="q">{{Another open question}}</p>
+      <p class="chosen">✓ {{chosen}}</p>
+      <p class="why">FILL: rationale + consequence.</p></div>
+  </div>
+  </div>
+</div></section>
+
+<!-- popover host (do not edit) -->
+<div id="pop"><div class="pt"></div><div class="pb"></div></div>
+
+<!-- side pane host (do not edit) -->
+<div id="ov"></div>
+<aside id="pane"><button class="close" aria-label="close">✕</button><div id="paneBody"></div></aside>
+
+<script>
+/* ===== POPOVER DATA — one entry per jargon term used above =====
+   KEY must match a <span class="term" data-pop="KEY">. Format: KEY:["Title","Explanation"]. */
+const POPS = {
+  port:["Port","A narrow read-only interface the module declares (\"give me the item's notes\"). Another app implements it. Dependencies point inward, so the module stays framework-free."],
+  EXAMPLE:["Example term","Replace this. A short, plain-language definition of a piece of jargon used in the body — one or two sentences, no code."]
+  /* FILL: add more terms here */
+};
+
+/* ---- popover engine (do not edit) ---- */
+const pop=document.getElementById('pop');
+function showPop(el){const p=POPS[el.dataset.pop]||["",""];
+  pop.querySelector('.pt').textContent=p[0];pop.querySelector('.pb').textContent=p[1];
+  pop.style.display='block';
+  const r=el.getBoundingClientRect(),pw=pop.offsetWidth,ph=pop.offsetHeight;
+  let x=r.left,y=r.bottom+8;
+  if(x+pw>innerWidth-12)x=innerWidth-pw-12;
+  if(y+ph>innerHeight-12)y=r.top-ph-8;
+  pop.style.left=Math.max(12,x)+'px';pop.style.top=Math.max(12,y)+'px';}
+function hidePop(){pop.style.display='none';}
+document.querySelectorAll('.term').forEach(el=>{
+  el.addEventListener('mouseenter',()=>showPop(el));
+  el.addEventListener('mouseleave',hidePop);
+  el.addEventListener('click',e=>{e.stopPropagation();pop.style.display==='block'?hidePop():showPop(el);});
+});
+document.addEventListener('click',hidePop);addEventListener('scroll',hidePop,true);
+
+/* ===== SIDE-PANE DATA — one entry per clickable box/chip =====
+   KEY must match a data-pane="KEY".
+   ENTITY panes end with a "Logical layer" row (which layer reads/runs it, or "None — core entity").
+   LAYER panes end with a "Projected package" row — the deferred folder projection, decided at ADR time.
+   The Fact-providers pane (lfacts) carries the PORT CATALOG — each consumed port traced to the
+   behaviour that needs it and its producer app. Consumed ports live HERE, never in the Pass-2 table. */
+const PANE={
+
+  /* --- entity panes --- */
+  subject:{eyebrow:"the subject — the heart",title:"{{emoji}} {{Subject}}",
+    plain:"FILL: what this entity IS, in the user's terms.",
+    analogy:"FILL: a sticky real-world analogy.",
+    rows:[
+      ["Scope","FILL: identity + what it is the consistency unit for."],
+      ["Maps to","FILL: the real model/table, in <code>{{app}}</code>."],
+      ["Behaviour (Pass 3)","FILL: the singular verbs homed on it. Batch/plural questions live on the SCOPE entity, not here."],
+      ["Logical layer","None — the subject every layer works on. Use cases in orchestration compose its behaviours."]
+    ]},
+  coreA:{eyebrow:"core vocabulary",title:"{{emoji}} {{CoreEntityA}}",
+    plain:"FILL: what it is.",
+    analogy:"FILL: analogy.",
+    rows:[
+      ["Scope","FILL: what it owns; the module cares only which X exist inside it — never its CRUD."],
+      ["Maps to","FILL: <code>Model</code>, in <code>{{app}}</code>. The module points at it, doesn't manage it."],
+      ["Behaviour (Pass 3)","FILL: definition reads only."],
+      ["Logical layer","None — a core entity, read-only. Its facts reach the module through the fact-providers layer."]
+    ]},
+  entA:{eyebrow:"the engine's entity",title:"{{emoji}} {{EntityA}}",
+    plain:"FILL: what it is — a single read-only predicate / strategy / etc.",
+    analogy:"FILL: analogy (a bouncer at a door…).",
+    rows:[
+      ["Scope","FILL: what it unifies behind one contract."],
+      ["Behaviour (Pass 3)","FILL: the single contract verb — input = facts + its own params."],
+      ["Coupling","FILL: e.g. None to the subject — the binding is one-way, owned by the subject's assembly."],
+      ["Logical layer","{{Engine A}} — the OCP surface."]
+    ]},
+  entB:{eyebrow:"the engine's entity",title:"{{emoji}} {{EntityB}}",
+    plain:"FILL: what it is.",
+    analogy:"FILL: analogy.",
+    rows:[
+      ["Scope","FILL."],
+      ["Behaviour (Pass 3)","FILL: its contract verb."],
+      ["Logical layer","{{Engine B}}."]
+    ]},
+  coreB:{eyebrow:"core vocabulary",title:"{{emoji}} {{CoreEntityB}}",
+    plain:"FILL: what it is.",
+    analogy:"FILL: analogy.",
+    rows:[
+      ["Scope","FILL."],
+      ["Maps to","FILL: <code>Model</code>, in <code>{{app}}</code>."],
+      ["Behaviour (Pass 3)","FILL."],
+      ["Logical layer","None — a core entity, read-only, via the fact-providers layer."]
+    ]},
+
+  /* --- layer panes (end with Projected package) --- */
+  lorch:{eyebrow:"logical layer · no entity",title:"{{Orchestration}}",
+    plain:"Runs one use case — asks the layers below in order, decides nothing itself.",
+    analogy:"A conductor: sets the order, plays no instrument.",
+    rows:[
+      ["Question it answers","In what order do the layers compose, per use case?"],
+      ["Nature","Thin sequencing. Owns no rules — if a use case grows an <code>if</code> about the domain, a rule leaked upward."],
+      ["Depends on","The layers below — never on other apps directly."],
+      ["Projected package","<code>interactors/</code> — one class per use case. Decided at ADR / plan time."]
+    ]},
+  lauth:{eyebrow:"logical layer · no entity",title:"{{Authorization}}",
+    plain:"FILL: the RBAC pre-phase — is this principal permitted to attempt it at all?",
+    analogy:"A keycard reader: checks who you are, not whether the room is ready.",
+    rows:[
+      ["Question it answers","Is this principal permitted to attempt it?"],
+      ["Nature","FILL: fail-closed — no grant, no access."],
+      ["Why not a guard/engine variant","FILL: different failure semantics / different change axis."],
+      ["Projected package","<code>authorization/</code> — a distinct axis of change."]
+    ]},
+  lengineA:{dd:"dd-engineA",  /* <- opens the L2 deep dive. Set ONLY on decision-heavy engines; omit for CRUD/plumbing layers. Must match a <section class="ddview" id="..."> */
+    eyebrow:"logical layer · runs the {{EntityA}}s",title:"{{Engine A}}",
+    plain:"FILL: what it evaluates and combines.",
+    analogy:"FILL: analogy (a pre-flight checklist…).",
+    rows:[
+      ["Question it answers","FILL: the one question."],
+      ["Nature","Pure domain logic — knows nothing of Django or other apps. The <b>OCP surface</b>: add a variant without touching the engine."],
+      ["Hard boundary","FILL: it orchestrates variants, it never does the foreign math — it delegates through a fact provider."],
+      ["Projected package","<code>{{engine_a}}/</code> — contract · registry · engine · the variants."]
+    ]},
+  lengineB:{eyebrow:"logical layer · runs the {{EntityB}}",title:"{{Engine B}}",
+    plain:"FILL.",
+    analogy:"FILL.",
+    rows:[
+      ["Question it answers","FILL."],
+      ["Nature","FILL: per-type strategy."],
+      ["Hard boundary","FILL: e.g. \"where it lands\" never influences \"may it move\"."],
+      ["Projected package","<code>{{engine_b}}/</code> — a distinct axis of change."]
+    ]},
+  lfacts:{eyebrow:"logical layer · the edge",title:"{{Fact providers}}",
+    plain:"The module DEFINES these ports as interfaces; the producing apps IMPLEMENT them (thin adapters living with the producers); the GraphQL resolver injects them — the codebase's native wiring. The module imports zero apps.",
+    analogy:"Foreign correspondents: they go abroad and report back in the module's language.",
+    rows:[
+      ["Question it answers","What is true right now?"],
+      ["Nature","The translation edge — corruption from foreign models stops here. The only layer that knows other apps exist."],
+      ["Implemented by","FILL: <code>{{app}}</code> · <code>{{app}}</code> — each implements the module's port in its OWN app. Reads only, never writes."],
+      ["Port catalog — each traced to the behaviour that needs it","<div style='font-size:12px;line-height:1.8'>"+
+        "<b>{{group}}</b> · <code>{{port(args)}}</code> · <code>{{port(args)}}</code> — {{producer}}<br>"+
+        "<b>{{group}}</b> · <code>{{port(args)}}</code> — {{producer}}<br>"+
+        "FILL: one line per port group, traced to producer app</div>"],
+      ["Projected package","<code>ports/</code> in {{module}} — <b>interfaces only</b>. Implementations live with the producers. Dependency direction: apps → module, never back. (A consumer app reaching stabler services would instead use <code>gateways/</code> — see the dependency-direction check.)"]
+    ]}
+  /* FILL: add one entry per clickable box/chip */
+};
+
+/* ---- side-pane engine (do not edit) ---- */
+const ov=document.getElementById('ov'),pane=document.getElementById('pane'),pbody=document.getElementById('paneBody');
+function openPane(k){const d=PANE[k];if(!d)return;
+  pbody.innerHTML=`<p class="peyebrow">${d.eyebrow}</p><h3>${d.title}</h3>`+
+    `<div class="plain">${d.plain}</div>`+
+    (d.analogy?`<p class="analogy">💡 ${d.analogy}</p>`:'')+
+    d.rows.map(r=>`<div class="row"><div class="k">${r[0]}</div><div class="v">${r[1]}</div></div>`).join('')+
+    /* a layer pane with a dd: field grows a button into its L2 deep dive */
+    (d.dd?`<button class="ddcrumb" style="margin-top:10px" onclick="openDD('${d.dd}')">Deep dive — engine internals →</button>`:'');
+  ov.classList.add('on');pane.classList.add('on');}
+function closePane(){ov.classList.remove('on');pane.classList.remove('on');}
+document.querySelectorAll('[data-pane]').forEach(b=>b.addEventListener('click',e=>{e.stopPropagation();openPane(b.dataset.pane);}));
+ov.addEventListener('click',closePane);
+pane.querySelector('.close').addEventListener('click',closePane);
+
+/* ---- L2 deep-dive engine (do not edit) ---- */
+function openDD(id){closePane();hidePop();const v=document.getElementById(id);if(v){v.classList.add('on');v.scrollTop=0;}}
+function closeDD(){document.querySelectorAll('.ddview.on').forEach(v=>v.classList.remove('on'));}
+/* deep-dive tabs — scoped to each .ddwrap so multiple deep dives don't cross-toggle */
+document.querySelectorAll('.ddtab').forEach(t=>t.addEventListener('click',()=>{
+  const scope=t.closest('.ddwrap');
+  scope.querySelectorAll('.ddtab').forEach(x=>x.classList.remove('on'));
+  scope.querySelectorAll('.ddpanel').forEach(x=>x.classList.remove('on'));
+  t.classList.add('on');
+  scope.querySelector('#'+t.dataset.tab).classList.add('on');
+}));
+addEventListener('keydown',e=>{if(e.key==='Escape'){closePane();hidePop();closeDD();}});
+</script>
+</body>
+</html>

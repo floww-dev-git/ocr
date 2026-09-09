@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Requirement Phase — intake, triage, and the PRD contract</title>
+<style>
+:root{
+  --bg:#f6f8fa; --surface:#ffffff; --ink:#1f2328; --muted:#59636e; --line:#d1d9e0;
+  --accent:#0969da; --accent-soft:rgba(9,105,218,.08);
+  --gate:#9a6700; --gate-soft:#fff8c5;
+  --ok:#1a7f37; --ok-soft:#dafbe1;
+  --warn:#cf222e; --warn-soft:#ffebe9;
+  --violet:#8250df; --violet-soft:#fbefff;
+  --teal:#1b7c83; --teal-soft:#d6f3f5;
+  --serif:"Charter","Iowan Old Style",Georgia,serif;
+  --sans:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;
+  --mono:ui-monospace,"SF Mono",SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font:15px/1.6 var(--sans);
+  background-image:radial-gradient(circle at 85% -5%, rgba(130,80,223,.05), transparent 55%);}
+.wrap{max-width:1060px;margin:0 auto;padding:32px 28px 120px}
+
+/* ---------- back link ---------- */
+.back{display:inline-flex;align-items:center;gap:6px;font:600 12.5px/1 var(--sans);color:var(--accent);
+  text-decoration:none;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:8px 15px;margin-bottom:26px;transition:border-color .15s}
+.back:hover{border-color:var(--accent)}
+
+/* ---------- you-are-here breadcrumb ---------- */
+.crumb{display:flex;align-items:center;gap:9px;margin:-14px 0 26px;flex-wrap:wrap}
+.crumb .mini{display:flex;align-items:center;gap:5px}
+.crumb .blk{font:700 10.5px/1 var(--sans);letter-spacing:.05em;border-radius:7px;padding:8px 12px;
+  border:1px solid var(--line);background:var(--surface);color:var(--muted);text-decoration:none;transition:border-color .15s}
+.crumb a.blk:hover{border-color:var(--violet);color:var(--violet)}
+.crumb .blk.here{background:var(--violet-soft);border-color:rgba(130,80,223,.42);color:var(--violet)}
+.crumb .arr{color:var(--line);font-size:12px}
+.crumb .cnote{font-size:12px;color:var(--muted);margin-left:2px}
+
+/* ---------- hero ---------- */
+.eyebrow{font:600 11px/1 var(--sans);letter-spacing:.14em;text-transform:uppercase;color:var(--violet);margin-bottom:14px}
+h1{font:700 40px/1.15 var(--serif);letter-spacing:-.01em;margin-bottom:10px}
+.sub{font-size:16.5px;color:var(--muted);max-width:70ch}
+.hero-law{margin:28px 0 6px;background:var(--surface);border:1px solid var(--line);border-left:4px solid var(--violet);
+  border-radius:10px;padding:20px 24px;position:relative;overflow:hidden}
+.hero-law b{display:block;font:700 18px/1.4 var(--serif);color:var(--ink);margin-bottom:4px}
+.hero-law span{font-size:13.5px;color:var(--muted)}
+
+/* ---------- section chrome ---------- */
+h2{font:700 25px/1.25 var(--serif);margin:64px 0 6px;display:flex;align-items:baseline;gap:12px}
+h2 .n{font:700 13px/1 var(--mono);color:#fff;background:var(--ink);border-radius:6px;padding:5px 8px;transform:translateY(-3px)}
+.because{color:var(--muted);font-size:14px;margin-bottom:22px;max-width:76ch}
+.hint{font-size:12px;color:var(--muted);font-style:italic}
+
+/* ---------- status badges ---------- */
+.badge{font:600 9.5px/1 var(--mono);letter-spacing:.07em;text-transform:uppercase;border-radius:20px;padding:4px 8px;white-space:nowrap}
+.b-ship{color:var(--ok);background:var(--ok-soft);border:1px solid rgba(26,127,55,.3)}
+.b-prop{color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.32)}
+.b-live{color:var(--teal);background:var(--teal-soft);border:1px solid rgba(27,124,131,.3)}
+.legend{display:flex;gap:16px;flex-wrap:wrap;margin:18px 0 4px;font-size:12px;color:var(--muted);align-items:center}
+.legend .badge{margin-right:6px}
+
+/* ---------- intake rail ---------- */
+.rail{position:relative;margin:26px 0 6px;padding-left:34px}
+.rail::before{content:"";position:absolute;left:12px;top:14px;bottom:14px;width:2px;
+  background:repeating-linear-gradient(to bottom,var(--line) 0 6px,transparent 6px 11px)}
+.station{position:relative;margin-bottom:14px;cursor:pointer;background:var(--surface);
+  border:1px solid var(--line);border-radius:10px;padding:13px 18px;transition:border-color .15s, box-shadow .15s}
+.station:hover{border-color:var(--violet);box-shadow:0 2px 10px rgba(130,80,223,.10)}
+.station::before{content:"";position:absolute;left:-28px;top:20px;width:12px;height:12px;border-radius:50%;
+  background:var(--surface);border:3px solid var(--violet)}
+.station.arch::before{border-color:var(--teal)}
+.station .row{display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.station b{font:650 15.5px/1.3 var(--sans)}
+.station .who{font:500 11px/1 var(--mono);color:var(--violet);background:var(--violet-soft);border-radius:20px;padding:4px 9px}
+.station .who.a{color:var(--teal);background:var(--teal-soft)}
+.station .skl{font:500 11px/1 var(--mono);color:var(--accent);background:var(--accent-soft);border-radius:20px;padding:4px 9px}
+.station p{font-size:12.5px;color:var(--muted);margin-top:5px}
+.station .more{position:absolute;right:14px;bottom:11px;font-size:11px;color:var(--violet)}
+.gate{margin:2px 0 16px 34px}
+.gate .sig{display:inline-flex;align-items:center;gap:8px;font:600 11.5px/1 var(--sans);
+  color:var(--gate);background:var(--gate-soft);border:1px solid rgba(154,103,0,.35);border-radius:20px;padding:6px 13px;margin-left:-6px}
+.gate .sig::before{content:"◆";font-size:9px}
+
+/* ---------- phase markers ---------- */
+.phase-head{display:flex;align-items:center;gap:11px;margin:2px 0 18px;flex-wrap:wrap}
+.phase-head .tag{font:700 11px/1 var(--sans);letter-spacing:.13em;text-transform:uppercase;color:var(--violet);
+  background:var(--violet-soft);border:1px solid rgba(130,80,223,.28);border-radius:20px;padding:6px 13px}
+.phase-head.tech .tag{color:var(--teal);background:var(--teal-soft);border-color:rgba(27,124,131,.3)}
+.phase-head .desc{font-size:12.5px;color:var(--muted)}
+.lockdiv{margin:20px 0 22px -34px;display:flex;justify-content:center}
+.lockdiv .sig{display:inline-flex;align-items:center;gap:10px;text-align:center;
+  font:700 11.5px/1.35 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--gate);
+  background:var(--gate-soft);border:1.5px solid rgba(154,103,0,.5);border-radius:26px;padding:10px 20px;
+  box-shadow:0 3px 12px rgba(154,103,0,.14)}
+.lockdiv .sig::before,.lockdiv .sig::after{content:"═══";font:900 11px/1 var(--mono);letter-spacing:-.06em;opacity:.7}
+
+/* ---------- tables ---------- */
+table{width:100%;border-collapse:collapse;background:var(--surface);border:1px solid var(--line);border-radius:10px;overflow:hidden;font-size:13px;margin:14px 0}
+th{font:600 11px/1.3 var(--sans);letter-spacing:.06em;text-transform:uppercase;color:var(--muted);text-align:left;padding:10px 14px;border-bottom:1px solid var(--line);background:#fbfcfd}
+td{padding:10px 14px;border-bottom:1px solid #eef1f4;vertical-align:top}
+tr:last-child td{border-bottom:none}
+td b{font-weight:650}
+code{font:12px var(--mono);background:var(--accent-soft);border-radius:4px;padding:1.5px 5px}
+.no{color:var(--warn);font-weight:600}
+.yes{color:var(--ok);font-weight:600}
+.wt-c{color:var(--warn);font-weight:600}
+.wt-h{color:var(--gate);font-weight:600}
+.wt-l{color:var(--muted)}
+
+/* ---------- contract grid (PRD contract) ---------- */
+.contract{display:grid;grid-template-columns:repeat(2,1fr);gap:13px;margin:16px 0}
+.cbox{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:16px 18px;position:relative;overflow:hidden}
+.cbox::before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:var(--ok)}
+.cbox b{display:block;font:650 14px/1.35 var(--sans);margin-bottom:6px}
+.cbox p{font-size:12.5px;color:var(--muted)}
+.cbox ul{margin:4px 0 0 16px;font-size:12.5px;color:var(--ink)}
+.cbox li{margin-bottom:3px}
+@media(max-width:800px){.contract{grid-template-columns:1fr}}
+
+/* ---------- fabrication cards ---------- */
+.fab{display:grid;grid-template-columns:repeat(3,1fr);gap:13px;margin:16px 0}
+.fcard{background:var(--surface);border:1px solid var(--line);border-top:4px solid var(--warn);border-radius:10px;padding:15px 17px}
+.fcard .agent{font:600 10.5px/1 var(--mono);letter-spacing:.06em;text-transform:uppercase;color:var(--warn);margin-bottom:8px}
+.fcard b{font:650 14px/1.35 var(--sans)}
+.fcard p{font-size:12.5px;color:var(--muted);margin-top:5px}
+@media(max-width:800px){.fab{grid-template-columns:1fr}}
+
+/* ---------- details / disclosure ---------- */
+details{background:var(--surface);border:1px solid var(--line);border-radius:10px;margin:10px 0;overflow:hidden}
+summary{cursor:pointer;padding:13px 18px;font:650 14px/1.4 var(--sans);list-style:none;display:flex;align-items:center;gap:9px}
+summary::-webkit-details-marker{display:none}
+summary .chev{margin-left:auto;color:var(--violet);transition:transform .2s;font-size:12px}
+details[open] summary .chev{transform:rotate(90deg)}
+details .body{padding:2px 18px 16px;border-top:1px solid #eef1f4}
+details table{margin:10px 0 4px;border:none;border-radius:0}
+
+/* ---------- callouts ---------- */
+.takeaway{background:var(--accent-soft);border:1px solid rgba(9,105,218,.25);border-left:4px solid var(--accent);border-radius:8px;padding:13px 18px;font-size:13.5px;margin:18px 0}
+.warnbox{background:var(--warn-soft);border:1px solid rgba(207,34,46,.28);border-left:4px solid var(--warn);border-radius:8px;padding:13px 18px;font-size:13.5px;margin:18px 0}
+.shipbox{background:var(--ok-soft);border:1px solid rgba(26,127,55,.3);border-left:4px solid var(--ok);border-radius:8px;padding:13px 18px;font-size:13.5px;margin:18px 0}
+
+/* ---------- ramp diagram ---------- */
+.ramp{background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:18px 20px;margin:16px 0;
+  overflow-x:auto;font:12px/1.75 var(--mono);color:var(--muted);white-space:pre}
+.ramp .c1{color:var(--violet);font-weight:700}
+.ramp .c2{color:var(--teal);font-weight:700}
+.ramp .c3{color:var(--gate);font-weight:700}
+.ramp .c4{color:var(--accent);font-weight:700}
+.ramp .esc{color:var(--warn);font-weight:600}
+.subhead{font:700 16px/1.3 var(--serif);margin:30px 0 4px}
+
+/* ---------- side pane ---------- */
+#overlay{position:fixed;inset:0;background:rgba(31,35,40,.28);opacity:0;pointer-events:none;transition:opacity .2s;z-index:40}
+#overlay.on{opacity:1;pointer-events:auto}
+#pane{position:fixed;top:0;right:-560px;width:min(540px,94vw);height:100vh;background:var(--surface);
+  border-left:1px solid var(--line);box-shadow:-12px 0 34px rgba(31,35,40,.12);z-index:50;transition:right .25s ease;overflow-y:auto}
+#pane.on{right:0}
+#pane .inner{padding:34px 30px 60px}
+#pane .close{position:absolute;top:14px;right:16px;border:1px solid var(--line);background:var(--surface);
+  border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:13px;color:var(--muted)}
+#pane .peyebrow{font:600 10.5px/1 var(--sans);letter-spacing:.13em;text-transform:uppercase;color:var(--violet);margin-bottom:9px}
+#pane h3{font:700 22px/1.25 var(--serif);margin-bottom:9px}
+#pane .plain{font-size:14px;color:var(--ink);margin-bottom:14px}
+#pane .krow{display:grid;grid-template-columns:132px 1fr;gap:8px 12px;font-size:13px;padding:9px 0;border-top:1px solid #eef1f4}
+#pane .krow .k{font:600 11px/1.5 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted);padding-top:1px}
+.foot{margin-top:70px;padding-top:18px;border-top:1px solid var(--line);font-size:12px;color:var(--muted)}
+</style>
+</head>
+<body><div style="background:#3d3016;color:#e8c96a;border-bottom:1px solid #8a6d1f;padding:10px 24px;font:13px/1.5 -apple-system,BlinkMacSystemFont,sans-serif;letter-spacing:.02em"><strong>Historical snapshot — process as of 2026-07-02.</strong> The pipeline has moved on (task-breakdown rename, per-task Cases: lines, retro loop, Phase-C wiring). The live <code style="background:#2a2210;padding:1px 5px;border-radius:3px">.claude/</code> config is the source of truth; this page is kept for reference only.</div>
+<div class="wrap">
+
+<a class="back" href="sdlc-process-report.html">‹ The SDLC Process</a>
+
+<div class="crumb">
+  <div class="mini">
+    <span class="blk here">A · REQUIREMENT</span>
+    <span class="arr">→</span>
+    <a class="blk" href="sdlc-process-report.html#phase-b">B · DESIGN</a>
+    <span class="arr">→</span>
+    <a class="blk" href="sdlc-process-report.html#phase-c">C · BUILD</a>
+    <span class="arr">→</span>
+    <a class="blk" href="sdlc-process-report.html#phase-d">D · SHIP</a>
+  </div>
+  <span class="cnote">Phase A of the SDLC — the other phases live on the main report.</span>
+</div>
+
+<p class="eyebrow">CRM Backend · Requirement Phase · 2026-07-03</p>
+<h1>The Requirement Phase</h1>
+<p class="sub">Intake, triage, and the PRD contract — the front of the pipeline, where a thin human intent becomes a scoped, falsifiable set of stories. It runs in two phases split at <b>concept lock</b>: Phase 1 · Concept (product — manager + user) settles <em>what</em> to build; Phase 2 · Contract (manager-owned end to end) expresses it as <b>three separate artifacts — PRD → user flows → user stories</b> — at capability altitude. Code-level depth (impact analysis, escalation checks, the scope fence) belongs to Design, where the architecture is actually known. Read outside-in: the phase's law → the intake rail → the artifacts &amp; review surface → the PRD contract → the failure modes.</p>
+
+<div class="hero-law">
+  <b>A requirement is a delta on the module graph; the PRD is a transformation, never a creation.</b>
+  <span>Thin input produces questions back at the human, not a padded document. The agents contribute structure, gap-detection, and codebase grounding — never requirements. Anything that would propagate verbatim downstream should die here.</span>
+</div>
+
+<div class="legend">
+  <span><span class="badge b-live">exists today</span>live config</span>
+  <span><span class="badge b-ship">shipped 2026-07-02</span>landed in this pass</span>
+  <span><span class="badge b-prop">proposed</span>awaiting blessing</span>
+</div>
+
+<!-- ============ 1 · INTAKE RAIL ============ -->
+<h2><span class="n">1</span> The intake rail — two phases, split at concept lock</h2>
+<p class="because">Eight stations across two phases carry a requirement from a doc (or a sentence) to approved stories. <b>Phase 1 · Concept</b> (product — manager + user) turns thin intent into a locked concept; <b>Phase 2 · Contract</b> (manager-owned end to end) expresses it as three artifacts — <b>PRD ◆1a → flows ✓ → stories ◆1b</b> — each pass reviewed on a <b>living HTML review page</b> (section 2). No code reading anywhere in Phase A: the PRD names key modules as <em>candidates</em>, honestly labeled; verification happens in Phase B where design authority lives. <b>M</b> = manager (the WHAT); <b>A</b> = architect (enters at dispatch). <span class="hint">Tap any step for what it does, what it changes downstream, and its status.</span></p>
+
+<div class="rail">
+  <div class="phase-head"><span class="tag">Phase 1 · Concept</span><span class="desc">product — manager + user. Thin intent → a locked concept, before any architect or code audit.</span></div>
+  <div class="station" data-pane="s1"><div class="row"><b>1 · Understand &amp; ground</b><span class="who">M</span><span class="skl">/intake-requirement 1–2</span><span class="badge b-live">exists today</span></div><p>Two beats. <b>Scan → validate:</b> a cheap pass over the app map and CLAUDE.md titles yields a candidate module list, confirmed <b>with the user</b> before any deep reading — a 5-second veto beats a 5-minute wrong read. <b>Then ground:</b> full conceptual depth on the confirmed set only — problem, domain terminology, what those modules <b>can do</b> today (capability layer: app CLAUDE.mds, domain docs, existing flows), never the code structure. The structural caller/parity audit defers to Phase 2, paid once, on the locked concept.</p><span class="more">detail ›</span></div>
+  <div class="station" data-pane="s2"><div class="row"><b>2 · Coarse triage</b><span class="who">M</span><span class="skl">Step 2.5</span><span class="badge b-ship">shipped 2026-07-03</span></div><p>Classify into <b>four classes</b> {1 new concept · 2 update to existing concept · 3 bug fix · 4 refactor/debt} as a <b>hypothesis</b>, confirmed with the user (AskUserQuestion). Triage is <b>never skipped</b> — stations 1–2 run for everything; the class picks the <b>exit ramp</b>, not the boarding station. The 1-vs-2 discriminator: <em>"is there more than one plausible product shape?"</em> — one obvious shape → class 2; competing shapes, new actors, a new flow, or changed invariants → class 1. Spec-change-disguised-as-bug resolves <em>into</em> class 2, not a class of its own; config/ops and spikes exit before the rail.</p><span class="more">detail ›</span></div>
+  <div class="station" data-pane="sci"><div class="row"><b>3 · Concept ideation</b><span class="who">M</span><span class="skl">/intake-requirement · post-triage</span><span class="badge b-ship">shipped 2026-07-03</span></div><p><b>Class 1 only</b> — classes 2/3/4 ramp past this station: the manager proposes 2–3 concept shapes — JTBD-framed, grounded in the module map, trade-offs sketched — and the <b>user</b> picks or blends a direction before any convergence. The pipeline stops being a stenographer here: options are generated, not just structured.</p><span class="more">detail ›</span></div>
+  <div class="station" data-pane="sfin"><div class="row"><b>4 · Concept finalization</b><span class="who">M</span><span class="skl">→ PRD sections</span><span class="badge b-ship">shipped 2026-07-03</span></div><p>The pick is bound and immediately expressed as the PRD's <b>Chosen Concept · Rejected Shapes · Assumptions</b> sections (station 5, same sitting — lock and draft are one continuous move; no separate decision store). This is the concept-lock boundary — the rejected shapes are recorded so the choice never has to be re-excavated.</p><span class="more">detail ›</span></div>
+
+  <div class="lockdiv"><span class="sig">CONCEPT LOCKED — Phase 2 · Contract begins (manager continues; architect consults)</span></div>
+
+  <div class="phase-head tech"><span class="tag">Phase 2 · Contract</span><span class="desc">manager-owned end to end — three separate artifacts at capability altitude: PRD ◆1a → flows ✓ → stories ◆1b. No code reading; depth belongs to Design.</span></div>
+  <div class="station" data-pane="sprd"><div class="row"><b>5 · PRD drafted — broad</b><span class="who">M</span><span class="skl">/write-prd</span><span class="badge b-prop">re-cut proposed</span></div><p>Chosen concept + Q&amp;A → <code>/write-prd</code>: problem · <b>JTBD · value proposition</b> · outcome · scope · actors · <b>Chosen Concept · Rejected Shapes · Assumptions</b> · <b>key modules as CANDIDATES</b> — a broad, honestly-labeled hypothesis from the capability layer, not a witnessed claim (Phase B verifies). Anything the capability layer can't answer stays <code>UNCONFIRMED</code>. <b>Flows move OUT of the PRD</b> — they are the next artifact, planned after ◆1a. Features arriving <em>with</em> a PRD board here.</p><span class="more">detail ›</span></div>
+  <div class="gate"><span class="sig">GATE 1a · PRD finalized — flows may begin</span></div>
+  <div class="station" data-pane="s3"><div class="row"><b>6 · User flows</b><span class="who">M</span><span class="skl">/write-user-flows</span><span class="badge b-prop">proposed</span></div><p>From the <b>finalized</b> PRD: one journey per actor — what they do and observe, step by step, happy + failure paths — authored <b>diagram-first</b> (flows have shape; show the shape). A separate artifact (<code>flows.md</code>), its own <b>checkpoint</b>: you confirm the journeys BEFORE stories derive from them — a wrong flow caught here is exactly the redone-stories rework the checkpoint exists to prevent.</p><span class="more">detail ›</span></div>
+  <div class="lockdiv"><span class="sig">✓ FLOWS CONFIRMED — stories may derive</span></div>
+  <div class="station" data-pane="s5"><div class="row"><b>7 · Stories per flow</b><span class="who">M</span><span class="skl">/write-user-stories</span><span class="badge b-ship">shipped · re-cut proposed</span></div><p>Derive role-scoped stories from the <b>confirmed flows</b> — every story cites the flow step it serves; every edge case traces to a step it stresses. GWT in domain vocabulary. Stories live beside flows (<code>stories.md</code>, same folder). Challenge scope. Confirmed-vs-assumed provenance throughout.</p><span class="more">detail ›</span></div>
+  <div class="gate"><span class="sig">GATE 1b · stories approved — phase exit (= the hub's Gate 1)</span></div>
+  <div class="station" data-pane="s6"><div class="row"><b>8 · Dispatch — handoff to Design</b><span class="who">M</span><span class="skl">manifest → Phase B</span><span class="badge b-live">exists today</span></div><p><b>No design work happens here — nothing is written, only routed.</b> The manager packages Phase A's output (PRD + flows + stories + the Q&amp;A digest) as the dispatch manifest and hands it to the architect's track by class: bug → dev loop · extension → Phase B (blueprint* → <b>ADR</b> → plan) · new module / refactor → <code>/design-module</code>. The ADR, the deep impact analysis, T1–T6, and the scope fence all belong to <b>Phase B</b>, where they're listed on the main report.</p><span class="more">detail ›</span></div>
+</div>
+<div class="takeaway"><b>Routing precedes stories; the definitive structural call is an ADR decision.</b> The coarse class decides which pipeline runs, so it comes first — but "new app vs extension" may legitimately shift once on code evidence at Phase-B entry, never after tasks are cut.</div>
+
+<!-- ============ 2 · ARTIFACTS & REVIEW SURFACE ============ -->
+<h2><span class="n">2</span> Three artifacts, one living review surface <span class="badge b-prop" style="transform:translateY(-4px)">proposed</span></h2>
+<p class="because">A gate is only as strong as the reviewer's comprehension at it. A wall-of-markdown PRD gets skimmed; a skimmed gate is a rubber stamp; and a rubber-stamped Gate 1 sets wrong direction at the exact moment it's cheapest to fix. So artifact form is gate integrity, not cosmetics. Markdown stays canonical (agents parse it downstream for the feature's whole life); the HTML is the human review rendering — regenerated from the md, never hand-drifted.</p>
+<div class="contract">
+  <div class="cbox"><b>The artifact chain (markdown — canonical)</b>
+    <ul>
+      <li><code>&lt;app&gt;/docs/prd/PRD-&lt;slug&gt;.md</code> — WHAT &amp; WHY, broad: problem · JTBD · value proposition · outcome · scope · actors · key modules (candidates)</li>
+      <li><code>&lt;app&gt;/docs/user_stories/&lt;slug&gt;/flows.md</code> — actor journeys, step by step, diagram-first</li>
+      <li><code>&lt;app&gt;/docs/user_stories/&lt;slug&gt;/stories.md</code> — GWT cards, each citing the flow step it serves</li>
+    </ul>
+    <p style="margin-top:8px">Three separate files, three altitudes — a PRD edit never silently rewrites flows; a flow edit never silently rewrites stories. Each derives from the one before, at its own review beat.</p></div>
+  <div class="cbox"><b>The review surface (HTML — what the human sees at the gates)</b>
+    <ul>
+      <li><b>ONE living page per feature</b> that grows pass by pass: PRD → +flows → +stories — the reviewer always returns to the same place and sees the phase's state</li>
+      <li>Flows drawn as actual diagrams (actor → step → outcome), stories as cards grouped under the step they serve</li>
+      <li><code>UNCONFIRMED</code> / open questions visually flagged — impossible to miss</li>
+      <li>On iteration: <b>what-changed-since-your-last-review</b> highlighted</li>
+      <li>Frontend-design bar: progressive disclosure, no walls of text — same discipline as the architect's <code>/module-blueprint</code>, applied to the requirement side</li>
+      <li><b>Lifespan: alive until the feature is delivered</b> — the feature's readable face for its whole life; retired with the worktree at delivery</li>
+    </ul></div>
+</div>
+<div class="takeaway"><b>The pattern already exists on the architect's side</b> — <code>/module-blueprint</code> is exactly this for Phase B (interactive HTML, read outside-in, confirmed pass-by-pass). This gives the manager's gates the same treatment: a consistent review experience at every gate, both phases.</div>
+
+<!-- ============ 3 · THE ESCALATOR ============ -->
+<h2><span class="n">3</span> The escalator — class picks the exit ramp <span class="badge b-prop" style="transform:translateY(-4px)">proposed</span></h2>
+<p class="because">Triage is <b>never skipped</b> — stations 1–2 run for every requirement, in minutes, and that's where the class is decided. What the class chooses is the <b>exit ramp</b>, not the boarding station. Four classes board the rail at four depths. The under-classing detector moved with the depth: the <b>architect at Phase-B entry</b> runs the escalation checks and can send a class 2 back up to class 1 — with code evidence. <b>M</b> = manager · <b>A</b> = architect.</p>
+
+<div class="ramp"><span class="c1">                    ┌─ 1 NEW CONCEPT</span> ─► 3 ideate ─ 4 lock ═► 5 PRD ◆1a → 6 flows ✓ → 7 stories ─► ◆1b
+ALL ─► 1–2 triage ──┼─ <span class="c2">2 UPDATE</span> ─────────────────────► 6Δ flows-patch → 7Δ delta-stories ─► ◆1b (lite)
+   (never skipped)  │                          <span class="esc">▲ escalation (T1–T6) fires at Phase-B entry — architect bounces back WITH evidence</span>
+                    ├─ <span class="c3">3 BUG FIX</span> ─► bug lane · repro · dir-path blast radius ─────► commit gate only
+                    └─ <span class="c4">4 REFACTOR</span> ─► Phase B directly: /design-module Step 0 · parity inventory ─► GATE 2 (ADR)</div>
+
+<table>
+  <tr><th>Class</th><th>After triage, boards at</th><th>Depth check (Phase B)</th><th>Minimal WHAT-artifact</th><th>Gate</th></tr>
+  <tr><td><b>1 · new concept</b></td><td>station 3 — full rail</td><td>architect impact analysis at dispatch; fence declared at the ADR</td><td>PRD (broad) · flows · stories per flow</td><td class="wt-h">Gate 1a (PRD) → flows ✓ → Gate 1b (stories)</td></tr>
+  <tr><td><b>2 · update</b> <span class="hint">majority lane</span></td><td>station 6Δ — flows patch + delta-stories</td><td>DELTA impact analysis at Phase-B entry; <b>T1–T6 runs there</b></td><td>delta-stories citing flow steps + canonical <code>flows.md</code> patched same pass</td><td class="wt-h">Gate 1b (lite — no new PRD, so no 1a)</td></tr>
+  <tr><td><b>3 · bug fix</b></td><td>bug lane</td><td>none — blast radius as real dir paths in the bug card (feeds scope-drift check)</td><td>repro · expected-vs-actual · trap question · regression test</td><td class="wt-l">commit gate only</td></tr>
+  <tr><td><b>4 · refactor / debt</b></td><td>Phase B directly — architect phase-entry</td><td><b>two-sided</b>: before→after module graph + parity inventory (<code>/design-module</code> Step 0)</td><td>structure delta + behavior-preserving declaration (no stories)</td><td class="wt-h">Gate 2 (ADR)</td></tr>
+</table>
+
+<p class="subhead">The escalation protocol — class 2 → class 1</p>
+<p class="because">Class 2 is the majority lane, so its escape hatch must be a free check: all six triggers are facts the architect's Phase-B impact analysis already computes — running them at PRD time would demand code reading the phase deliberately doesn't do. Any one trips → bounce back via the <b>Design Correction Protocol</b> → up-class. This is the REF-001 net — "extend transitions to other entities" that was really an engine, ~60% of live behaviour described, 14 behaviours missed.</p>
+<table>
+  <tr><th>Trigger</th><th>Trips when</th></tr>
+  <tr><td><b>T1 · homing failure</b></td><td>new behaviour homes on no existing entity without inventing a synonym (naming gate)</td></tr>
+  <tr><td><b>T2 · rule-of-three copy</b></td><td>the update would create the 3rd+ copy of the same shape across entities/apps</td></tr>
+  <tr><td><b>T3 · new / cyclic edge</b></td><td>a new cross-app integration edge, or a would-be cycle (SDP direction check fails)</td></tr>
+  <tr><td><b>T4 · unabsorbed change axis</b></td><td>host has no extension point for it AND the axis is confirmed recurring</td></tr>
+  <tr><td><b>T5 · parity gap</b></td><td>requirement describes well under the live behaviour set (REF-001: ~60%, 14 missed)</td></tr>
+  <tr><td><b>T6 · external contract break</b></td><td>API/DTO breakage for external consumers → user-visible → a product decision</td></tr>
+</table>
+<div class="warnbox"><b>Reclassification card, not a silent switch.</b> Any trigger → a card (<b>trigger · evidence · new class</b>) → the <b>user</b> confirms → board the class-1 rail at ideation <em>with the evidence</em> (the Design Correction Protocol carries it back). Up-class is <b>always a user question</b>; down-class (a concept that turns out trivial) is announce-and-execute. The move is <b>one-way, once, and never after tasks are cut</b>.</div>
+<div class="takeaway"><b>Class-3 mechanical tell:</b> a bug fix touching files <em>outside</em> its declared blast radius means one of two things — the root cause lives elsewhere (re-audit), or a spec-change is smuggling itself through the bug lane (the trap question, caught mechanically by the scope-drift check).</div>
+<div class="takeaway" style="border-left-color:var(--violet);background:var(--violet-soft);border-color:rgba(130,80,223,.25)"><b>Anti-staleness (class 2):</b> no delta-story without a cited flow step; no cited flow change without the canonical <code>flows.md</code> (<code>&lt;app&gt;/docs/user_stories/&lt;slug&gt;/</code>) patched in the <b>same Gate-1b pass</b> — bootstrapped from current behavior if it doesn't exist yet. Legacy concepts with no PRD: the delta-story's <em>Given</em> clause records prior behavior — never retro-author PRDs as ceremony.</div>
+
+<details>
+  <summary>The conceiver duty (proactive) <span class="badge b-ship" style="margin-left:2px">shipped 2026-07-03</span><span class="chev">›</span></summary>
+  <div class="body">
+    <p style="font-size:13px;color:var(--muted);margin:12px 0 10px">Concept ideation at station 3 is the <em>reactive</em> half — options generated once a requirement is already in the pipeline. The manager also holds a standing <b>product-ideation duty</b> that lives <em>outside</em> the intake rail.</p>
+    <div class="krow" style="border-top:1px solid #eef1f4;display:grid;grid-template-columns:132px 1fr;gap:8px 12px;font-size:13px;padding:9px 0">
+      <div class="k" style="font:600 11px/1.5 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Does</div>
+      <div>Periodically scans the module graph, domain docs, and recurring user pain (feature-context files, correction patterns) and brings <b>unprompted</b> feature/concept ideas to the user.</div>
+    </div>
+    <div class="krow" style="border-top:1px solid #eef1f4;display:grid;grid-template-columns:132px 1fr;gap:8px 12px;font-size:13px;padding:9px 0">
+      <div class="k" style="font:600 11px/1.5 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Cadence</div>
+      <div>Cheap: 1–3 ideas, each one line + which modules it touches. Not a report — a nudge.</div>
+    </div>
+    <div class="krow" style="border-top:1px solid #eef1f4;display:grid;grid-template-columns:132px 1fr;gap:8px 12px;font-size:13px;padding:9px 0">
+      <div class="k" style="font:600 11px/1.5 var(--sans);letter-spacing:.05em;text-transform:uppercase;color:var(--muted)">Never</div>
+      <div>Self-initiates a pipeline. An idea only enters intake when the <b>user</b> picks it up — then it lands at station 1 like any other requirement.</div>
+    </div>
+  </div>
+</details>
+
+<!-- ============ 3 · PRD CONTRACT ============ -->
+<h2><span class="n">4</span> The PRD contract <span class="badge b-ship" style="transform:translateY(-4px)">shipped 2026-07-02</span></h2>
+<p class="because">The PRD is the entry contract to the whole pipeline. The input contract landed this pass: a provenance rule that makes an honest <code>UNCONFIRMED</code> beat confident filler, because the incentive that rewarded padding is now gone.</p>
+<div class="contract">
+  <div class="cbox"><b>Fed by — four inputs, raw intent mandatory</b>
+    <ul>
+      <li>Raw human intent (<b>mandatory</b> — the requirement itself)</li>
+      <li>Source docs when they exist (GR/circular, tender sheet, client email, incident)</li>
+      <li>Codebase reality (the agent digs — grounding before a word is written)</li>
+      <li>Clarifying Q&amp;A (extracted from the human, never assumed)</li>
+    </ul></div>
+  <div class="cbox"><b>NO-INVENTION rule</b><p>Agents contribute structure, gap-detection, and grounding — <b>never requirements</b>. Thin input produces questions back at the human, not a padded document. The Step-4 checklist no longer rewards a non-empty section; padding is now a smell, not a passing grade.</p></div>
+  <div class="cbox"><b>Consumers</b><p><b>manager</b> (primary — <code>/intake-requirement</code>) · <b>architect</b> (read-only, for the four sole-witness sections: Out-of-Scope, Constraints, Domain Terminology, Error Scenarios). No second copy of those sections exists anywhere downstream.</p></div>
+  <div class="cbox"><b>Checklist semantics</b><p>Every section is either <span class="yes">human-confirmed</span> or explicitly marked <code>UNCONFIRMED</code> — never author filler dressed as truth. Confirmed content reads as ground truth downstream, so a lie in it launders past every gate silently.</p></div>
+</div>
+
+<!-- ============ 4 · SECTION FATE ============ -->
+<h2><span class="n">5</span> Section fate — what each PRD section is worth, and to whom</h2>
+<p class="because">The PRD serves two readers with opposite diets. The manager consumes the WHAT-seeds; the architect reads only the envelope around the WHAT — the sections stories strip out. The last column is the discipline: <b>content survives downstream only by transformation, never by copy.</b></p>
+<table>
+  <tr><th>PRD section</th><th>To manager</th><th>To architect</th><th>Survives downstream as</th></tr>
+  <tr><td><b>Scope In / Out</b></td><td class="wt-c">Critical — scope-creep defense</td><td class="wt-c">Load-bearing — "not now" (OCP surface) vs "never" (YAGNI)</td><td>Extension-Cost lines + phase boundaries — never a copied list</td></tr>
+  <tr><td><b>Acceptance Criteria</b></td><td class="wt-c">Critical — the story seed</td><td class="wt-l">Noise — stories supersede post-Gate-1</td><td>Story Given/When/Then, then tests</td></tr>
+  <tr><td><b>Domain Terminology</b></td><td class="wt-h">High — canonical vocabulary</td><td class="wt-c">Load-bearing — naming gate; longest-lived</td><td>entity / exception / DTO names (outlives everything)</td></tr>
+  <tr><td><b>Error Scenarios</b></td><td class="wt-h">High — failure-path stories</td><td class="wt-c">Load-bearing — exception hierarchy, union error types</td><td>failure-mode design — derivation, not copy</td></tr>
+  <tr><td><b>Constraints &amp; Dependencies</b></td><td class="wt-l">Low — only the permissions row</td><td class="wt-c">Load-bearing — PG-vs-ES, sync-vs-async, index/cache</td><td>ADR decision rationale ("why shaped this way")</td></tr>
+  <tr><td><b>Desired Outcome</b></td><td class="wt-h">High — the "so that" benefit</td><td class="wt-l">Digested into stories</td><td>dies at the PRD</td></tr>
+  <tr><td><b>Open Questions</b></td><td class="wt-h">High — input to the Clarify round</td><td class="wt-l">Must be <b>empty</b> by Gate 1a — a PRD cannot finalize with open questions (else it's a bounce-back)</td><td>resolved into stories</td></tr>
+  <tr><td><b>Problem Statement</b></td><td class="wt-l">Medium — candidate roles</td><td class="wt-l">Noise — already digested</td><td>dies at the PRD</td></tr>
+  <tr><td><b>Data Examples</b></td><td class="wt-l">Low — spot-check</td><td class="wt-l">Shape sanity-check only</td><td>test fixtures at most</td></tr>
+</table>
+
+<!-- ============ 5 · FABRICATION ASYMMETRY ============ -->
+<h2><span class="n">6</span> The fabrication asymmetry — the sole-witness sections are the dangerous ones</h2>
+<p class="because">Not all fabrications are equal. The most dangerous sections to invent are the ones <b>no downstream artifact carries a competing copy of</b> — Out-of-Scope, Constraints, Domain Terminology. A lie there is uncontradictable, so nothing ever "breaks"; the cost is paid silently and permanently. Each seat has its own worst case.</p>
+<div class="fab">
+  <div class="fcard"><div class="agent">manager · worst</div><b>Invented Out-of-Scope</b><p>An exclusion the human never confirmed reads as settled truth — so it <b>suppresses the clarifying questions</b> the manager would otherwise ask. Gate 1 collapses silently; the un-approved interpretation ships through every gate downstream.</p></div>
+  <div class="fcard"><div class="agent">architect · worst</div><b>Invented constraint</b><p>A fabricated "1M rows/day" or "sub-100ms" becomes a fake confirmed change axis: speculative ES read models, caching layers, async pipelines. Structural, silent, <b>unfalsifiable</b> — permanent complexity bought for a change that never comes.</p></div>
+  <div class="fcard"><div class="agent">reviewer · mirror</div><b>New-module-as-extension</b><p>The review-net version of the same shape. A foreign concern welded into a host module fails <b>silent</b> — each PR looks like a reasonable small extension; no one diff trips a threshold. Death by a thousand approved commits.</p></div>
+</div>
+<div class="warnbox"><b>The asymmetry, stated once:</b> the fabrication that <em>fails loud</em> (extension-as-new-module → duplication, a stranded module, a "why not reuse fee_engine?" flag) is cheap — it gets caught pre-merge. The one that <em>fails silent</em> (invented constraint, invented out-of-scope, new-as-extension) is expensive precisely because it never presents as a violation in any single artifact. The uncontradictable one is always the dangerous one.</div>
+
+<!-- ============ 6 · BUG-FIX LANE ============ -->
+<h2><span class="n">7</span> The bug-fix lane <span class="badge b-prop" style="transform:translateY(-4px)">proposed</span></h2>
+<p class="because">A defect is a story that already shipped — the acceptance criteria exist and are being violated, so writing new stories is ceremony. It bypasses Gate 1's story machinery, but not the gate's discipline: without a reproduction, the reviewer has nothing to verify the fix against, only "does it run."</p>
+<div class="contract">
+  <div class="cbox"><b>The minimal artifact</b>
+    <ul>
+      <li><b>Expected vs actual</b> — cite the spec/story if one exists</li>
+      <li><b>Reproduction</b> — failing input → wrong output → right output</li>
+      <li><b>Blast radius</b> — who else consumes this path</li>
+      <li><b>Root-cause vs symptom</b> — one line, so the fix isn't a None-guard papering over a broken contract</li>
+      <li><b>Regression test</b> — failing-before / passing-after, proving the fix is load-bearing</li>
+    </ul></div>
+  <div class="cbox"><b>The one trap question</b><p style="margin-bottom:8px">Before the fix goes into the bug lane, the manager must ask:</p><p style="font:650 14px/1.4 var(--serif);color:var(--ink)">"Is the behaviour wrong per spec, or is the spec changing?"</p><p style="margin-top:8px">The second answer <b>reclassifies out of the bug lane</b> — it's an extension in disguise and needs stories, not a patch. Skipping this question is how a spec-change smuggles itself past Gate 1 as a "bug fix."</p></div>
+</div>
+
+<!-- ============ 7 · CLASSIFICATION IS FALSIFIABLE ============ -->
+<h2><span class="n">8</span> Classification is falsifiable, not authoritative <span class="badge b-prop" style="transform:translateY(-4px)">proposed</span></h2>
+<p class="because">The reviewer's rule: a declared classification is only useful if it's something the review net <b>checks</b>, never something it trusts as already-true. A fabricated module list launders scope past the reviewer exactly as a fabricated Out-of-Scope launders past the manager. Its value is that it's diffable, not that it's authoritative. <b>Who declares moved with the depth:</b> classes 1/2/4 — the <b>architect writes the declared-modules line at the ADR (Gate 2)</b>, after actually reading the code; class 3 — the bug card declares its blast radius at intake (bugs skip Phase B).</p>
+<table>
+  <tr><th>Declared (at ADR · bug card)</th><th>The net checks</th><th>Review lens the type sets</th></tr>
+  <tr><td><code>{type, modules:[real dir paths]}</code> — enumerable type, paths not prose ("the fees area" is not diffable)</td><td><b>scope-drift check</b> (<code>check-scope-drift.py</code> — <span class="badge b-ship">built</span>, 8 self-tests): <code>git diff --name-only</code> ⊆ declared set, run as a hard-check in self-review + review-pr, advisory at commit. Files outside the set = drift, flagged before any logic is read.</td><td>—</td></tr>
+  <tr><td><code>type: refactor</code></td><td>set-membership as above</td><td>assert behaviour-preserving — move-only, no interleaved behaviour change</td></tr>
+  <tr><td><code>type: new_module</code></td><td>set-membership + completeness</td><td>CLAUDE.md present · full test coverage · dependency-direction gate</td></tr>
+  <tr><td><code>type: extension</code> / <code>bugfix</code></td><td>set-membership · (bugfix) fail-before/pass-after test</td><td>DRY against the declared siblings · regression proof</td></tr>
+</table>
+<div class="takeaway"><b>Why it sharpens the reviewer:</b> it converts "does this belong here?" — a judgment call the fresh-eyes reviewer is structurally blind to, since the duplication lives in code the diff never touched — into "did the diff exceed its declared blast radius?", a pure set operation with zero judgment. That's the one worth hard-enforcing as a hook.</div>
+
+<!-- ============ 8 · CONFIG DELTA ============ -->
+<h2><span class="n">9</span> The config delta — agents · skills · rules · scripts <span class="badge b-prop" style="transform:translateY(-4px)">re-cut proposed</span></h2>
+<p class="because"><b>Zero new agents.</b> The phase needs wiring, not headcount: one new skill, one toolkit, one script, and surgical edits — near-zero always-on context because everything loads at its authoring moment. The 2026-07-03 re-cut (user direction): depth relocated from Phase A to Phase B — the deep impact-audit machinery built ahead of blessing is <b>withdrawn</b> from intake and its salvageable parts move to the architect's side.</p>
+<table>
+  <tr><th>Change</th><th>Kind</th><th>What it does · status</th></tr>
+  <tr><td><code>/intake-requirement</code></td><td>skill (live) + re-cut edit</td><td>the Phase-A driver: scan → validate → ground (broad) → triage ⑂ → ideate → lock → PRD ◆1a → flows ✓ → stories ◆1b → dispatch. Re-cut: deep-audit Step 7 removed; flows checkpoint added <span class="badge b-ship">shipped</span> <span class="badge b-prop">re-cut proposed</span></td></tr>
+  <tr><td><code>/write-prd</code></td><td>skill (live) + trim</td><td>broad PRD: problem · outcome · scope · actors · concept sections · key modules as CANDIDATES. Flows section moves OUT; saves at draft time (<code>Status: Draft</code> → <code>Final</code> at ◆1a) <span class="badge b-ship">shipped</span> <span class="badge b-prop">trim proposed</span></td></tr>
+  <tr><td><code>/write-user-flows</code></td><td><b>new skill</b></td><td>canonical flows format — one journey per actor, diagram-first, happy + failure paths, no-invention discipline; own artifact (<code>flows.md</code>) + own checkpoint <span class="badge b-prop">proposed</span></td></tr>
+  <tr><td><code>/write-user-stories</code></td><td>skill (live) + re-point</td><td>GWT stories derived from <b>confirmed flows</b> (was: PRD flows section); each story cites its flow step; delta-stories + same-pass <code>flows.md</code> patch, bootstrap rule when no flow doc exists <span class="badge b-ship">shipped</span> <span class="badge b-prop">re-point proposed</span></td></tr>
+  <tr><td>review-page toolkit</td><td><b>new reference + convention</b></td><td>the living HTML review page per feature (section 2): grows PRD → flows → stories, change-highlighting, UNCONFIRMED flags, frontend-design bar; md canonical, HTML regenerated; lives until delivery <span class="badge b-prop">proposed</span></td></tr>
+  <tr><td><code>check-scope-drift.py</code></td><td>script</td><td><code>git diff --name-only</code> ⊆ declared set; component-wise prefix match, allowlist for docs/schema artifacts; hard-check in <code>/self-review-checklist</code> + <code>/review-pr</code>, advisory at commit — 8 self-tests <span class="badge b-ship">built, uncommitted</span></td></tr>
+  <tr><td>declared-modules fence</td><td>convention (re-homed)</td><td><b>written at the ADR (Gate 2) by the architect</b> — after real code reading, not guessed at the PRD; recorded in <code>feature-context.md</code>; re-audits overwrite the line <span class="badge b-prop">re-home proposed</span></td></tr>
+  <tr><td>T1–T6 escalation checks</td><td>reference (re-homed)</td><td>six up-class triggers run by the <b>architect at Phase-B entry</b>; a trip bounces back via the Design Correction Protocol → reclassification card → user confirms <span class="badge b-prop">re-home proposed</span></td></tr>
+  <tr><td>deep impact-audit at intake</td><td><b>withdrawn</b></td><td><code>/impact-audit</code>-as-intake-Step-7 (built 2026-07-03 ahead of blessing) — withdrawn per user direction: architecture isn't known at PRD time, so code-evidence auditing there is premature depth and gets redone in Phase B anyway</td></tr>
+  <tr><td>manager tool-guard carve-out · triage · ideation · conceiver duty · concept-lock</td><td>persona + skill (live)</td><td>manager owns Phase-A artifacts end to end; 4-class triage, class-1 ideation, proactive conceiver cadence, lock-and-draft as one move <span class="badge b-ship">shipped</span></td></tr>
+  <tr><td>always-on context</td><td>~0 lines</td><td>triage, flows format, review-page toolkit all load on demand; the mechanical check is a script, not persona prose</td></tr>
+</table>
+<div class="shipbox"><b>Direction to confirm:</b> Phase A stays at capability altitude end to end (PRD broad → flows ✓ → stories); all code-level depth — impact analysis, T1–T6, the scope fence — belongs to the architect in Phase B. Confirm and the re-cut executes; the withdrawn pieces unwind and the proposed rows build.</div>
+
+<p class="foot">Prepared: dhruva + manager / architect / reviewer consults (2026-07-02).
+Sources: <code>/tmp/manager-prd-analysis.md</code> · <code>/tmp/architect-prd-analysis.md</code> · the three intake consults (manager, architect, reviewer).
+Status: Phase-A manager-side <em>shipped</em>; the 2026-07-03 <b>re-cut</b> (broad PRD · flows artifact + checkpoint · living review page · depth to Phase B) <em>proposed — this page is its confirmation vehicle</em>.
+Amended 2026-07-02: conceiver role added (user direction).
+Amended 2026-07-02 (2): two-phase split at concept lock — concept (product) / contract (architect consult); Module Impact Map named as the dual-use artifact.
+Amended 2026-07-03: class-based entry depth (4 classes, T1–T6 escalation, reclassification protocol) — user + manager + architect.
+Amended 2026-07-03 (2): Phase 2 renamed Contract; audit demoted to blocking consult (class-4 exception); PRD draft precedes audit; dispatch = A→B hinge — manager + architect consults.
+Phase-A manager-side implementation shipped 2026-07-03 (/intake-requirement + /write-user-stories + conceiver duty).
+<b>Amended 2026-07-03 (3) — the re-cut (user direction):</b> depth relocated to Phase B — the intake-time impact audit withdrawn (architecture isn't known at PRD time; premature depth is bad design); PRD broad, modules as candidates; flows a separate artifact + checkpoint; stories derive from confirmed flows; one living HTML review page per feature, alive until delivery; T1–T6 + declared-modules fence move to the architect at Phase-B entry / the ADR.
+<a href="sdlc-process-report.html" style="color:var(--accent);text-decoration:none;font-weight:600">‹ back to The SDLC Process</a></p>
+</div>
+
+<!-- ---------- pane ---------- -->
+<div id="overlay"></div>
+<aside id="pane"><button class="close" aria-label="close">✕</button><div class="inner" id="paneBody"></div></aside>
+
+<script>
+const PANE={
+ s1:{ey:"step 1 · manager · exists today",t:"Understand & ground",p:"The requirement lands as a doc or a sentence. Two beats: a cheap scan proposes candidate modules, the USER validates the list, and only then does the manager build full conceptual depth on the confirmed set. The axis is conceptual vs structural, not shallow vs deep: without conceptual clarity, station 3's concepts are decoration and the trade-off sketches are fiction.",rows:[["Beat 1 — scan","Read requirement/source doc · cheap pass over app dependency map + CLAUDE.md titles → CANDIDATE module list (no deep reading yet)"],["Beat 2 — validate","Confirm candidates with the user (AskUserQuestion — add/remove modules): a 5-second veto beats a 5-minute wrong read; an unvalidated list silently biases ideation toward the wrong neighbourhoods"],["Beat 3 — ground","Full conceptual depth on the CONFIRMED set only: capability layer (app CLAUDE.mds, domain docs, existing flows) — context spent only on modules that survived the checkpoint"],["Does NOT","Read code structure — anywhere in Phase A. Deep reading is Phase B's job, done once, with design authority (the Phase-B entry read / design-module Step 0)"],["Side-effect","App CLAUDE.mds gain a second consumer (concept-phase knowledge base) — their capability descriptions must stay current"],["Status","Live core + proposed validation beat — /intake-requirement Steps 1–2"]]},
+ s2:{ey:"step 2 · manager · shipped 2026-07-03",t:"Coarse triage",p:"Requirement-kind is the manager's call, pre-Gate-1 — it decides which questions get asked and whether stories exist at all. It is a confirmed hypothesis, never a silent default (consent-granularity: pre-gate interpretations are questions). The bug-fix lane exits the rail here.",rows:[["Classes","1 new concept · 2 update (majority) · 3 bug fix · 4 refactor/debt — a class earns existence only if it changes downstream artifacts or gates"],["How","Propose the class + confirm via AskUserQuestion; cheap, minutes, no code reading"],["1-vs-2 discriminator","'Is there more than one plausible product shape?' — one obvious shape → class 2; competing shapes / new actors / changed invariants → class 1"],["Bug exits here","A confirmed defect leaves the rail immediately for the bug-fix lane — no concept, no contract, no stories; the trap question fires first"],["Under-classing net","Escalation (T1–T6) fires later at Phase-B entry, with code evidence — the class is falsifiable, not trusted"],["Status","Shipped — /intake-requirement Step 4 + references/triage-classes.md"]]},
+ sci:{ey:"step 3 · manager · proposed",t:"Concept ideation",p:"Class 1 only — classes 2/3/4 ramp past this station. The manager proposes 2–3 concept shapes — JTBD-framed, grounded in the module map, trade-offs sketched — and the user picks or blends a direction before any convergence. Options are generated here, not just structured.",rows:[["Input","Understood requirement + module map from stations 1–2"],["Output","2–3 labeled concept shapes → user-chosen direction → bound at station 4 as the PRD's concept sections"],["Guardrail","Ideation ≠ invention: concepts are LABELED PROPOSALS surfaced at the gate for the human to choose — the NO-INVENTION rule bans silently smuggling requirements PAST the gate; ideation is its sanctioned mirror"],["Skip when","Classes 2/3/4 (only class 1 ideates) · or the user arrives with a fixed concept — record it and proceed straight to finalization (announce-and-execute)"]]},
+ s3:{ey:"step 6 · manager · proposed",t:"User flows",p:"From the FINALIZED PRD (◆1a closed — a flow derived from a moving draft is invalidated by every edit): one journey per actor, what they do and observe, step by step. Authored diagram-first — flows have shape, and prose hides shape. A separate artifact with its own checkpoint: the user confirms the journeys BEFORE stories derive from them.",rows:[["Input","The finalized PRD — actors, scope, outcome; never a draft"],["Output","<app>/docs/user_stories/<slug>/flows.md — one flow per actor journey: happy path + failure paths + mid-flow interruption edges"],["Form","Diagram-first (actor → step → observed outcome); prose only for judgment. On the review page, flows render as actual diagrams"],["Checkpoint","✓ flows confirmed — NOT a formal gate, but stories may not derive until the user confirms the journeys: a wrong flow caught here is precisely the redone-stories rework this beat exists to prevent"],["Boundary","What the user does and observes — never screens, storage, or implementation; hints die here"],["No invention","Thin input produces questions about the journey, never padded steps — same provenance discipline as the PRD"],["Class 2","No new flows doc — the existing flows.md is PATCHED (delta), bootstrapped from current behavior if it doesn't exist"],["Status","Proposed — /write-user-flows skill"]]},
+ sfin:{ey:"step 4 · manager · proposed",t:"Concept finalization",p:"The chosen shape is bound before any tech cost is paid. Finalization concludes as the CONCRETE PRD: the chosen shape, rejected shapes, and assumptions become PRD sections (written at station 5) — not a separate artifact. The lock test: a reader with no conversation access can answer 'what are we building, and why this shape?' from the PRD alone.",rows:[["Output","The pick, immediately expressed as the PRD's Chosen Concept · Rejected Shapes · Assumptions sections (station 5, same sitting — one continuous move). No separate decision store: a permanent decision in ephemeral session state is a lifespan violation, and at intake time a feature worktree may not even exist yet"],["Gate?","No — working checkpoint, not a formal gate: the pick IS the approval ('locking concept X' announced, override open). Reopens only via evidence (Phase-B findings via the Design Correction Protocol), never taste"],["WHY rejected matters","Six weeks later 'why not the rule-builder version?' must not be archaeology"],["Boundary","═ CONCEPT LOCKED ═ — concept work ends; contract work begins. No code reading on either side of this line within Phase A; the architect enters at dispatch"]]},
+ sprd:{ey:"step 5 · manager · re-cut proposed",t:"PRD drafted — broad",p:"The PRD is DRAFTED right after concept lock from confirmed intent, the Q&A, and the chosen concept — at CAPABILITY altitude. It names the key modules as CANDIDATES from the broad grounding (station 1's capability layer), honestly labeled — never witnessed claims, because nobody has read the code yet and the architecture isn't known. Verification is Phase B's job, done with design authority.",rows:[["Fed by","Raw intent (mandatory) · source docs · the locked concept · clarifying Q&A"],["Carries","Problem · JTBD (the job the user hires this feature for) · value proposition (why this beats the status quo) · outcome · scope in/out · actors & roles · Chosen Concept / Rejected Shapes / Assumptions · key modules (candidates) · terminology · error scenarios"],["Does NOT carry","User Flows — a separate artifact planned AFTER ◆1a (station 6); implementation details; witnessed constraints"],["Honesty rule","Anything the capability layer can't answer stays UNCONFIRMED with a named consequence — an honest hole beats confident filler; deep verification happens in Phase B, not by padding here"],["Save timing","Saved at DRAFT time (Status: Draft); ◆1a approval flips it to Final in place — no copy"],["Provenance","Sole-witness sections (Out-of-Scope · Constraints · Terminology) need explicit human confirmation at ◆1a"],["Early boarding","Features arriving WITH a PRD board the rail at this station"]]},
+ s5:{ey:"step 7 · manager · shipped · re-point proposed",t:"Stories per flow",p:"Stories are derived from the CONFIRMED flows — each story cites the flow step it serves; each edge case traces to the step it stresses. Deriving from confirmed flows (not a PRD section, not a draft) means a story can never reference a journey the user hasn't seen and blessed.",rows:[["Input","Confirmed flows.md (the ✓ checkpoint passed) + the finalized PRD for vocabulary and scope"],["Does","Derive role-scoped stories per flow step · attach Given/When/Then AC in domain vocabulary · challenge scope → GATE 1b"],["Home","<app>/docs/user_stories/<slug>/stories.md — beside flows.md, same folder: three artifacts, one derivation chain"],["Review form","On the living review page, stories render as cards grouped under the flow step they serve"],["Class 2","Delta-stories citing the flow steps they modify; flows.md patched in the SAME Gate-1b pass"],["Status","/write-user-stories shipped 2026-07-03; re-point to flows.md proposed"]]},
+ s6:{ey:"step 8 · manager hands off · exists today",t:"Dispatch — handoff to Design",p:"The last beat of Phase A and the first breath of Phase B — a pure HANDOFF. The manager routes; the architect receives. No ADR, no design, no code reading happens at this station: those are Phase B's own stations, on the main report. Dispatch exists so the architect starts with everything Phase A learned — asking the user something already on the manifest is a clarity-cascade failure.",rows:[["What moves","The dispatch manifest: PRD path (Final) · flows.md · stories.md · Q&A digest (questions + answers verbatim) · rejected shapes with whys · surviving UNCONFIRMED items"],["Routing by class","bug → dev loop directly (no ADR — blast radius came from the bug card) · extension → Phase B: [optional blueprint] → ADR → plan · new module / refactor → /design-module"],["What happens NEXT (Phase B, not here)","The architect's deep reading with design authority: impact analysis · T1–T6 escalation ledger (a 'small update' that's secretly a new concept bounces back via the Design Correction Protocol) · the ADR · the declared-modules fence written at Gate 2"],["Why it's drawn on this page","It's the hinge — the reader should see where Phase A's artifacts GO. The work itself is billed to Phase B"],["Never","Fold refactoring into feature tasks (blocking debt = separate tasks, ordered before) · gate a 'refactor first' — it stalls delivery"],["Status","Handoff live (intake Step 10 + manifest template); Phase-B-entry depth (T1–T6 + fence-at-ADR) proposed on the B side"]]}
+};
+const pane=document.getElementById('pane'),overlay=document.getElementById('overlay'),body=document.getElementById('paneBody');
+function openPane(k){const d=PANE[k];if(!d)return;
+ body.innerHTML=`<p class="peyebrow">${d.ey}</p><h3>${d.t}</h3><p class="plain">${d.p}</p>`+
+  d.rows.map(r=>`<div class="krow"><div class="k">${r[0]}</div><div>${r[1]}</div></div>`).join('');
+ pane.classList.add('on');overlay.classList.add('on');}
+function closePane(){pane.classList.remove('on');overlay.classList.remove('on');}
+document.querySelectorAll('[data-pane]').forEach(el=>el.addEventListener('click',()=>openPane(el.dataset.pane)));
+overlay.addEventListener('click',closePane);
+pane.querySelector('.close').addEventListener('click',closePane);
+document.addEventListener('keydown',e=>{if(e.key==='Escape')closePane();});
+</script>
+</body>
+</html>

@@ -1,0 +1,1025 @@
+<title>Fee Engine × Payments Engine — The Money Path</title>
+<style>
+/* ============ Midnight Forge (git-master theme) — dark-first tokens ============ */
+:root{
+  --bg:#0a0912; --surface:#15131f; --elevated:#201d2e; --border:#322e46;
+  --text:#f4f2fc; --muted:#a3a0b8;
+  --primary:#ff9a3c; --primary-hover:#ffae5e; --accent:#b18bff;
+  --success:#2fe3a3; --warning:#ffc63d; --danger:#ff6b6b; --blue:#4fb7ff; --grey:#8e8ca8;
+  --radius:14px;
+  --shadow-elevated:0 10px 34px -12px rgba(0,0,0,.7);
+  --glow-primary:0 0 0 1px rgba(255,154,60,.5),0 0 22px -2px rgba(255,154,60,.4);
+  --sans:'Geist','Inter',system-ui,-apple-system,sans-serif;
+  --mono:'Geist Mono','JetBrains Mono',ui-monospace,'SF Mono',monospace;
+  --glowA:rgba(255,154,60,.12); --glowB:rgba(177,139,255,.12); --glowC:rgba(79,183,255,.08);
+  --chipbg:rgba(255,255,255,.05);
+}
+@media (prefers-color-scheme: light){
+  :root{
+    --bg:#faf7f1; --surface:#ffffff; --elevated:#ffffff; --border:#ebe4d8;
+    --text:#181620; --muted:#6a6776;
+    --primary:#f1701a; --primary-hover:#ff8330; --accent:#7c3aed;
+    --success:#06a06d; --warning:#d97706; --danger:#e83a3a; --blue:#0a86da; --grey:#6a6776;
+    --shadow-elevated:0 10px 30px -16px rgba(20,20,30,.28);
+    --glow-primary:0 0 0 1px rgba(241,112,26,.4),0 0 18px -2px rgba(241,112,26,.3);
+    --glowA:rgba(241,112,26,.10); --glowB:rgba(124,58,237,.09); --glowC:rgba(10,134,218,.07);
+    --chipbg:rgba(20,20,30,.05);
+  }
+}
+:root[data-theme="light"]{
+  --bg:#faf7f1; --surface:#ffffff; --elevated:#ffffff; --border:#ebe4d8;
+  --text:#181620; --muted:#6a6776;
+  --primary:#f1701a; --primary-hover:#ff8330; --accent:#7c3aed;
+  --success:#06a06d; --warning:#d97706; --danger:#e83a3a; --blue:#0a86da; --grey:#6a6776;
+  --shadow-elevated:0 10px 30px -16px rgba(20,20,30,.28);
+  --glow-primary:0 0 0 1px rgba(241,112,26,.4),0 0 18px -2px rgba(241,112,26,.3);
+  --glowA:rgba(241,112,26,.10); --glowB:rgba(124,58,237,.09); --glowC:rgba(10,134,218,.07);
+  --chipbg:rgba(20,20,30,.05);
+}
+:root[data-theme="dark"]{
+  --bg:#0a0912; --surface:#15131f; --elevated:#201d2e; --border:#322e46;
+  --text:#f4f2fc; --muted:#a3a0b8;
+  --primary:#ff9a3c; --primary-hover:#ffae5e; --accent:#b18bff;
+  --success:#2fe3a3; --warning:#ffc63d; --danger:#ff6b6b; --blue:#4fb7ff; --grey:#8e8ca8;
+  --shadow-elevated:0 10px 34px -12px rgba(0,0,0,.7);
+  --glow-primary:0 0 0 1px rgba(255,154,60,.5),0 0 22px -2px rgba(255,154,60,.4);
+  --glowA:rgba(255,154,60,.12); --glowB:rgba(177,139,255,.12); --glowC:rgba(79,183,255,.08);
+  --chipbg:rgba(255,255,255,.05);
+}
+
+*{box-sizing:border-box;border-color:var(--border)}
+html{scroll-behavior:smooth}
+body{
+  margin:0;background-color:var(--bg);color:var(--text);
+  font-family:var(--sans);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+  background-image:
+    radial-gradient(900px 520px at 8% -8%,var(--glowA),transparent 70%),
+    radial-gradient(820px 520px at 100% 0%,var(--glowB),transparent 70%),
+    radial-gradient(700px 600px at 100% 100%,var(--glowC),transparent 72%);
+  background-attachment:fixed;
+}
+::selection{background:color-mix(in oklab,var(--primary) 30%,transparent)}
+::-webkit-scrollbar{width:10px;height:10px}
+::-webkit-scrollbar-thumb{background:var(--border);border-radius:999px;border:2px solid var(--bg)}
+::-webkit-scrollbar-track{background:transparent}
+
+.mono{font-family:var(--mono);font-variant-ligatures:none}
+.tabular{font-variant-numeric:tabular-nums}
+.wrap{max-width:1240px;margin:0 auto;padding:0 28px}
+
+/* ============ App shell — git-master landing chrome ============ */
+.shell{display:flex;min-height:100vh}
+.siderail{width:64px;flex:none;position:sticky;top:0;height:100vh;display:flex;flex-direction:column;align-items:center;gap:12px;padding:12px 0;border-right:1px solid var(--border);background:var(--surface);z-index:40}
+.logo-mark{width:40px;height:40px;display:grid;place-items:center;border-radius:12px;color:var(--primary);background:color-mix(in oklab,var(--primary) 12%,transparent);transition:transform .2s}
+.logo-mark:hover{transform:scale(1.08) rotate(-6deg)}
+.rail-div{width:28px;height:1px;background:var(--border);margin:4px 0}
+.rbtn{position:relative;width:44px;height:44px;border-radius:12px;display:grid;place-items:center;background:none;border:none;color:var(--muted);cursor:pointer;transition:color .2s,background .2s}
+.rbtn:hover{color:var(--text)}
+.rbtn.active{color:var(--primary);background:color-mix(in oklab,var(--primary) 18%,transparent);box-shadow:var(--glow-primary)}
+.rbtn.active::before{content:"";position:absolute;left:-10px;top:50%;transform:translateY(-50%);width:3px;height:24px;border-radius:99px;background:var(--primary)}
+.rbtn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.rbtn svg{width:21px;height:21px}
+.rbtn .tip{position:absolute;left:calc(100% + 14px);top:50%;transform:translateY(-50%) scale(.95);transform-origin:left center;white-space:nowrap;background:var(--elevated);border:1px solid var(--border);border-radius:10px;padding:6px 11px;opacity:0;pointer-events:none;transition:all .15s;box-shadow:var(--shadow-elevated);z-index:50;text-align:left}
+.rbtn:hover .tip{opacity:1;transform:translateY(-50%) scale(1)}
+.tip .t1{font-size:12.5px;font-weight:600;color:var(--text)}
+.tip .t2{font-size:10px;color:var(--muted)}
+.maincol{flex:1;min-width:0;display:flex;flex-direction:column}
+.topbar{position:sticky;top:0;z-index:30;display:flex;height:48px;flex:none;align-items:center;justify-content:space-between;gap:16px;padding:0 20px;border-bottom:1px solid var(--border);background:color-mix(in oklab,var(--surface) 86%,transparent);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.crumb{font-size:13px;font-weight:500}
+.crumb small{display:block;font-size:11px;color:var(--muted);font-weight:400}
+.ibtn{font-family:var(--mono);font-size:12px;height:32px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:8px;border:1px solid var(--border);background:none;color:var(--muted);transition:border-color .2s,color .2s}
+.ibtn:hover{border-color:var(--primary);color:var(--text)}
+
+/* hero band — gradient like git-master LearnPage */
+.heroband{flex:none;border-bottom:1px solid var(--border);padding:24px 32px 0;background:linear-gradient(135deg,color-mix(in oklab,var(--primary) 14%,var(--surface)),color-mix(in oklab,var(--accent) 12%,var(--surface)) 55%,var(--surface))}
+.heroband .hb-in{max-width:1240px;margin:0 auto;position:relative}
+.hb-mark{position:absolute;right:6px;top:-10px;color:var(--primary);opacity:.07;pointer-events:none}
+@media (max-width:760px){.hb-mark{display:none}}
+.hb-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:16px}
+h1{font-size:26px;line-height:1.25;margin:0;font-weight:700;letter-spacing:-.01em;text-wrap:balance}
+h1 .fe{color:var(--primary)} h1 .pe{color:var(--blue)} h1 .ok{color:var(--success)}
+.lede{color:var(--muted);font-size:13px;line-height:1.6;max-width:60ch;margin:4px 0 0}
+.lede b{color:var(--text);font-weight:600}
+.cta{display:flex;align-items:center;gap:8px;margin-bottom:4px;border:none;border-radius:12px;padding:10px 16px;font-family:var(--sans);font-size:13px;font-weight:700;background:linear-gradient(135deg,var(--primary),var(--accent));color:#0B0B0F;cursor:pointer;box-shadow:var(--shadow-elevated);transition:transform .15s}
+.cta:hover{transform:scale(1.03)}
+.cta svg{width:16px;height:16px}
+
+/* pill-style tab selector — exact git-master pattern */
+.pilltabs{margin:20px 0 16px;display:flex;width:fit-content;gap:4px;border:1px solid var(--border);border-radius:999px;background:color-mix(in oklab,var(--bg) 50%,transparent);padding:4px;backdrop-filter:blur(4px)}
+.ptab{display:flex;align-items:center;gap:8px;border-radius:999px;padding:7px 16px;font-family:var(--sans);font-size:13px;font-weight:600;color:var(--muted);background:none;border:none;cursor:pointer;transition:color .2s,background .2s}
+.ptab:hover{color:var(--text)}
+.ptab.active{background:linear-gradient(135deg,var(--primary),var(--primary-hover));color:#0B0B0F}
+.ptab:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.ptab svg{width:15px;height:15px}
+.view[hidden]{display:none}
+
+/* ============ Section headings ============ */
+section{padding:54px 0;scroll-margin-top:70px}
+.sec-head{display:flex;align-items:baseline;gap:16px;margin-bottom:8px}
+.sec-num{font-family:var(--mono);font-size:13px;color:var(--primary);letter-spacing:.15em}
+h2{font-size:clamp(24px,3vw,34px);margin:0;letter-spacing:-.015em;text-wrap:balance}
+.sec-sub{color:var(--muted);margin:10px 0 34px;max-width:72ch;line-height:1.6}
+.sec-sub code, .note code, td code{font-family:var(--mono);font-size:.92em;background:var(--chipbg);padding:1px 6px;border-radius:6px;border:1px solid var(--border)}
+
+/* ============ Act II — constellation (Stitch: schema explorer) ============ */
+.viz-shell{position:relative;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-elevated);padding:14px;overflow-x:auto}
+.viz-inner{min-width:1180px}
+svg#er{display:block;width:100%;height:auto}
+.er-node .box{fill:var(--elevated);stroke:var(--border);stroke-width:1.2}
+.er-node .headband{opacity:.16}
+.er-node .headline{stroke-width:1}
+.er-node text{font-family:var(--mono);fill:var(--text)}
+.er-node .fname{font-size:10.5px}
+.er-node .fname.enumable{cursor:help}
+.er-node .echev{fill:var(--primary);font-size:8px}
+.er-node .erow-hit{pointer-events:all}
+.enum-pop{position:absolute;z-index:20;min-width:230px;max-width:310px;background:var(--elevated);border:1px solid var(--border);border-radius:12px;box-shadow:var(--shadow-elevated);padding:11px 13px;pointer-events:none;opacity:0;transform:translateY(4px);transition:opacity .15s,transform .15s;font-family:var(--mono)}
+.enum-pop.show{opacity:1;transform:none}
+.enum-pop h5{margin:0 0 7px;font-size:10px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+.enum-pop .ev{display:flex;align-items:baseline;gap:9px;padding:4px 0;border-top:1px dashed color-mix(in oklab,var(--border) 70%,transparent)}
+.enum-pop .ev:first-of-type{border-top:none}
+.enum-pop .ed{font-size:10.5px;color:var(--muted);line-height:1.45}
+.enum-pop .iv{font-size:10.5px;color:var(--muted);line-height:1.55;padding:4.5px 0;border-top:1px dashed color-mix(in oklab,var(--border) 70%,transparent)}
+.enum-pop .iv:first-of-type{border-top:none}
+.enum-pop .iv b{color:var(--text)}
+.enum-pop .pwarn{margin-top:7px;font-size:10.5px;line-height:1.5;color:var(--danger);border:1px solid color-mix(in oklab,var(--danger) 40%,transparent);background:color-mix(in oklab,var(--danger) 8%,transparent);border-radius:8px;padding:5px 9px}
+.er-node .ftype{fill:var(--muted);font-size:9.5px;font-style:italic}
+.er-node .btxt{font-size:7.5px;font-weight:700;letter-spacing:.05em}
+.er-node .brect{fill:transparent;stroke-width:1}
+.er-node{cursor:pointer;transition:opacity .3s ease}
+.er-node.dim{opacity:.15}
+.er-node.lit .box{stroke-width:2}
+.zoom-ctl{position:absolute;right:22px;bottom:22px;display:flex;gap:6px;z-index:5}
+.viz-shell:fullscreen{background:var(--bg);border:none;border-radius:0;display:flex;flex-direction:column;justify-content:center;overflow:auto;padding:24px}
+.viz-shell:fullscreen .viz-inner{width:100%;max-width:1560px;margin:0 auto}
+.viz-shell.fs-fallback{position:fixed;inset:0;z-index:100;border-radius:0;background:var(--bg);display:flex;flex-direction:column;justify-content:center;overflow:auto;padding:24px}
+.viz-shell.fs-fallback .viz-inner{width:100%;max-width:1560px;margin:0 auto}
+.zoom-ctl button{width:34px;height:34px;border-radius:9px;border:1px solid var(--border);background:var(--elevated);color:var(--text);font-size:16px;cursor:pointer;transition:border-color .2s}
+.zoom-ctl button:hover{border-color:var(--primary)}
+.zoom-ctl button:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.edge{fill:none;stroke-width:1.6;transition:opacity .3s ease}
+.edge.dim{opacity:.08}
+.edge.fk-edge{stroke-dasharray:none}
+.edge.soft-edge{stroke-dasharray:5 5}
+.edge-flow{fill:none;stroke-width:2.4;stroke-linecap:round;stroke-dasharray:3 14;animation:flow 1.6s linear infinite;pointer-events:none;transition:opacity .3s ease}
+.edge-flow.dim{opacity:0}
+@keyframes flow{to{stroke-dashoffset:-17}}
+.legend{display:flex;gap:22px;flex-wrap:wrap;margin-top:14px;padding:0 6px 4px;font-size:12.5px;color:var(--muted);font-family:var(--mono)}
+.legend .li{display:flex;align-items:center;gap:8px}
+.legend svg{flex:none}
+
+/* ============ Act III — the money path player ============ */
+.player{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:var(--shadow-elevated);overflow:hidden}
+.pbtn:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+
+/* Part A — flow-chart illustration */
+.film{padding:22px 24px 18px;display:flex;flex-direction:column;gap:18px;background:
+  radial-gradient(700px 220px at 50% -40%,color-mix(in oklab,var(--accent) 8%,transparent),transparent 75%)}
+.flowchart{display:flex;align-items:flex-start;overflow-x:auto;padding:8px 2px 4px}
+.fnode{flex:none;width:92px;display:flex;flex-direction:column;align-items:center;gap:7px;background:none;border:none;cursor:pointer;color:var(--muted);padding:0;font-family:var(--mono)}
+.fnode .disc{width:48px;height:48px;border-radius:14px;display:grid;place-items:center;border:1.5px solid var(--border);background:var(--elevated);transition:all .35s ease}
+.fnode .disc svg{width:22px;height:22px}
+.fnode .lbl{font-size:10px;letter-spacing:.02em;text-align:center;line-height:1.35;max-width:92px}
+.fnode .actor{font-size:8.5px;font-weight:700;letter-spacing:.1em;color:var(--accent);border:1px solid color-mix(in oklab,var(--accent) 45%,transparent);border-radius:99px;padding:1px 7px;background:color-mix(in oklab,var(--accent) 10%,transparent)}
+.fnode:hover .disc{border-color:var(--muted)}
+.fnode.done{color:var(--muted)}
+.fnode.done .disc{color:var(--success);border-color:color-mix(in oklab,var(--success) 50%,var(--border));background:color-mix(in oklab,var(--success) 10%,var(--elevated))}
+.fnode.active{color:var(--text)}
+.fnode.active .disc{color:var(--primary);border-color:var(--primary);background:color-mix(in oklab,var(--primary) 14%,var(--elevated));box-shadow:var(--glow-primary);animation:discPulse 2.2s ease-in-out infinite}
+@keyframes discPulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+.fnode:focus-visible{outline:2px solid var(--primary);outline-offset:2px;border-radius:10px}
+.fedge{flex:1;min-width:22px;height:48px;display:flex;align-items:center;gap:0}
+.fedge i{display:block;height:2px;width:100%;background:var(--border);border-radius:99px;position:relative;overflow:hidden}
+.fedge.past i{background:linear-gradient(90deg,color-mix(in oklab,var(--success) 65%,var(--border)),color-mix(in oklab,var(--primary) 65%,var(--border)))}
+.fedge.live i::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,transparent,var(--primary),transparent);animation:edgeRun 1.2s linear infinite}
+@keyframes edgeRun{from{transform:translateX(-100%)}to{transform:translateX(100%)}}
+
+/* Part B — data deck (fixed, pill-selected tables) */
+.data-deck{border-top:1px solid var(--border);padding:16px 20px 18px;background:color-mix(in oklab,var(--elevated) 45%,var(--surface))}
+.deck-head{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+.deck-title{font-family:var(--mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);flex:none}
+.deck-body{min-height:280px;max-height:340px;overflow:auto}
+.deck-body .mini{display:none}
+.deck-body .mini.deck-active{display:block}
+.narrate{min-height:110px;text-align:center;padding:18px 26px 14px;border-radius:12px;background:
+  radial-gradient(420px 130px at 50% 0%,color-mix(in oklab,var(--accent) 9%,transparent),transparent 75%),
+  color-mix(in oklab,var(--elevated) 40%,transparent);border:1px solid color-mix(in oklab,var(--border) 70%,transparent)}
+.narrate .line{font-size:21px;font-weight:700;letter-spacing:-.015em;line-height:1.45;text-wrap:balance;transition:opacity .3s}
+.narrate .subline{color:var(--muted);font-size:13.5px;margin:8px auto 0;line-height:1.6;max-width:78ch}
+.narrate .subline .hl{color:var(--primary)}
+.tok{font-family:var(--mono);font-size:.82em;font-weight:700;color:var(--primary);background:color-mix(in oklab,var(--primary) 12%,transparent);border:1px solid color-mix(in oklab,var(--primary) 45%,transparent);border-radius:8px;padding:1px 9px 2px;box-shadow:0 0 16px -4px color-mix(in oklab,var(--primary) 60%,transparent);white-space:nowrap}
+.tab-pills{display:flex;gap:8px;flex-wrap:wrap}
+.tpill{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;padding:6px 13px;border-radius:999px;border:1px solid var(--border);background:var(--elevated);color:var(--muted);cursor:pointer;transition:all .2s}
+.tpill:hover{color:var(--text);border-color:var(--muted)}
+.tpill.active{color:#0B0B0F;border-color:transparent;background:linear-gradient(135deg,var(--primary),var(--primary-hover));font-weight:700}
+.tpill.touched:not(.active){color:var(--primary);border-color:color-mix(in oklab,var(--primary) 55%,var(--border))}
+.tpill:focus-visible{outline:2px solid var(--primary);outline-offset:2px}
+.mini{background:var(--elevated);border:1px solid var(--border);border-radius:12px;overflow:hidden;transition:box-shadow .4s ease,border-color .4s ease,opacity .4s ease}
+.mini.lit{border-color:color-mix(in oklab,var(--hue,var(--primary)) 60%,var(--border));box-shadow:0 0 0 1px color-mix(in oklab,var(--hue,var(--primary)) 40%,transparent),0 0 22px -4px color-mix(in oklab,var(--hue,var(--primary)) 45%,transparent)}
+.mini.hidden{display:none}
+.mini h4{margin:0;font-family:var(--mono);font-size:12.5px;font-weight:700;padding:10px 14px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px;color:var(--text)}
+.mini h4 .appdot{width:8px;height:8px;border-radius:3px;background:var(--hue,var(--primary));flex:none}
+.mini h4 .empty-note{margin-left:auto;color:var(--muted);font-weight:400;font-size:10.5px;letter-spacing:.06em}
+.mini table{width:100%;border-collapse:collapse;font-family:var(--mono);font-size:11.5px}
+.mini th{text-align:left;color:var(--muted);font-weight:500;font-size:10px;letter-spacing:.07em;text-transform:uppercase;padding:7px 10px;border-bottom:1px solid var(--border);white-space:nowrap}
+.mini td{padding:7px 10px;border-bottom:1px solid color-mix(in oklab,var(--border) 55%,transparent);white-space:nowrap;color:var(--text);font-variant-numeric:tabular-nums}
+.mini td.c0{color:color-mix(in oklab,var(--primary) 72%,var(--text))}
+.mini tbody tr:hover td{background:color-mix(in oklab,var(--text) 3%,transparent)}
+.mini tr:last-child td{border-bottom:none}
+.mini .muted-cell{color:var(--muted)}
+.mini tr.enter{animation:rowIn .55s cubic-bezier(.2,.9,.3,1.2) both}
+@keyframes rowIn{from{opacity:0;transform:translateX(-14px)}to{opacity:1;transform:none}}
+.mini td.flash{animation:cellFlash 1.15s ease both}
+@keyframes cellFlash{0%{background:color-mix(in oklab,var(--primary) 45%,transparent)}100%{background:transparent}}
+.mini tr.dead td{color:var(--muted);text-decoration:line-through;text-decoration-color:var(--danger);opacity:.6}
+.chip{display:inline-block;font-size:10px;font-weight:700;letter-spacing:.06em;padding:2px 8px;border-radius:999px;border:1px solid transparent}
+.chip.ok{color:var(--success);border-color:color-mix(in oklab,var(--success) 55%,transparent);background:color-mix(in oklab,var(--success) 12%,transparent)}
+.chip.warn{color:var(--warning);border-color:color-mix(in oklab,var(--warning) 55%,transparent);background:color-mix(in oklab,var(--warning) 12%,transparent)}
+.chip.info{color:var(--blue);border-color:color-mix(in oklab,var(--blue) 55%,transparent);background:color-mix(in oklab,var(--blue) 12%,transparent)}
+.chip.bad{color:var(--danger);border-color:color-mix(in oklab,var(--danger) 55%,transparent);background:color-mix(in oklab,var(--danger) 12%,transparent)}
+.chip.neutral{color:var(--grey);border-color:color-mix(in oklab,var(--grey) 55%,transparent);background:color-mix(in oklab,var(--grey) 12%,transparent)}
+.chip.viol{color:var(--accent);border-color:color-mix(in oklab,var(--accent) 55%,transparent);background:color-mix(in oklab,var(--accent) 12%,transparent)}
+.note{border:1px solid color-mix(in oklab,var(--accent) 40%,var(--border));background:color-mix(in oklab,var(--accent) 7%,transparent);border-radius:10px;padding:10px 14px;font-size:12.5px;color:var(--text);line-height:1.55;animation:rowIn .5s ease both}
+.note b{color:var(--accent)}
+.notes-area{display:flex;flex-direction:column;gap:8px}
+.player-bar{display:flex;align-items:center;gap:14px;border-top:1px solid var(--border);padding:12px 18px;background:color-mix(in oklab,var(--elevated) 55%,var(--surface))}
+.pbtn{background:linear-gradient(135deg,var(--primary),var(--primary-hover));border:none;color:#0B0B0F;width:40px;height:36px;padding:0;border-radius:12px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:transform .15s}
+.pbtn:hover{transform:scale(1.06)}
+.pbtn svg{width:16px;height:16px}
+.pbtn.ghost{background:transparent;color:var(--muted);border:1px solid var(--border);font-family:var(--mono);font-weight:500;transition:border-color .2s,color .2s,transform .15s}
+.pbtn.ghost:hover{border-color:var(--primary);color:var(--text);transform:none}
+.pbtn:disabled{opacity:.35;cursor:not-allowed;transform:none;pointer-events:none}
+.pbtn,.zoom-ctl button{position:relative}
+[data-tip]::after{content:attr(data-tip);position:absolute;bottom:calc(100% + 9px);left:50%;transform:translateX(-50%) translateY(3px);white-space:nowrap;background:var(--elevated);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:5px 10px;font-family:var(--sans);font-size:11.5px;font-weight:600;box-shadow:var(--shadow-elevated);opacity:0;pointer-events:none;transition:opacity .15s,transform .15s;z-index:60}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{opacity:1;transform:translateX(-50%) translateY(0)}
+.progress{flex:1;height:5px;border-radius:99px;background:var(--chipbg);overflow:hidden}
+.progress i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--accent));border-radius:99px;transition:width .35s linear}
+.beat-count{font-family:var(--mono);font-size:11.5px;color:var(--muted);white-space:nowrap}
+
+footer{padding:40px 0 70px;color:var(--muted);font-size:13px;font-family:var(--mono)}
+footer .rule{height:1px;background:var(--border);margin-bottom:20px}
+
+@media (max-width:760px){
+  .siderail{display:none}
+  .heroband{padding:20px 20px 0}
+}
+@media (max-width:900px){
+  .fnode{width:78px}
+  .fnode .lbl{max-width:78px}
+  .narrate .line{font-size:17px}
+}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}
+</style>
+
+<div class="shell">
+<aside class="siderail" aria-label="Primary">
+  <div class="logo-mark" title="Flow Atlas">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="22" height="22"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg>
+  </div>
+  <div class="rail-div"></div>
+  <nav style="display:flex;flex-direction:column;gap:12px">
+    <button class="rbtn active" data-view="schema" aria-label="Schema">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+      <span class="tip"><span class="t1">Schema</span><span class="t2" style="display:block">Tables & relationships</span></span>
+    </button>
+    <button class="rbtn" data-view="story" aria-label="Story">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+      <span class="tip"><span class="t1">Story</span><span class="t2" style="display:block">Animated money path</span></span>
+    </button>
+  </nav>
+</aside>
+
+<div class="maincol">
+<!-- ═══ @DATA:BRAND — topbar crumb + boundary chip; also update <title> and sidebar tooltips ═══ -->
+<header class="topbar">
+  <div class="crumb">Flow Atlas<small>fee_engine × payments_engine · the money path</small></div>
+  <span class="ibtn" style="cursor:default" title="Amounts convert at the app boundary"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="13" height="13"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg> paise = int(rupees × 100)</span>
+</header>
+
+<!-- ═══ @DATA:HERO — module title (two-tone h1: domain word in .fe amber, outcome word in .ok green), lede, CTA label ═══ -->
+<div class="heroband"><div class="hb-in">
+  <span class="hb-mark"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="120" height="120"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg></span>
+  <div class="hb-row">
+    <div>
+      <h1>Follow the money <span class="fe">from formula</span> to <span class="ok">PAID</span></h1>
+      <p class="lede">How a fee is born in <b>fee_engine</b> (rupees), shaped by an officer, packaged into <b>payments_engine</b> orders (paise), paid through Razorpay and confirmed by webhooks — <b>told through the actual tables, one row at a time.</b></p>
+    </div>
+    <button class="cta" id="cta-play">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="6 3 20 12 6 21 6 3"/></svg>
+      Play the story
+    </button>
+  </div>
+  <div class="pilltabs" role="tablist">
+    <button class="ptab active" data-view="schema" role="tab" aria-selected="true">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="6" x2="6" y1="3" y2="15"/><circle cx="18" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><path d="M18 9a9 9 0 0 1-9 9"/></svg>
+      Schema
+    </button>
+    <button class="ptab" data-view="story" role="tab" aria-selected="false">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.2 6 3 11l-.9-2.4c-.3-1.1.3-2.2 1.3-2.5l13.5-4c1.1-.3 2.2.3 2.5 1.3Z"/><path d="m6.2 5.3 3.1 3.9"/><path d="m12.4 3.4 3.1 4"/><path d="M3 11h18v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2Z"/></svg>
+      Story
+    </button>
+  </div>
+</div></div>
+
+<div id="view-schema" class="view">
+
+<section id="constellation">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">SCHEMA</span><h2>The relationship constellation</h2></div>
+    <p class="sec-sub">Hover any table to isolate its relations. <b>Solid edges</b> are real Django foreign keys. <b>Dashed edges</b> are string references — they cross the app boundary (or an audit boundary) with <em>no DB constraint</em>, which is exactly where stale-reference bugs live. The moving dots trace the direction money-data flows.</p>
+    <div class="viz-shell">
+      <div class="viz-inner"><svg id="er" viewBox="0 0 1420 880" role="img" aria-label="Entity relationship diagram of fee_engine and payments_engine tables"></svg></div>
+      <div class="zoom-ctl">
+        <button id="z-in" aria-label="Zoom in" data-tip="Zoom in"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M5 12h14"/><path d="M12 5v14"/></svg></button>
+        <button id="z-out" aria-label="Zoom out" data-tip="Zoom out"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" width="16" height="16"><path d="M5 12h14"/></svg></button>
+        <button id="z-fit" aria-label="Full screen"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+      </div>
+    </div>
+    <div class="legend">
+      <span class="li"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="var(--muted)" stroke-width="2"/></svg> Django FK (DB-enforced)</span>
+      <span class="li"><svg width="34" height="10"><line x1="0" y1="5" x2="34" y2="5" stroke="var(--muted)" stroke-width="2" stroke-dasharray="5 5"/></svg> string reference (no constraint)</span>
+      <span class="li"><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--primary)"></span> fee_engine</span>
+      <span class="li"><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--blue)"></span> payments_engine</span>
+      <span class="li"><span class="dot" style="display:inline-block;width:9px;height:9px;border-radius:3px;background:var(--accent)"></span> junction / audit</span>
+    </div>
+  </div>
+</section>
+</div><!-- /view-schema -->
+
+<div id="view-story" class="view" hidden>
+<section id="movie">
+  <div class="wrap">
+    <div class="sec-head"><span class="sec-num">STORY</span><h2>The money path, animated</h2></div>
+    <p class="sec-sub">One real story: application <code>APP-BP-1024</code>, a building permit with <code>builtup_area = 450 sqm</code>. Press play and watch every table mutate exactly as production would — new rows slide in, changed cells flash amber, statuses morph. Scenes are replayable; click any scene to jump.</p>
+
+    <div class="player">
+      <div class="film">
+        <div class="flowchart" id="flowchart" role="tablist" aria-label="Story steps"></div>
+        <div class="narrate"><div class="line" id="nline">Ready when you are.</div><div class="subline" id="nsub">Press <b>Play</b> to run the full lifecycle, or click any step in the flow above.</div></div>
+        <div class="notes-area" id="notes"></div>
+      </div>
+      <div class="player-bar">
+        <button class="pbtn ghost" id="btn-prev" aria-label="Previous moment" data-tip="Previous moment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m15 18-6-6 6-6"/></svg></button>
+        <button class="pbtn" id="btn-play" aria-label="Play or pause"></button>
+        <button class="pbtn ghost" id="btn-next" aria-label="Next moment" data-tip="Next moment"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="m9 18 6-6-6-6"/></svg></button>
+        <button class="pbtn ghost" id="btn-restart" aria-label="Restart" data-tip="Restart"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg></button>
+        <div class="progress" aria-hidden="true"><i id="prog"></i></div>
+        <span class="beat-count" id="beatlbl">scene 0 / 7</span>
+      </div>
+      <div class="data-deck">
+        <div class="deck-head"><span class="deck-title" style="display:flex;align-items:center;gap:6px"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="12" height="12"><path d="M6 3h12"/><path d="M6 8h12"/><path d="m6 13 8.5 8"/><path d="M6 13h3"/><path d="M9 13c6.667 0 6.667-10 0-10"/></svg> Table writes</span><div class="tab-pills" id="table-pills"></div></div>
+        <div class="deck-body" id="stage-tables"></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+</div><!-- /view-story -->
+
+<footer>
+  <div class="wrap"><div class="rule"></div>
+    Columns, enums and status machines verified against <span style="color:var(--text)">fee_engine/models/*.py</span> and <span style="color:var(--text)">payments_engine/models/orders.py</span> · amounts: fee_engine in rupees, payments_engine in paise · EFR = EntityFeeRuleSet · AFH = AppliedFeeHeader · OCE = OrderContributedEntity
+  </div>
+</footer>
+</div><!-- /maincol -->
+</div><!-- /shell -->
+
+<script>
+/* =================================================================
+   ACT II — ER constellation (generated SVG)
+================================================================= */
+const HUES={fe:'var(--primary)',pe:'var(--blue)',jn:'var(--accent)'};
+const BADGE={PK:'var(--warning)',FK:'var(--accent)',SOFT:'var(--blue)',UQ:'var(--success)'};
+/* fields: [name, badge|null, type] — table-card nodes, Stitch schema-explorer style */
+/* ═══ @DATA:NODES — schema constellation table-cards. Positioning math in authoring-guide.md. ═══ */
+const NODES=[
+ {id:'sfri',label:'StageFeeRuleSetIdentification',app:'fe',x:30,y:46,w:230,fields:[['stage_id',null,'str'],['fee_rule_set','SOFT','wildcard'],['action_type',null,'enum']]},
+ {id:'fpt',label:'FeePaymentTemplate',app:'fe',x:330,y:30,w:220,fields:[['id','PK','uuid'],['fee_rule_set','FK','uuid'],['config_type',null,'enum'],['config',null,'json']]},
+ {id:'frs',label:'FeeRuleSet',app:'fe',x:30,y:240,w:280,fields:[['id','PK','uuid'],['name',null,'varchar'],['entity_id','SOFT','template'],['payment_gateway_code',null,'str'],['tdr_field_ref_id',null,'str'],['enable_recalc_post_orders',null,'bool']]},
+ {id:'efr',label:'EntityFeeRuleSet · EFR',app:'fe',x:340,y:235,w:225,fields:[['id','PK','uuid'],['fee_rule_set','FK','uuid'],['entity_id','SOFT','application'],['status',null,'enum']]},
+ {id:'fh',label:'FeeHeader',app:'fe',x:60,y:440,w:220,fields:[['id','PK','uuid'],['fee_rule_set','FK','uuid'],['name',null,'varchar'],['exec_type',null,'enum'],['order',null,'int'],['parent_fee_head','FK','self'],['is_tdr_applicable',null,'bool'],['config',null,'json']]},
+ {id:'afh',label:'AppliedFeeHeader · AFH',app:'fe',x:330,y:440,w:250,fields:[['entity_fee_rule_set','FK','uuid'],['fee_header','FK','uuid'],['amount_calculated_by_system',null,'₹ dec'],['amount_given_by_editor',null,'₹ dec'],['adjusted_amount',null,'₹ dec'],['net_amount',null,'₹ dec'],['is_deleted',null,'bool'],['modified_by',null,'user id'],['applied_formula',null,'expr']]},
+ {id:'fhf',label:'FeeHeaderFormula',app:'fe',x:60,y:680,w:220,fields:[['fee_header','FK','uuid'],['formula',null,'expr'],['conditions (AND-ed)',null,'1:N']]},
+ {id:'log',label:'EntityFeeRuleSetLog',app:'jn',x:330,y:700,w:235,fields:[['log_id','PK','uuid'],['entity_fee_rule_set_id','SOFT','idx'],['action_type',null,'enum'],['payload',null,'json']]},
+ {id:'efro',label:'EntityFeeRuleSetOrder',app:'jn',x:645,y:340,w:235,fields:[['entity_fee_rule_set','FK','uuid'],['order_id','SOFT','str'],['creation_config',null,'json']]},
+ {id:'order',label:'Order',app:'pe',x:920,y:40,w:225,fields:[['id','PK','uuid'],['amount',null,'paise'],['status',null,'enum'],['rzpay_order_id',null,'str'],['allow_partial',null,'bool'],['due_datetime',null,'datetime'],['penalty_config',null,'json']]},
+ {id:'rzo',label:'RazorpayOrder',app:'pe',x:1180,y:55,w:225,fields:[['razorpay_order_id','PK','gateway'],['order','FK','uuid'],['amount',null,'paise'],['status',null,'enum']]},
+ {id:'oce',label:'OrderContributedEntity · OCE',app:'pe',x:900,y:330,w:245,fields:[['order','FK','uuid'],['entity_id','SOFT','fee head'],['amount',null,'paise'],['effective_amount',null,'paise'],['revised_amount',null,'deprecated'],['penalty_amount',null,'paise'],['status',null,'enum'],['is_tdr_applicable',null,'bool']]},
+ {id:'rzoce',label:'RazorpayOrderOCE',app:'jn',x:1180,y:350,w:225,fields:[['razorpay_order','FK','gateway'],['order_contributed_entity','FK','uuid']]},
+ {id:'wh',label:'RazorpayWebhook',app:'jn',x:920,y:600,w:235,fields:[['rzpay_order_id','SOFT','idx'],['event_status',null,'enum'],['webhook_data',null,'json']]},
+ {id:'pay',label:'Payment',app:'pe',x:1180,y:560,w:225,fields:[['id','PK','uuid'],['rzpay_payment_id','UQ','str'],['amount',null,'paise'],['status',null,'enum']]},
+];
+/* ═══ @DATA:EDGES — [from,to,'fk'|'soft']. fk=DB-enforced (solid), soft=string ref (dashed). ═══ */
+const EDGES=[
+ ['sfri','frs','soft'],['frs','fh','fk'],['fh','fhf','fk'],['frs','fpt','fk'],
+ ['frs','efr','fk'],['efr','afh','fk'],['afh','fh','fk'],['efr','efro','fk'],['efr','log','soft'],
+ ['efro','order','soft'],['oce','fh','soft'],
+ ['order','oce','fk'],['order','rzo','fk'],['rzo','rzoce','fk'],['oce','rzoce','fk'],
+ ['rzo','pay','fk'],['order','pay','fk'],['wh','rzo','soft'],
+];
+/* enum popovers — hover a dropdown-ish column to see its values (verified against constants) */
+/* ═══ @DATA:FIELD_ENUMS — chip popovers for enum columns: verify EVERY value in constants before listing. ═══ */
+const FIELD_ENUMS={
+ 'efr.status':{name:'EntityFeeRuleSetStatus',vals:[
+   ['DRAFT','editable; only ONE per entity'],['ORDERS_CREATED','orders out; irreversible']]},
+ 'fh.exec_type':{name:'FeeHeaderExecType',vals:[
+   ['DEFAULT','independent formula + conditions'],['DEPENDENT','% of parent head amount'],
+   ['TOTAL_BASED','runs after DEFAULTs; % of sum'],['PENALTY_BASED','time-based penalty calculation']]},
+ 'fpt.config_type':{name:'FeePaymentTemplateConfigType',vals:[
+   ['DEFAULT','standard auto-applied template'],['CUSTOM','explicitly configured grouping']]},
+ 'sfri.action_type':{name:'EntityActionType',vals:[
+   ['CREATE','fires on entity creation'],['UPDATE','fires on entity update'],['DELETE','fires on entity deletion']]},
+ 'log.action_type':{name:'EntityFeeRuleSetLogActionType',vals:[
+   ['CREATE_ENTITY_FEE_RULE_SET','EFR instantiated for entity'],['ADD_FEE_HEAD','officer added fee head'],
+   ['REMOVE_FEE_HEAD','officer removed fee head'],['RESTORE_FEE_HEAD','removed head brought back'],
+   ['UPDATE_FEE_HEAD','officer overrode an amount'],['RESET_ENTITY_FEE_RULE_SET','wiped back to system calc'],
+   ['CREATE_ENTITY_FEE_RULE_SET_ORDERS','payment orders generated'],['RECALCULATE_ENTITY_FEE_RULE_SET','fees recomputed; new EFR'],
+   ['RECALCULATED_ON_PAYMENT_INITIATION','auto-recalc at pay time']]},
+ 'order.status':{name:'OrderStatus',vals:[
+   ['YET_TO_PAY','awaiting citizen payment'],['INITIATED','pay clicked; 5-min hold'],
+   ['PROCESSING','payment in flight'],['PAID','fully collected'],
+   ['PARTIALLY_PAID','some fee heads paid'],['CANCELLED','voided; no longer payable']]},
+ 'oce.status':{name:'OrderContributedEntityStatus',vals:[
+   ['YET_TO_PAY','fee head still unpaid'],['PAID','fee head paid in full'],
+   ['PARTIALLY_PAID','derived partial state'],['FAILED','payment attempt failed']]},
+ 'rzo.status':{name:'RazorpayOrderPaymentStatus',vals:[
+   ['YET_TO_PAY','gateway order still open'],['PAID','captured at the gateway'],['CANCELLED','superseded or abandoned attempt']]},
+ 'pay.status':{name:'PaymentStatus',vals:[
+   ['CREATED','gateway record created'],['AUTHORIZED','authorized; not yet captured'],
+   ['PAID','captured — money is real'],['FAILED','authorization or capture failed'],
+   ['INITIATED','payment attempt started'],['UNDER_REVIEW','flagged for manual review'],
+   ['CANCELLED','cancelled before processing'],['REFUNDED','refund completed to payer']]},
+ 'wh.event_status':{name:'WebhookEventStatus',vals:[
+   ['EVENT_RECEIVED','journaled; awaiting processing'],['PROCESS_SUCCESS','handled successfully'],['PROCESS_FAILED','handler errored; remarks kept']]},
+};
+/* info popovers — amount columns get a full-clarity explainer (multiple amount fields ≠ precedence chain) */
+/* ═══ @DATA:FIELD_INFO — prose popovers for confusable columns (multiple amounts, deprecated fields…). ═══ */
+const FIELD_INFO={
+ 'oce.amount':{name:'OCE.amount — the base',rows:[
+   ['<b>Set once at order creation</b> — copied from the AFH <b>net_amount</b>, converted rupees → paise.'],
+   ['Never mutated afterwards. It is the historical “what this fee head owed when the order was born”.']],
+   warn:'Never use it alone for business logic — it knows nothing about set-off or later fee revisions.'},
+ 'oce.effective_amount':{name:'OCE.effective_amount — what to charge',rows:[
+   ['<b>The amount the citizen is actually charged.</b> Razorpay order creation reads THIS field, always.'],
+   ['Computed by the set-off interactor before checkout: negative (overpaid) OCEs get <b>0</b>; positive OCEs absorb the negative proportionally, integer arithmetic only.']]},
+ 'oce.revised_amount':{name:'OCE.revised_amount',dep:true,rows:[
+   ['<b>Legacy field — not written anymore.</b> It came from the old post-order recalculation design.'],
+   ['Fee revisions now create a NEW order with signed set-off OCEs instead of mutating this field.'],
+   ['Older OCEs still carry values, so consolidation keeps reading <b>revised_amount ?? amount</b> for legacy coexistence.']],
+   warn:'Do not build new logic on this field.'},
+ 'oce.penalty_amount':{name:'OCE.penalty_amount — late add-on',rows:[
+   ['<b>0 by default.</b> Applied when payment happens past the order\'s <b>due_datetime</b>, per its penalty_config.'],
+   ['Charged on top of effective_amount; consolidation counts it into penalty / collected totals.']]},
+ 'order.amount':{name:'Order.amount — total payable',rows:[
+   ['<b>Integer PAISE</b>, never rupees: <b>paise = int(rupees × 100)</b>. Rupees exist only in fee_engine.'],
+   ['Equals the sum of this order\'s OCE amounts at creation time.']]},
+ 'afh.net_amount':{name:'AFH.net_amount — final payable (₹)',rows:[
+   ['<b>net_amount = (amount_given_by_editor ?? amount_calculated_by_system) − adjusted_amount.</b>'],
+   ['Decimal(21,2) rupees — becomes an OCE (in paise) at order creation. Can go <b>NEGATIVE</b> when the citizen overpaid before a downward revision.']]},
+ 'afh.amount_calculated_by_system':{name:'AFH.amount_calculated_by_system — system truth',rows:[
+   ['<b>Raw formula-engine output.</b> Written once when the EFR is calculated, never edited.'],
+   ['Preserved forever next to the officer\'s override, so every edit stays auditable against what the system said.']]},
+ 'afh.amount_given_by_editor':{name:'AFH.amount_given_by_editor — officer override',rows:[
+   ['<b>Nullable.</b> NULL means “no manual edit” — the system amount stands.'],
+   ['When an officer overrides a fee, the new figure lands here and flows into net_amount; the system amount is untouched.']]},
+ 'afh.adjusted_amount':{name:'AFH.adjusted_amount — already paid / adjusted',rows:[
+   ['Amount <b>already paid or adjusted from earlier orders</b> — direct orders (processing fee) adjusted in by priority, and prior payments in revised-fee scenarios.'],
+   ['Example: original ₹1,000 paid, fees revised to ₹800 → adjusted_amount = ₹1,000, net_amount = −₹200.']]},
+ 'afh.is_deleted':{name:'AFH.is_deleted — soft delete',rows:[
+   ['<b>Officer removed this head.</b> The row stays for audit; nothing is hard-deleted.'],
+   ['REMOVE_FEE_HEAD logs the full object; RESTORE_FEE_HEAD can bring it back.']]},
+ 'afh.modified_by':{name:'AFH.modified_by',rows:[
+   ['User id of the last officer who touched this head — pairs with remarks / remarks_last_updated_* for the audit trail.']]},
+ 'afh.applied_formula':{name:'AFH.applied_formula — substituted snapshot',rows:[
+   ['The winning formula <b>after variable substitution</b> (e.g. <b>450 * 100</b>, not builtup_area * 100).'],
+   ['Snapshot of how this exact amount was produced; the template formula stays on FeeHeader. Used as override during refresh.']]},
+ 'fh.order':{name:'FeeHeader.order — calculation sequence',rows:[
+   ['Execution runs in exec_type phases: <b>DEFAULT → DEPENDENT → TOTAL_BASED</b>; <b>order</b> sorts heads within each phase.'],
+   ['DEPENDENT / TOTAL_BASED heads read earlier results — they MUST come after every head they read.']],
+   warn:'Misordering raises no error — it silently computes wrong values.'},
+ 'fh.parent_fee_head':{name:'FeeHeader.parent_fee_head — self-FK',rows:[
+   ['Links <b>TDR-charge and INTEREST child heads</b> to the head they are computed from (e.g. “TDR Charges 2%” hangs under “Registration Fee”).'],
+   ['The DEPENDENT child reads the parent\'s system amount. NULL for independent fees.']],
+   warn:'Naively summing all heads double-counts parent + child amounts.'},
+ 'fh.is_tdr_applicable':{name:'FeeHeader.is_tdr_applicable — gateway charge',rows:[
+   ['Here TDR = <b>Transaction Discount Rate</b>: online payment-gateway charges (≈2% credit card, 1% debit, 0% UPI).'],
+   ['true → a DEPENDENT TDR child head is created under this fee via <b>FeeRuleSet.tdr_field_ref_id</b> config. TDR charges are non-refundable.']],
+   warn:'Not the same TDR as payments_engine! OCE.is_tdr_applicable means Transfer-of-Development-Rights certificates.'},
+ 'oce.is_tdr_applicable':{name:'OCE.is_tdr_applicable — certificates',rows:[
+   ['Here TDR = <b>Transfer of Development Rights</b>: the citizen settles this fee head with TDR certificates (GHMC / HMDA), no money moves through Razorpay.'],
+   ['TDR OCEs get their own <b>TDROrder</b> lifecycle and are excluded from refunds, reconciliation ATR and consolidation base_amount.']],
+   warn:'Not the same TDR as fee_engine! FeeHeader.is_tdr_applicable means Transaction-Discount-Rate gateway charges.'},
+ 'frs.enable_recalc_post_orders':{name:'FRS.enable_recalculation_post_orders_creation',rows:[
+   ['<b>true</b> → fees recalculate when the citizen initiates payment — stale amounts are refreshed and the citizen must accept the new figures.'],
+   ['<b>false</b> → order amounts are charged even if engine variables changed since — documented revenue risk. Inherited by every EFR at creation.']]},
+ 'frs.tdr_field_ref_id':{name:'FRS.tdr_field_ref_id — gateway-charge config',rows:[
+   ['Reference to the <b>Transaction Discount Rate</b> config used to spawn TDR child fee heads (≈2% credit card / 1% debit / 0% UPI).'],
+   ['TDR gateway charges are non-refundable. NULL → no TDR heads for this rule set.']]},
+ 'frs.payment_gateway_code':{name:'FRS.payment_gateway_code — account routing',rows:[
+   ['Selects the Razorpay service account (LIVE_RZPAY_GATEWAY_CODE, TEST_RZPAY_GATEWAY_CODE…).'],
+   ['ALL gateway operations for orders born from this rule set — order creation, refunds, status checks — use this account. NULL = default gateway.']]},
+ 'order.rzpay_order_id':{name:'Order.rzpay_order_id — latest attempt only',rows:[
+   ['Convenience pointer to the <b>latest</b> gateway attempt. The canonical link is <b>RazorpayOrder.order</b> (FK).'],
+   ['One Order can have MANY RazorpayOrders — each OCE re-selection or amount change cancels the old attempt and creates a fresh one.']]},
+ 'order.allow_partial':{name:'Order.allow_partial — from the payment template',rows:[
+   ['Set from FeePaymentTemplate config, not hardcoded. <b>true</b> → fee-engine order: the citizen may pay selected OCEs (fee heads) now, others later.'],
+   ['<b>false</b> → direct order (e.g. processing fee): must be paid in full, selective payment raises an error.']]},
+ 'order.penalty_config':{name:'Order.penalty_config — late payment',rows:[
+   ['JSON <b>{penalty_percentage, no_of_days}</b> — grace days after due_datetime, then the % applies.'],
+   ['At pay time the gateway order amount = base + computed penalty; penalties land on OCE.penalty_amount.']]},
+ 'fh.config':{name:'FeeHeader.config — varies by exec_type',rows:[
+   ['<b>DEFAULT</b> → {parameter_name} · <b>PENALTY_BASED</b> → {payment_date_variable}.'],
+   ['Common keys: <b>ignore_for_totals</b> (skip in TOTAL_BASED sums), <b>adjust_from_direct_orders_priority</b> (setoff ordering).']]},
+};
+const HEAD=30,ROW=19,PADB=8;
+NODES.forEach(n=>n.h=HEAD+n.fields.length*ROW+PADB);
+function nodeCenter(n){return {cx:n.x+n.w/2, cy:n.y+n.h/2};}
+function edgeGeom(a,b){
+  const A=nodeCenter(a),B=nodeCenter(b);
+  let x1=A.cx,y1=A.cy,x2=B.cx,y2=B.cy,horiz;
+  const dx=B.cx-A.cx, dy=B.cy-A.cy;
+  if(Math.abs(dx)>Math.abs(dy)){ horiz=true; x1=dx>0?a.x+a.w:a.x; x2=dx>0?b.x:b.x+b.w; }
+  else { horiz=false; y1=dy>0?a.y+a.h:a.y; y2=dy>0?b.y:b.y+b.h; }
+  const mx=(x1+x2)/2, my=(y1+y2)/2;
+  const d = horiz ? `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2},${y2}`
+                  : `M${x1},${y1} C${x1},${my} ${x2},${my} ${x2},${y2}`;
+  // arrowhead at (x2,y2), pointing along approach axis
+  const s=6;
+  let arrow;
+  if(horiz){ const dir=dx>0?1:-1; arrow=`M${x2},${y2} l${-dir*s},${-s*0.7} l0,${s*1.4} Z`; }
+  else { const dir=dy>0?1:-1; arrow=`M${x2},${y2} l${-s*0.7},${-dir*s} l${s*1.4},0 Z`; }
+  return {d,arrow};
+}
+function nodeSvg(n){
+  const hue=HUES[n.app];
+  const rows=n.fields.map(([fname,badge,ftype],i)=>{
+    const y=HEAD+12+i*ROW;
+    let badgeSvg='',nameW=fname.length*6.4;
+    if(badge){
+      const bx=14+nameW+7,bw=badge.length*6+10,bcol=BADGE[badge];
+      badgeSvg=`<rect class="brect" x="${bx}" y="${y-8.5}" width="${bw}" height="11.5" rx="3.5" style="stroke:color-mix(in oklab,${bcol} 55%,transparent)"/>
+        <text class="btxt" x="${bx+bw/2}" y="${y+0.5}" text-anchor="middle" style="fill:${bcol}">${badge}</text>`;
+    }
+    const ekey=`${n.id}.${fname}`, hasEnum=!!(FIELD_ENUMS[ekey]||FIELD_INFO[ekey]);
+    const nameSvg=hasEnum
+      ? `<text class="fname enumable" x="14" y="${y}">${fname}<tspan class="echev"> ▾</tspan></text>`
+      : `<text class="fname" x="14" y="${y}">${fname}</text>`;
+    const hit=hasEnum?`<rect class="erow-hit" data-ekey="${ekey}" x="4" y="${y-12}" width="${n.w-8}" height="${ROW}" fill="transparent"/>`:'';
+    return `${nameSvg}${badgeSvg}
+      <text class="ftype" x="${n.w-12}" y="${y}" text-anchor="end">${ftype}</text>${hit}`;
+  }).join('');
+  return `<g class="er-node" data-id="${n.id}" transform="translate(${n.x},${n.y})" tabindex="0">
+    <rect class="box" width="${n.w}" height="${n.h}" rx="10" style="stroke:color-mix(in oklab,${hue} 45%,var(--border))"/>
+    <rect class="headband" width="${n.w}" height="${HEAD}" rx="10" fill="${hue}"/>
+    <line class="headline" x1="0" y1="${HEAD}" x2="${n.w}" y2="${HEAD}" style="stroke:color-mix(in oklab,${hue} 35%,var(--border))"/>
+    <circle cx="15" cy="${HEAD/2}" r="3.2" fill="${hue}"/>
+    <text x="26" y="${HEAD/2+4}" font-size="11.5" font-weight="700">${n.label}</text>
+    ${rows}</g>`;
+}
+function renderER(){
+  const svg=document.getElementById('er');
+  const byId=Object.fromEntries(NODES.map(n=>[n.id,n]));
+  const defs=`<defs><pattern id="dotgrid" width="22" height="22" patternUnits="userSpaceOnUse">
+    <circle cx="1.2" cy="1.2" r="1.2" fill="var(--border)" opacity=".55"/></pattern></defs>
+    <rect x="0" y="0" width="1420" height="880" fill="url(#dotgrid)" rx="10"/>`;
+  const edgesSvg=EDGES.map(([f,t,kind],i)=>{
+    const g=edgeGeom(byId[f],byId[t]);
+    const col = byId[f].app==='pe'||byId[t].app==='pe' ? 'var(--blue)':'var(--primary)';
+    return `<g class="edge-g" data-f="${f}" data-t="${t}">
+      <path class="edge ${kind}-edge" d="${g.d}" stroke="color-mix(in oklab, ${col} 45%, var(--border))"/>
+      <path class="edge" d="${g.arrow}" fill="color-mix(in oklab, ${col} 60%, var(--border))" stroke="none"/>
+      <path class="edge-flow" d="${g.d}" stroke="${col}" style="animation-delay:${(i*0.13).toFixed(2)}s"/>
+    </g>`;
+  }).join('');
+  const nodesSvg=NODES.map(nodeSvg).join('');
+  svg.innerHTML=defs+edgesSvg+nodesSvg;
+
+  const nodeEls=[...svg.querySelectorAll('.er-node')];
+  const edgeGs=[...svg.querySelectorAll('.edge-g')];
+  function focus(id){
+    const adj=new Set([id]);
+    EDGES.forEach(([f,t])=>{ if(f===id)adj.add(t); if(t===id)adj.add(f); });
+    nodeEls.forEach(el=>{ el.classList.toggle('dim',!adj.has(el.dataset.id)); el.classList.toggle('lit',el.dataset.id===id); });
+    edgeGs.forEach(g=>{ const on=g.dataset.f===id||g.dataset.t===id;
+      g.querySelectorAll('path').forEach(p=>p.classList.toggle('dim',!on)); });
+  }
+  function clear(){ nodeEls.forEach(el=>el.classList.remove('dim','lit')); edgeGs.forEach(g=>g.querySelectorAll('path').forEach(p=>p.classList.remove('dim'))); }
+  nodeEls.forEach(el=>{
+    el.addEventListener('mouseenter',()=>focus(el.dataset.id));
+    el.addEventListener('focus',()=>focus(el.dataset.id));
+    el.addEventListener('mouseleave',clear);
+    el.addEventListener('blur',clear);
+  });
+
+  /* enum popover on hover of dropdown-ish columns */
+  const shellEl=document.querySelector('.viz-shell');
+  const pop=document.createElement('div'); pop.className='enum-pop'; shellEl.appendChild(pop);
+  function showPop(hit){
+    const k=hit.dataset.ekey, e=FIELD_ENUMS[k], info=FIELD_INFO[k];
+    if(!e&&!info) return;
+    if(e){
+      pop.innerHTML=`<h5>${e.name}</h5>`+e.vals.map(([v,d])=>`<div class="ev">${chip(v)}<span class="ed">${d}</span></div>`).join('');
+    }else{
+      pop.innerHTML=`<h5>${info.name}${info.dep?' <span class="chip bad">DEPRECATED</span>':''}</h5>`
+        +info.rows.map(r=>`<div class="iv">${r[0]}</div>`).join('')
+        +(info.warn?`<div class="pwarn">${info.warn}</div>`:'');
+    }
+    const r=hit.getBoundingClientRect(), s=shellEl.getBoundingClientRect();
+    let left=r.right-s.left+shellEl.scrollLeft+10;
+    let top=r.top-s.top+shellEl.scrollTop-10;
+    pop.style.left='0px'; pop.style.top='0px'; pop.classList.add('show');
+    const pw=pop.offsetWidth, ph=pop.offsetHeight;
+    if(left+pw>shellEl.scrollLeft+shellEl.clientWidth-12) left=r.left-s.left+shellEl.scrollLeft-pw-10;
+    const maxTop=shellEl.scrollTop+shellEl.clientHeight-ph-10;
+    if(top>maxTop) top=Math.max(shellEl.scrollTop+10,maxTop);
+    pop.style.left=left+'px'; pop.style.top=top+'px';
+  }
+  svg.querySelectorAll('.erow-hit').forEach(hit=>{
+    hit.addEventListener('mouseenter',()=>showPop(hit));
+    hit.addEventListener('mouseleave',()=>pop.classList.remove('show'));
+  });
+}
+renderER();
+
+/* zoom controls */
+let zoom=1;
+function applyZoom(){
+  const w=1420/zoom,h=880/zoom,x=710-w/2,y=440-h/2;
+  document.getElementById('er').setAttribute('viewBox',`${x} ${y} ${w} ${h}`);
+}
+document.getElementById('z-in').addEventListener('click',()=>{zoom=Math.min(2,zoom*1.25);applyZoom();});
+document.getElementById('z-out').addEventListener('click',()=>{zoom=Math.max(.6,zoom/1.25);applyZoom();});
+/* fullscreen toggle for the constellation */
+const vizShell=document.querySelector('.viz-shell');
+const zFitBtn=document.getElementById('z-fit');
+const I_EXPAND='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M8 3H5a2 2 0 0 0-2 2v3"/><path d="M21 8V5a2 2 0 0 0-2-2h-3"/><path d="M3 16v3a2 2 0 0 0 2 2h3"/><path d="M16 21h3a2 2 0 0 0 2-2v-3"/></svg>';
+const I_SHRINK='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="16" height="16"><path d="M8 3v3a2 2 0 0 1-2 2H3"/><path d="M21 8h-3a2 2 0 0 1-2-2V3"/><path d="M3 16h3a2 2 0 0 1 2 2v3"/><path d="M16 21v-3a2 2 0 0 1 2-2h3"/></svg>';
+function isFs(){ return document.fullscreenElement===vizShell||document.webkitFullscreenElement===vizShell||vizShell.classList.contains('fs-fallback'); }
+function syncFsBtn(){ zFitBtn.innerHTML=isFs()?I_SHRINK:I_EXPAND; zFitBtn.setAttribute('aria-label',isFs()?'Exit full screen':'Full screen'); zFitBtn.dataset.tip=isFs()?'Exit full screen':'Full screen'; }
+zFitBtn.addEventListener('click',()=>{
+  if(isFs()){
+    if(document.exitFullscreen&&document.fullscreenElement) document.exitFullscreen();
+    else if(document.webkitExitFullscreen&&document.webkitFullscreenElement) document.webkitExitFullscreen();
+    else vizShell.classList.remove('fs-fallback');
+  }else{
+    if(vizShell.requestFullscreen) vizShell.requestFullscreen().catch(()=>vizShell.classList.add('fs-fallback'));
+    else if(vizShell.webkitRequestFullscreen) vizShell.webkitRequestFullscreen();
+    else vizShell.classList.add('fs-fallback');
+  }
+  setTimeout(syncFsBtn,50);
+});
+document.addEventListener('fullscreenchange',syncFsBtn);
+document.addEventListener('webkitfullscreenchange',syncFsBtn);
+document.addEventListener('keydown',e=>{ if(e.key==='Escape'&&vizShell.classList.contains('fs-fallback')){ vizShell.classList.remove('fs-fallback'); syncFsBtn(); } });
+syncFsBtn();
+
+/* view switching — sidebar rail + pill tabs (2 views: schema, story) */
+const VIEWS={schema:document.getElementById('view-schema'),story:document.getElementById('view-story')};
+function switchView(v){
+  for(const [k,el] of Object.entries(VIEWS)) el.hidden=(k!==v);
+  document.querySelectorAll('[data-view]').forEach(b=>{
+    const on=b.dataset.view===v;
+    b.classList.toggle('active',on);
+    if(b.getAttribute('role')==='tab') b.setAttribute('aria-selected',on);
+  });
+  window.scrollTo({top:0,behavior:'instant'});
+}
+document.querySelectorAll('[data-view]').forEach(b=>b.addEventListener('click',()=>switchView(b.dataset.view)));
+document.getElementById('cta-play').addEventListener('click',()=>{ switchView('story'); if(!playing) togglePlay(true); });
+
+/* =================================================================
+   ACT III — the money path player
+================================================================= */
+const fmtR=v=>'₹'+v.toLocaleString('en-IN',{minimumFractionDigits:2});
+const fmtP=v=>v.toLocaleString('en-IN');
+/* ═══ @DATA:CHIP — status value → chip variant (ok|warn|info|bad|neutral|viol). Extend for module statuses. ═══ */
+const CHIP={
+ 'DRAFT':'neutral','ORDERS_CREATED':'info',
+ 'YET_TO_PAY':'warn','INITIATED':'info','PROCESSING':'info','PAID':'ok','PARTIALLY_PAID':'warn','CANCELLED':'bad',
+ 'CREATED':'neutral','AUTHORIZED':'info','FAILED':'bad','REFUNDED':'viol',
+ 'EVENT_RECEIVED':'warn','PROCESS_SUCCESS':'ok','PROCESS_FAILED':'bad',
+ 'CREATE_ENTITY_FEE_RULE_SET':'viol','UPDATE_FEE_HEAD':'warn','REMOVE_FEE_HEAD':'bad','CREATE_ENTITY_FEE_RULE_SET_ORDERS':'info',
+ 'true':'bad','false':'neutral',
+};
+const chip=v=>`<span class="chip ${CHIP[v]||'neutral'}">${v}</span>`;
+
+/* ═══ @DATA:TABLES — deck mini-table configs. One entry per table the story writes to.
+   {key:{title:'DisplayName (unit)',app:'fe|pe|jn',cols:[...]}} — cols are the columns shown in the deck. ═══ */
+const TABLES={
+ frs:{title:'FeeRuleSet',app:'fe',cols:['id','name','entity_type']},
+ fh:{title:'FeeHeader (+ winning formula)',app:'fe',cols:['name','exec_type','order','formula']},
+ sfri:{title:'StageFeeRuleSetIdentification',app:'fe',cols:['stage_id','fee_rule_set','action_type']},
+ efr:{title:'EntityFeeRuleSet — EFR',app:'fe',cols:['id','entity_id','status','orders_created_at']},
+ afh:{title:'AppliedFeeHeader — AFH  (₹)',app:'fe',cols:['fee_header','calculated_by_system','given_by_editor','net_amount','is_deleted']},
+ log:{title:'EntityFeeRuleSetLog',app:'jn',cols:['action_type','action_done_by','payload']},
+ efro:{title:'EntityFeeRuleSetOrder',app:'jn',cols:['entity_fee_rule_set','order_id']},
+ order:{title:'Order  (paise)',app:'pe',cols:['id','name','amount','status','rzpay_order_id']},
+ oce:{title:'OrderContributedEntity — OCE  (paise)',app:'pe',cols:['id','order','fee head','amount','effective','status']},
+ rzo:{title:'RazorpayOrder',app:'pe',cols:['razorpay_order_id','order','amount','status','paid_datetime']},
+ rzoce:{title:'RazorpayOrderOCE (junction)',app:'jn',cols:['razorpay_order','oce']},
+ pay:{title:'Payment',app:'pe',cols:['rzpay_payment_id','amount','payment_mode','status']},
+ wh:{title:'RazorpayWebhook',app:'jn',cols:['rzpay_order_id','event','event_status']},
+};
+
+/* Beat vocabulary:
+   {say, sub}                      — narration
+   {add:'table', id, cells:{}}     — new row (animated)
+   {set:'table', id, cells:{}}     — mutate cells (flash)
+   {kill:'table', id}              — strike-through row
+   {note:'html'}                   — annotation card
+   {lit:['table',...]}             — glow these tables
+   status-like values auto-chip; d = ms after beat (default 1500)
+*/
+/* ═══ @DATA:SCENES — the story. 5-8 scenes, each 4-10 beats. Beat vocabulary in authoring-guide.md. ═══ */
+const SCENES=[
+ {title:'Fees are calculated',tables:['sfri','frs','fh'],beats:[
+   {say:'<span class="tok">APP-BP-1024</span> reaches the “Fee Payment” stage.',sub:'The stage trigger asks the router: which fee rule set applies here? <span class="hl">StageFeeRuleSetIdentification</span> answers with a string reference — not a FK.',lit:['sfri'],d:2200},
+   {add:'sfri',id:'r1',cells:{stage_id:'stg_fee_payment',fee_rule_set:'frs_tg_bp_01',action_type:'CREATE'},d:1700},
+   {add:'frs',id:'f1',cells:{id:'frs_tg_bp_01',name:'TG Building Permit Fees',entity_type:'PIPELINE_TEMPLATE'},lit:['frs'],d:1800},
+   {say:'The formula engine resolves engine variables, then evaluates each FeeHeader in order.',sub:'For every head: conditions on each formula are AND-ed; the first matching formula (lowest <code>order</code>) wins. <span class="hl">builtup_area = 450</span>.',lit:['fh'],d:2300},
+   {add:'fh',id:'h1',cells:{name:'Building Permit Fee',exec_type:'DEFAULT',order:'1',formula:'builtup_area * 100'},d:1300},
+   {add:'fh',id:'h2',cells:{name:'Scrutiny Fee',exec_type:'DEFAULT',order:'2',formula:'builtup_area * 20'},d:1300},
+   {add:'fh',id:'h3',cells:{name:'Labour Cess',exec_type:'DEFAULT',order:'3',formula:'builtup_area * 25'},d:1300},
+   {add:'fh',id:'h4',cells:{name:'Development Charges',exec_type:'DEFAULT',order:'4',formula:'builtup_area * 50'},d:1600},
+   {note:'<b>Order matters silently.</b> A DEPENDENT or TOTAL_BASED head placed before its inputs computes wrong values with no error raised.',d:2400},
+ ]},
+ {title:'EFR & AFHs are born',tables:['efr','afh','log'],beats:[
+   {say:'The template is stamped into a runtime instance: one EntityFeeRuleSet for this application.',sub:'Status begins at <span class="hl">DRAFT</span>. Every calculated head becomes an AppliedFeeHeader carrying real rupees.',lit:['efr'],d:2200},
+   {add:'efr',id:'e1',cells:{id:'efr_9f3a12',entity_id:'APP-BP-1024',status:'DRAFT',orders_created_at:'—'},d:1700},
+   {add:'afh',id:'a1',cells:{fee_header:'Building Permit Fee',calculated_by_system:fmtR(45000),given_by_editor:'—',net_amount:fmtR(45000),is_deleted:'false'},lit:['afh'],d:1200},
+   {add:'afh',id:'a2',cells:{fee_header:'Scrutiny Fee',calculated_by_system:fmtR(9000),given_by_editor:'—',net_amount:fmtR(9000),is_deleted:'false'},d:1200},
+   {add:'afh',id:'a3',cells:{fee_header:'Labour Cess',calculated_by_system:fmtR(11250),given_by_editor:'—',net_amount:fmtR(11250),is_deleted:'false'},d:1200},
+   {add:'afh',id:'a4',cells:{fee_header:'Development Charges',calculated_by_system:fmtR(22500),given_by_editor:'—',net_amount:fmtR(22500),is_deleted:'false'},d:1600},
+   {say:'And the audit trail starts.',sub:'Every lifecycle event lands in EntityFeeRuleSetLog — append-only, keyed by string id so it survives recalculation.',lit:['log'],d:1600},
+   {add:'log',id:'l1',cells:{action_type:'CREATE_ENTITY_FEE_RULE_SET',action_done_by:'system',payload:'{efr: efr_9f3a12, frs: frs_tg_bp_01}'},d:2000},
+ ]},
+ {title:'Officer edits the fees',tables:['afh','log'],beats:[
+   {say:'Officer Priya reviews the draft and overrides Labour Cess to <span class="tok">₹10,000</span>.',sub:'The system amount is <b>preserved</b> in <code>amount_calculated_by_system</code>; the override lives in <code>amount_given_by_editor</code>; <code>net_amount</code> becomes the payable truth. Overrides require remarks and cascade to DEPENDENT / TOTAL_BASED heads.',lit:['afh'],d:2400},
+   {set:'afh',id:'a3',cells:{given_by_editor:fmtR(10000),net_amount:fmtR(10000)},d:1600},
+   {add:'log',id:'l2',cells:{action_type:'UPDATE_FEE_HEAD',action_done_by:'officer_priya',payload:'{fee_header: Labour Cess, net: 10000.00}'},lit:['log'],d:2000},
+   {say:'She then removes Development Charges entirely.',sub:'No hard delete — <code>is_deleted = true</code> keeps the row for audit, and the log records the full object for RESTORE_FEE_HEAD later. Heads with <code>adjusted_amount &gt; 0</code> (already paid) cannot be removed.',lit:['afh'],d:2300},
+   {set:'afh',id:'a4',cells:{is_deleted:'true'},kill:true,d:1500},
+   {add:'log',id:'l3',cells:{action_type:'REMOVE_FEE_HEAD',action_done_by:'officer_priya',payload:'{fee_header: Development Charges…}'},lit:['log'],d:1900},
+   {note:'<b>Payable total is now ₹64,000</b> — Permit ₹45,000 + Scrutiny ₹9,000 + Cess ₹10,000. Every keystroke is reconstructable from the log.',d:2600},
+ ]},
+ {title:'Payment template → Orders & OCEs',tables:['order','oce','efro','efr','log'],beats:[
+   {say:'FeePaymentTemplate “Standard Collection” packages the fee heads into orders.',sub:'Config groups <span class="hl">[Permit, Scrutiny]</span> into one order and <span class="hl">[Labour Cess]</span> into another. Here the money crosses the app boundary — and the unit flips: <b>paise = int(rupees × 100)</b>.',d:2800},
+   {add:'order',id:'o1',cells:{id:'ord_7c21',name:'Permit & Scrutiny Charges',amount:fmtP(5400000),status:'YET_TO_PAY',rzpay_order_id:'—'},lit:['order'],d:1600},
+   {add:'oce',id:'c1',cells:{id:'oce_11',order:'ord_7c21','fee head':'Building Permit Fee',amount:fmtP(4500000),effective:fmtP(4500000),status:'YET_TO_PAY'},lit:['oce'],d:1200},
+   {add:'oce',id:'c2',cells:{id:'oce_12',order:'ord_7c21','fee head':'Scrutiny Fee',amount:fmtP(900000),effective:fmtP(900000),status:'YET_TO_PAY'},d:1400},
+   {add:'order',id:'o2',cells:{id:'ord_7c22',name:'Labour Cess',amount:fmtP(1000000),status:'YET_TO_PAY',rzpay_order_id:'—'},d:1300},
+   {add:'oce',id:'c3',cells:{id:'oce_13',order:'ord_7c22','fee head':'Labour Cess',amount:fmtP(1000000),effective:fmtP(1000000),status:'YET_TO_PAY'},d:1600},
+   {say:'fee_engine remembers which orders it created.',sub:'EntityFeeRuleSetOrder bridges EFR → Order with a plain string <code>order_id</code>, and the EFR flips to its terminal status.',lit:['efro'],d:2000},
+   {add:'efro',id:'b1',cells:{entity_fee_rule_set:'efr_9f3a12',order_id:'ord_7c21'},d:1100},
+   {add:'efro',id:'b2',cells:{entity_fee_rule_set:'efr_9f3a12',order_id:'ord_7c22'},d:1300},
+   {set:'efr',id:'e1',cells:{status:'ORDERS_CREATED',orders_created_at:'2026-07-06 11:42'},lit:['efr'],d:1600},
+   {add:'log',id:'l4',cells:{action_type:'CREATE_ENTITY_FEE_RULE_SET_ORDERS',action_done_by:'system',payload:'{efr: efr_9f3a12}'},d:1800},
+   {note:'<b>allow_partial = true</b> on both orders: these are fee-engine orders, so the citizen may pay selected OCEs. ₹54,000 → 5,400,000 paise.',d:2600},
+ ]},
+ {title:'Citizen initiates payment',tables:['order','rzo','rzoce','oce'],beats:[
+   {say:'Ravi opens the citizen portal and selects both fee heads of the first order.',sub:'Behind a Redis lock (<code>CREATE_RAZORPAY_ORDER_IN_PORTAL-ord_7c21</code>) a gateway order is created for exactly the selected OCEs.',d:2500},
+   {add:'rzo',id:'z1',cells:{razorpay_order_id:'order_MNqx4A1B9zKQ7c',order:'ord_7c21',amount:fmtP(5400000),status:'YET_TO_PAY',paid_datetime:'—'},lit:['rzo'],d:1800},
+   {add:'rzoce',id:'j1',cells:{razorpay_order:'order_MNqx4A…',oce:'oce_11'},lit:['rzoce'],d:1100},
+   {add:'rzoce',id:'j2',cells:{razorpay_order:'order_MNqx4A…',oce:'oce_12'},d:1400},
+   {set:'order',id:'o1',cells:{status:'INITIATED',rzpay_order_id:'order_MNqx4A…'},lit:['order'],d:1900},
+   {note:'<b>One Order, many RazorpayOrders.</b> If Ravi re-selects different heads or a penalty changes the amount, this gateway order is CANCELLED and a fresh one is created. INITIATED auto-reverts to YET_TO_PAY after 300 s if abandoned.',d:3000},
+   {say:'Ravi pays <span class="tok">₹54,000</span> by card on the Razorpay checkout.',sub:'Had the order been past <code>due_datetime</code>, the gateway amount would be base + penalty (per penalty_config). From here on, our system only learns the truth through <b>webhooks</b>.',d:2200},
+ ]},
+ {title:'Webhooks land',tables:['wh','pay'],beats:[
+   {say:'Razorpay calls POST /payments_engine/razorpay/webhook/ — payment.authorized.',sub:'Every callback is journaled verbatim in RazorpayWebhook before anything else; a per-order Redis webhook lock stops duplicate deliveries from double-processing. <span class="hl">payment.authorized</span> fires only for 2-step card payments — UPI goes straight to captured.',lit:['wh'],d:2700},
+   {add:'wh',id:'w1',cells:{rzpay_order_id:'order_MNqx4A…',event:'payment.authorized',event_status:'EVENT_RECEIVED'},d:1500},
+   {add:'pay',id:'p1',cells:{rzpay_payment_id:'pay_PqR8sT2uV3wX',amount:fmtP(5400000),payment_mode:'card',status:'AUTHORIZED'},lit:['pay'],d:1800},
+   {set:'wh',id:'w1',cells:{event_status:'PROCESS_SUCCESS'},d:1500},
+   {say:'Then <span class="tok">payment.captured</span> — the money is real now.',sub:'Razorpay\'s <code>captured</code> maps to internal <span class="hl">PAID</span> via RazorpayPaymentStatus. There is no internal CAPTURED status.',d:2200},
+   {add:'wh',id:'w2',cells:{rzpay_order_id:'order_MNqx4A…',event:'payment.captured',event_status:'EVENT_RECEIVED'},lit:['wh'],d:1400},
+   {set:'pay',id:'p1',cells:{status:'PAID'},lit:['pay'],d:1400},
+   {set:'wh',id:'w2',cells:{event_status:'PROCESS_SUCCESS'},d:1300},
+   {add:'wh',id:'w3',cells:{rzpay_order_id:'order_MNqx4A…',event:'order.paid',event_status:'EVENT_RECEIVED'},d:1800},
+ ]},
+ {title:'The status cascade',tables:['rzo','oce','order','wh'],beats:[
+   {say:'<span class="tok">order.paid</span> processing fans out: gateway order, OCEs, then the Order itself.',sub:'Amounts are matched, each covered OCE flips to PAID, and the order status is <b>derived</b> — sum(paid OCEs) vs order.amount.',lit:['rzo'],d:2500},
+   {set:'rzo',id:'z1',cells:{status:'PAID',paid_datetime:'2026-07-06 12:03'},d:1600},
+   {set:'oce',id:'c1',cells:{status:'PAID'},lit:['oce'],d:1100},
+   {set:'oce',id:'c2',cells:{status:'PAID'},d:1400},
+   {set:'order',id:'o1',cells:{status:'PAID'},lit:['order'],d:1600},
+   {set:'wh',id:'w3',cells:{event_status:'PROCESS_SUCCESS'},lit:['wh'],d:1600},
+   {note:'Had Ravi selected only <b>one</b> OCE, the same cascade would leave the Order at <span class="chip warn">PARTIALLY_PAID</span> — a derived state, never stored-then-transitioned. A duplicate order.paid on an already-PAID order is rejected: <b>DisallowedStatusTransition</b>.',d:2800},
+   {say:'The money path is complete. ₹54,000 collected; Labour Cess still awaits.',sub:'ord_7c22 stays YET_TO_PAY. Downstream, ApplicationFeeConsolidation rebuilds the per-fee-head snapshot and reconciliation moves the money to government accounts: <span class="hl">ATR = paid − refunded − already reconciled</span>.',d:3000},
+ ]},
+];
+
+/* ---- player engine ---- */
+const stageTables=document.getElementById('stage-tables');
+const notesEl=document.getElementById('notes');
+const nline=document.getElementById('nline'), nsub=document.getElementById('nsub');
+const btnPlay=document.getElementById('btn-play'), btnRestart=document.getElementById('btn-restart');
+const btnPrev=document.getElementById('btn-prev'), btnNext=document.getElementById('btn-next');
+const prog=document.getElementById('prog'), beatlbl=document.getElementById('beatlbl');
+const reduced=matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+let state={}, els={}, playing=false, timer=null, sceneIdx=0, beatIdx=0;
+
+/* Part A — flow-chart illustration: one node per scene, actor-tagged (lucide icons) */
+const LICON={
+ calc:'<rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="16" x2="16" y1="14" y2="18"/><path d="M16 10h.01"/><path d="M12 10h.01"/><path d="M8 10h.01"/><path d="M12 14h.01"/><path d="M8 14h.01"/><path d="M12 18h.01"/><path d="M8 18h.01"/>',
+ db:'<ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5V19A9 3 0 0 0 21 19V5"/><path d="M3 12A9 3 0 0 0 21 12"/>',
+ officer:'<path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/>',
+ receipt:'<path d="M4 2v20l2-1 2 1 2-1 2 1 2-1 2 1 2-1 2 1V2l-2 1-2-1-2 1-2-1-2 1-2-1-2 1Z"/><path d="M8 10h8"/><path d="M8 14h5"/>',
+ citizen:'<circle cx="12" cy="8" r="5"/><path d="M20 21a8 8 0 0 0-16 0"/>',
+ zap:'<polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/>',
+ check:'<circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/>',
+};
+const ic=k=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">'+LICON[k]+'</svg>';
+/* ═══ @DATA:FLOW — one flow-chart node per scene: {icon:LICON key, lbl, actor?(non-system only)}. ═══ */
+const FLOW=[
+ {icon:'calc',lbl:'Fees calculated'},
+ {icon:'db',lbl:'EFR + AFHs born'},
+ {icon:'officer',lbl:'Officer edits fees',actor:'OFFICER'},
+ {icon:'receipt',lbl:'Orders + OCEs'},
+ {icon:'citizen',lbl:'Citizen pays',actor:'CITIZEN'},
+ {icon:'zap',lbl:'Webhooks land',actor:'RAZORPAY'},
+ {icon:'check',lbl:'PAID cascade'},
+];
+const flowEl=document.getElementById('flowchart');
+const fnodes=[],fedges=[];
+FLOW.forEach((f,i)=>{
+  if(i>0){ const e=document.createElement('div'); e.className='fedge'; e.innerHTML='<i></i>'; flowEl.appendChild(e); fedges.push(e); }
+  const b=document.createElement('button');
+  b.className='fnode'; b.setAttribute('role','tab');
+  b.innerHTML=`<span class="disc">${ic(f.icon)}</span><span class="lbl">${i+1}. ${f.lbl}</span>${f.actor?`<span class="actor">${f.actor}</span>`:''}`;
+  b.addEventListener('click',()=>{ jumpTo(i); if(!playing) togglePlay(true); });
+  flowEl.appendChild(b); fnodes.push(b);
+});
+
+/* Part B — data deck: pill-selected single table, auto-follows the beat that writes */
+let deckActive=null;
+const pillsEl=document.getElementById('table-pills');
+function renderPills(visible){
+  pillsEl.innerHTML='';
+  visible.forEach(k=>{
+    const b=document.createElement('button');
+    b.className='tpill'+(deckActive===k?' active':'');
+    b.dataset.k=k;
+    b.textContent=TABLES[k].title.split(' (')[0].split('  ')[0];
+    b.addEventListener('click',()=>setDeck(k));
+    pillsEl.appendChild(b);
+  });
+}
+function setDeck(k){
+  if(!els[k]) return;
+  deckActive=k;
+  for(const [key,slot] of Object.entries(els)) slot.card.classList.toggle('deck-active',key===k);
+  [...pillsEl.children].forEach(b=>b.classList.toggle('active',b.dataset.k===k));
+}
+function buildStage(visible){
+  stageTables.innerHTML='';
+  els={};
+  for(const key of visible){
+    const cfg=TABLES[key];
+    const card=document.createElement('div');
+    card.className='mini'; card.style.setProperty('--hue',HUES[cfg.app]);
+    card.innerHTML=`<h4><span class="appdot"></span>${cfg.title}<span class="empty-note">— empty —</span></h4>
+      <div style="overflow-x:auto"><table><thead><tr>${cfg.cols.map(c=>`<th>${c}</th>`).join('')}</tr></thead><tbody></tbody></table></div>`;
+    stageTables.appendChild(card);
+    els[key]={card,tbody:card.querySelector('tbody'),note:card.querySelector('.empty-note')};
+    (state[key]||[]).forEach(r=>paintRow(key,r,false));
+  }
+  if(!deckActive||!els[deckActive]) deckActive=visible[0];
+  renderPills(visible); setDeck(deckActive);
+}
+function cellHtml(col,val){
+  if(val===undefined||val===null||val==='—') return '<span class="muted-cell">—</span>';
+  if(CHIP[val]!==undefined&&(col==='status'||col==='event_status'||col==='action_type'||col==='is_deleted')) return chip(val);
+  return val;
+}
+function paintRow(key,row,animate){
+  const cfg=TABLES[key], slot=els[key]; if(!slot) return;
+  slot.note.style.display='none';
+  const tr=document.createElement('tr'); tr.dataset.id=row.id;
+  if(animate&&!reduced) tr.className='enter';
+  if(row.dead) tr.classList.add('dead');
+  tr.innerHTML=cfg.cols.map((c,i)=>`<td data-c="${c}"${i===0?' class="c0"':''}>${cellHtml(c,row.cells[c])}</td>`).join('');
+  slot.tbody.appendChild(tr);
+}
+function mutateRow(key,id,cells,kill,animate){
+  const rows=state[key]||[]; const row=rows.find(r=>r.id===id); if(!row) return;
+  Object.assign(row.cells,cells); if(kill) row.dead=true;
+  const slot=els[key]; if(!slot) return;
+  const tr=slot.tbody.querySelector(`tr[data-id="${id}"]`); if(!tr) return;
+  if(kill) tr.classList.add('dead');
+  for(const [c,v] of Object.entries(cells)){
+    const td=tr.querySelector(`td[data-c="${c}"]`); if(!td) continue;
+    td.innerHTML=cellHtml(c,v);
+    if(animate&&!reduced){ td.classList.remove('flash'); void td.offsetWidth; td.classList.add('flash'); }
+  }
+}
+function applyBeat(scene,beat,animate){
+  if(beat.say!==undefined){ nline.innerHTML=beat.say; nsub.innerHTML=beat.sub||''; }
+  if(beat.note){ const d=document.createElement('div'); d.className='note'; d.innerHTML=beat.note;
+    notesEl.appendChild(d); while(notesEl.children.length>1) notesEl.removeChild(notesEl.firstChild); }
+  const touch=beat.add||beat.set;
+  if(touch&&animate) setDeck(touch);
+  if(beat.add){ const row={id:beat.id,cells:{...beat.cells}}; (state[beat.add]=state[beat.add]||[]).push(row); paintRow(beat.add,row,animate); }
+  if(beat.set) mutateRow(beat.set,beat.id,beat.cells||{},beat.kill,animate);
+}
+function resetAll(){ state={}; notesEl.innerHTML=''; nline.textContent='Ready when you are.'; nsub.innerHTML='Press <b>Play</b> to run the full lifecycle, or click any step in the flow above.'; }
+function jumpTo(idx){
+  clearTimeout(timer); resetAll();
+  sceneIdx=idx; beatIdx=0;
+  // replay silently everything before this scene, accumulating state
+  const visible=new Set();
+  for(let i=0;i<idx;i++) SCENES[i].tables.forEach(t=>visible.add(t));
+  SCENES[idx].tables.forEach(t=>visible.add(t));
+  // build union of tables that have appeared through the target scene, keeping story order
+  const ordered=Object.keys(TABLES).filter(k=>visible.has(k));
+  els={}; // silent replay: state only
+  for(let i=0;i<idx;i++) for(const b of SCENES[i].beats){
+    if(b.add){ const row={id:b.id,cells:{...b.cells}}; (state[b.add]=state[b.add]||[]).push(row); }
+    if(b.set){ const r=(state[b.set]||[]).find(x=>x.id===b.id); if(r){Object.assign(r.cells,b.set&&b.cells||{}); if(b.kill)r.dead=true;} }
+  }
+  buildStage(ordered);
+  const firstTouch=SCENES[idx].beats.find(b=>b.add||b.set);
+  if(firstTouch) setDeck(firstTouch.add||firstTouch.set);
+  notesEl.innerHTML='';
+  updateUi();
+  if(playing) scheduleNext(0);
+}
+function updateUi(){
+  fnodes.forEach((b,i)=>{ b.classList.toggle('active',i===sceneIdx); b.classList.toggle('done',i<sceneIdx); });
+  fedges.forEach((e,i)=>{ e.classList.toggle('past',i<sceneIdx); e.classList.toggle('live',playing&&i===sceneIdx-1); });
+  btnPrev.disabled=(sceneIdx===0&&beatIdx===0);
+  btnNext.disabled=(sceneIdx===SCENES.length-1&&beatIdx>=SCENES[sceneIdx].beats.length);
+  const total=SCENES[sceneIdx].beats.length;
+  prog.style.width=(beatIdx/total*100)+'%';
+  beatlbl.textContent=`scene ${sceneIdx+1} / ${SCENES.length}`;
+}
+/* manual stepping — one moment (narration / table write) at a time */
+function pausePlayback(){ playing=false; clearTimeout(timer); setPlayBtn(I_PLAY,'Play'); }
+function settleBeats(idx,count){
+  jumpTo(idx);
+  const sc=SCENES[idx];
+  for(let i=0;i<count;i++) applyBeat(sc,sc.beats[i],false);
+  beatIdx=count;
+  const lastTouch=[...sc.beats.slice(0,count)].reverse().find(b=>b.add||b.set);
+  if(lastTouch) setDeck(lastTouch.add||lastTouch.set);
+  updateUi();
+}
+function nextBeat(){
+  pausePlayback();
+  const sc=SCENES[sceneIdx];
+  if(beatIdx<sc.beats.length){ applyBeat(sc,sc.beats[beatIdx],true); beatIdx++; updateUi(); }
+  else if(sceneIdx<SCENES.length-1){ jumpTo(sceneIdx+1); const s2=SCENES[sceneIdx]; applyBeat(s2,s2.beats[0],true); beatIdx=1; updateUi(); }
+}
+function prevBeat(){
+  pausePlayback();
+  if(beatIdx>0) settleBeats(sceneIdx,beatIdx-1);
+  else if(sceneIdx>0) settleBeats(sceneIdx-1,SCENES[sceneIdx-1].beats.length);
+}
+function scheduleNext(delay){
+  timer=setTimeout(step,reduced?10:delay);
+}
+const SVG_O='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="15" height="15">';
+const I_PLAY=SVG_O+'<polygon points="6 3 20 12 6 21 6 3"/></svg>';
+const I_PAUSE=SVG_O+'<rect x="6" y="4" width="4" height="16" rx="1"/><rect x="14" y="4" width="4" height="16" rx="1"/></svg>';
+const I_REPLAY=SVG_O+'<path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>';
+function setPlayBtn(html,tip){ btnPlay.innerHTML=html; btnPlay.dataset.tip=tip; }
+function step(){
+  const scene=SCENES[sceneIdx];
+  if(beatIdx>=scene.beats.length){
+    if(sceneIdx+1<SCENES.length){ jumpTo(sceneIdx+1); return; }
+    playing=false; setPlayBtn(I_REPLAY,'Replay'); beatIdx=scene.beats.length; updateUi(); return;
+  }
+  const beat=scene.beats[beatIdx];
+  applyBeat(scene,beat,true);
+  beatIdx++; updateUi();
+  if(playing) scheduleNext(beat.d||1500);
+}
+function togglePlay(force){
+  const want=force!==undefined?force:!playing;
+  if(want&&sceneIdx===SCENES.length-1&&beatIdx>=SCENES[sceneIdx].beats.length) { jumpTo(0); }
+  playing=want;
+  setPlayBtn(playing?I_PAUSE:I_PLAY,playing?'Pause':'Play');
+  if(playing) scheduleNext(200); else clearTimeout(timer);
+}
+setPlayBtn(I_PLAY,'Play');
+btnPlay.addEventListener('click',()=>togglePlay());
+btnRestart.addEventListener('click',()=>{ jumpTo(0); if(!playing) togglePlay(true); });
+btnPrev.addEventListener('click',prevBeat);
+btnNext.addEventListener('click',nextBeat);
+document.addEventListener('keydown',e=>{
+  if(e.target.tagName==='BUTTON'&&e.key===' ') return;
+  if(e.key===' '){ e.preventDefault(); togglePlay(); }
+  if(e.key==='ArrowRight') nextBeat();
+  if(e.key==='ArrowLeft') prevBeat();
+});
+
+// initial: show scene 1 tables, empty, wait for play. Autostart when scrolled into view once.
+jumpTo(0);
+let autostarted=false;
+const io=new IntersectionObserver(entries=>{
+  entries.forEach(en=>{ if(en.isIntersecting&&!autostarted){ autostarted=true; togglePlay(true); io.disconnect(); } });
+},{threshold:.35});
+io.observe(document.getElementById('movie'));
+</script>

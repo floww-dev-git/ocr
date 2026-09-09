@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sale Deed Chain Validator</title>
+<style>
+  :root{
+    --ink:#1b211f; --paper:#f6f4ee; --line:#ddd8c9; --card:#fff;
+    --deed:#3b5bdb; --land:#2f9e6f; --warn:#e0913c; --gap:#c2410c; --broke:#d6336c;
+    --soft:#6a6f6a; --chip:#e9e6da; --mono:'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:28px 22px 90px}
+  header{text-align:center;padding:8px 0 4px}
+  .kicker{letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--soft);font-weight:700}
+  h1{font-size:30px;margin:6px 0 4px}
+  h1 .em{color:var(--deed)}
+  .sub{color:var(--soft);font-size:15px;max-width:640px;margin:0 auto}
+
+  /* upload panel */
+  .panel{background:var(--card);border:1px solid var(--line);border-radius:16px;padding:20px;margin:24px 0}
+  .drop{border:2px dashed var(--line);border-radius:13px;padding:26px;text-align:center;cursor:pointer;transition:.15s}
+  .drop:hover,.drop.over{border-color:var(--deed);background:#f7f8ff}
+  .drop .big{font-size:16px;font-weight:700}
+  .drop .small{font-size:13px;color:var(--soft);margin-top:3px}
+  .filelist{list-style:none;padding:0;margin:14px 0 0;display:flex;flex-direction:column;gap:8px}
+  .filelist li{display:flex;align-items:center;gap:10px;background:#fbfaf5;border:1px solid var(--line);border-radius:10px;padding:9px 13px;font-size:14px}
+  .filelist .id{width:26px;height:26px;flex:none;border-radius:50%;background:var(--deed);color:#fff;display:grid;place-items:center;font-weight:800;font-size:12px}
+  .filelist .nm{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .filelist .rm{color:var(--broke);cursor:pointer;font-size:18px;line-height:1;background:none;border:none}
+  .actions{display:flex;gap:12px;align-items:center;margin-top:16px}
+  button.go{background:var(--deed);color:#fff;border:none;border-radius:11px;padding:12px 26px;font-size:15px;font-weight:700;cursor:pointer}
+  button.go:disabled{opacity:.45;cursor:not-allowed}
+  .hint{font-size:12.5px;color:var(--soft)}
+
+  h2{font-size:20px;margin:40px 0 6px;display:flex;align-items:center;gap:9px}
+  h2 .dot{width:11px;height:11px;border-radius:50%;background:var(--deed)}
+  .lead{color:var(--soft);margin:0 0 16px;font-size:14px}
+  .hidden{display:none}
+
+  /* deed cards */
+  .frows{display:flex;flex-direction:column;gap:6px;margin-bottom:14px}
+  .frow{font-size:13px;color:var(--soft);background:#fbfaf5;border:1px solid var(--line);border-radius:9px;padding:8px 13px;display:flex;gap:9px;align-items:center;flex-wrap:wrap}
+  .invlist{width:100%;display:flex;flex-direction:column;gap:4px;margin-top:8px}
+  .invitem{font-size:12.5px;color:var(--ink);background:#fff;border:1px solid var(--line);border-radius:7px;padding:6px 11px}
+  .invitem b{color:var(--deed)}
+  .frow .fn{font-family:var(--mono);font-size:12px;color:var(--ink)}
+  .frow .b2{margin-left:auto;font-size:11px;font-weight:700;padding:2px 10px;border-radius:20px;background:var(--chip)}
+  .frow .b2.multi{background:#e7ebfd;color:var(--deed)}
+  .frow .b2.read{background:#fdeede;color:var(--warn)}
+  .docrole{font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 8px;border-radius:20px;margin-left:7px}
+  .docrole.primary{background:#e3f3eb;color:var(--land)} .docrole.link{background:#e7ebfd;color:var(--deed)}
+  .deeds{display:flex;flex-direction:column;gap:12px}
+  .dcard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:14px 17px;border-left:5px solid var(--line)}
+  .dcard.reading{border-left-color:var(--warn)}
+  .dcard.done{border-left-color:var(--land)}
+  .dcard.err{border-left-color:var(--broke)}
+  .dhead{display:flex;align-items:center;gap:11px}
+  .dhead .id{width:30px;height:30px;flex:none;border-radius:50%;background:var(--deed);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+  .dhead .t{font-weight:700;font-size:15px}
+  .dhead .file{font-size:12px;color:var(--soft);font-family:var(--mono)}
+  .dhead .status{margin-left:auto;font-size:11px;font-weight:700;padding:3px 11px;border-radius:20px}
+  .st-read{background:#fdeede;color:var(--warn)} .st-ok{background:#e3f3eb;color:var(--land)} .st-err{background:#fce4ee;color:var(--broke)}
+  .keystrip{display:flex;flex-wrap:wrap;gap:7px;margin:12px 0 2px}
+  .kchip{font-size:12.5px;background:#f1f3ff;border:1px solid #d9e0ff;border-radius:9px;padding:5px 11px}
+  .kchip b{color:var(--deed);font-weight:700}
+  .orig{color:var(--soft);font-weight:400}
+  .idtag{font-size:11px;background:var(--chip);border-radius:6px;padding:1px 7px;color:#5a6b3a;font-family:var(--mono);margin-left:5px}
+  .muted{color:var(--soft)}
+  .dgrid{display:grid;grid-template-columns:repeat(2,1fr);gap:5px 22px;margin-top:11px;font-size:13.5px}
+  .dgrid .k{color:var(--soft);font-size:11px;text-transform:uppercase;letter-spacing:.04em}
+  .dgrid code{font-family:var(--mono);background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+  .flags{display:flex;flex-wrap:wrap;gap:6px;margin-top:11px}
+  .flag{font-size:11.5px;padding:3px 10px;border-radius:20px;font-weight:600}
+  .f-high{background:#fce4ee;color:var(--broke)} .f-medium{background:#fdeede;color:var(--warn)} .f-low{background:#eef0e8;color:#5a6b3a}
+  .spin{display:inline-block;width:13px;height:13px;border:2px solid var(--chip);border-top-color:var(--warn);border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px}
+  @keyframes sp{to{transform:rotate(360deg)}}
+
+  /* verdict + chain */
+  .verdict{display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:16px;padding:18px 22px;border-left:8px solid var(--warn)}
+  .verdict.intact{border-left-color:var(--land)} .verdict.review{border-left-color:var(--warn)} .verdict.broken{border-left-color:var(--broke)}
+  .verdict .badge{flex:none;width:64px;height:64px;border-radius:50%;display:grid;place-items:center;font-size:30px;background:#fdeede}
+  .verdict.intact .badge{background:#e3f3eb} .verdict.broken .badge{background:#fce4ee}
+  .verdict h3{margin:0 0 2px;font-size:21px}
+  .verdict p{margin:0;color:var(--soft);font-size:14px}
+  .counts{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+  .vc{font-size:11.5px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .vc.ok{background:#e3f3eb;color:var(--land)} .vc.warn{background:#fdeede;color:var(--warn)} .vc.gap{background:#fde7da;color:var(--gap)} .vc.broke{background:#fce4ee;color:var(--broke)}
+
+  .glance{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin:18px 0}
+  .g{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--deed);border-radius:11px;padding:11px 14px}
+  .g .l{font-size:10.5px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .g .v{font-size:16px;font-weight:700;margin-top:2px}
+
+  .timeline{display:flex;flex-direction:column}
+  .owner{display:grid;grid-template-columns:50px 1fr;gap:14px}
+  .owner .node{width:50px;height:50px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--deed);font-size:17px;z-index:2;box-shadow:0 0 0 4px var(--paper)}
+  .owner.cur .node{background:var(--land)}
+  .owner .ocard{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:11px 15px;margin-bottom:4px}
+  .owner.cur .ocard{border:1.5px solid var(--land)}
+  .owner .role{font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--soft)}
+  .owner .nm{font-size:16px;font-weight:700}
+  .owner .det{font-size:12.5px;color:var(--soft)}
+  .link{display:grid;grid-template-columns:50px 1fr;gap:14px;position:relative}
+  .link::before{content:"";position:absolute;left:24px;top:-4px;bottom:-4px;width:2px;background:var(--line)}
+  .link.linked::before{background:var(--land)} .link.weak::before{background:var(--warn)}
+  .link.gap::before{background:repeating-linear-gradient(var(--gap) 0 6px,transparent 6px 12px)} .link.broken::before{background:var(--broke)}
+  .lcard{margin:4px 0;border:1px dashed var(--line);background:#fcfbf7;border-radius:11px;padding:9px 14px;font-size:12.5px}
+  .lhead{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .lbadge{font-size:10.5px;font-weight:800;padding:2px 10px;border-radius:20px}
+  .b-linked{background:#e3f3eb;color:var(--land)} .b-weak{background:#fdeede;color:var(--warn)} .b-gap{background:#fde7da;color:var(--gap)} .b-broken{background:#fce4ee;color:var(--broke)} .b-origin{background:var(--chip);color:var(--soft)}
+  .deedref{font-family:var(--mono);font-size:11.5px;color:var(--soft)}
+  .lnote{margin:6px 0 0;color:#3a403d;font-size:12.5px}
+
+  /* simple deed-by-deed timeline with loud break markers */
+  .breaknote{display:flex;gap:9px;align-items:center;border-radius:10px;padding:10px 14px;font-size:13.5px;font-weight:700;margin-bottom:12px}
+  .breaknote.broken{background:#fce4ee;border:1px solid #f1a8c4;color:var(--broke)}
+  .breaknote.gap{background:#fdebdd;border:1px solid #f2c39b;color:var(--gap)}
+  .tldeed{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:12px 16px;display:grid;grid-template-columns:36px 1fr;gap:13px;align-items:center}
+  .tldeed .dn{width:36px;height:36px;border-radius:50%;background:var(--deed);color:#fff;display:grid;place-items:center;font-weight:800;font-size:15px}
+  .tldeed .ttl{font-weight:700;font-size:14.5px}
+  .tldeed .flow{font-size:13.5px;margin-top:2px}
+  .tldeed .flow .arrow{color:var(--deed);font-weight:800;margin:0 7px}
+  .tldeed .meta{font-size:11.5px;color:var(--soft);font-family:var(--mono);margin-top:3px}
+  /* slim join between two consecutive deeds */
+  .tljoin{display:flex;align-items:center;gap:10px;margin:6px 0 6px 18px;padding:5px 0 5px 18px;border-left:3px solid var(--land)}
+  .tljoin.weak{border-left-color:var(--warn)}
+  .tljoin .jb{font-size:11.5px;font-weight:800;padding:2px 11px;border-radius:20px;white-space:nowrap}
+  .tljoin.ok .jb{background:#e3f3eb;color:var(--land)} .tljoin.weak .jb{background:#fdeede;color:var(--warn)}
+  .tljoin .jt{font-size:12.5px;color:var(--soft)}
+  /* loud rupture for gap / broken */
+  .rupture{margin:8px 0;border-radius:12px;padding:14px 17px;display:flex;gap:13px;align-items:flex-start}
+  .rupture.broken{background:#fce4ee;border:1.5px solid #ee9cbb}
+  .rupture.gap{background:#fdebdd;border:1.5px solid #f1bd92}
+  .rupture .ic{font-size:26px;line-height:1}
+  .rupture .rh{font-weight:800;font-size:15.5px}
+  .rupture.broken .rh{color:var(--broke)} .rupture.gap .rh{color:var(--gap)}
+  .rupture .rd{font-size:13px;color:#3a403d;margin-top:3px}
+  .rupture .mm{font-family:var(--mono);font-size:12px;margin-top:8px;background:rgba(255,255,255,.7);border-radius:8px;padding:8px 11px;line-height:1.6}
+  .rupture .mm .x{color:var(--broke);font-weight:700}
+  .finding{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:13px 16px;margin-bottom:10px;border-left:6px solid var(--warn)}
+  .finding.high{border-left-color:var(--gap)} .finding.medium{border-left-color:var(--warn)} .finding.clear{border-left-color:var(--land)}
+  .finding h4{margin:0 0 3px;font-size:15px;display:flex;align-items:center;gap:8px}
+  .finding .sev{font-size:10px;font-weight:800;padding:2px 9px;border-radius:20px}
+  .finding .body{font-size:13.5px;color:#3a403d}
+
+  /* document viewer + provenance */
+  .doctoggle{margin-top:12px;background:none;border:1px solid var(--line);border-radius:9px;padding:7px 13px;font-size:13px;cursor:pointer;color:var(--deed);font-weight:600}
+  .docview{margin-top:12px;display:none}
+  .docview.open{display:block}
+  .provhint{font-size:12px;color:var(--soft);margin:0 0 8px}
+  .pagewrap{position:relative;display:inline-block;max-width:100%;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:10px;background:#fff}
+  .pagewrap img{display:block;max-width:100%;height:auto}
+  .bbox{position:absolute;border:2px solid var(--deed);background:rgba(59,91,219,.08);border-radius:3px;transition:.15s}
+  .bbox .blabel{position:absolute;top:-16px;left:-2px;font-size:9px;font-weight:800;background:var(--deed);color:#fff;padding:1px 5px;border-radius:4px;white-space:nowrap;text-transform:uppercase;letter-spacing:.03em}
+  .bbox.active{border-color:var(--gap);background:rgba(194,65,12,.16);box-shadow:0 0 0 3px rgba(194,65,12,.22);z-index:5}
+  .bbox.active .blabel{background:var(--gap)}
+  .kchip[data-label]{cursor:pointer}
+  .kchip[data-label]:hover{background:#e3e8ff}
+
+  /* risk panel */
+  .riskpanel{display:flex;gap:16px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:14px;padding:15px 20px;margin:0 0 12px}
+  .riskpanel .score{flex:none;width:72px;height:72px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:21px;color:#fff;line-height:1}
+  .risk-Low{background:var(--land)} .risk-Medium{background:var(--warn)} .risk-High{background:var(--broke)}
+  .riskpanel .rt{font-weight:700;font-size:17px}
+  .riskpanel .rs{color:var(--soft);font-size:13px;margin-top:1px}
+  .risksig{display:flex;flex-direction:column;gap:8px;margin-bottom:6px}
+  .risksig .r{display:flex;gap:10px;align-items:flex-start;background:var(--card);border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:10px;padding:9px 13px}
+  .risksig .r.high{border-left-color:var(--broke)} .risksig .r.medium{border-left-color:var(--warn)} .risksig .r.low{border-left-color:#5a6b3a}
+  .risksig .sv{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px;flex:none;margin-top:1px}
+  .risksig .r.high .sv{background:#fce4ee;color:var(--broke)} .risksig .r.medium .sv{background:#fdeede;color:var(--warn)} .risksig .r.low .sv{background:#eef0e8;color:#5a6b3a}
+  .risksig b{font-size:13.5px;display:block} .risksig .d{font-size:12.5px;color:var(--soft)}
+  .errbox{background:#fce4ee;border:1px solid #f3c4d5;color:var(--broke);border-radius:12px;padding:13px 16px;font-size:14px}
+  .note{background:#fbfaf5;border:1px solid var(--line);border-radius:13px;padding:14px 18px;margin-top:16px;font-size:12.5px;color:var(--soft)}
+  .note b{color:var(--broke)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="kicker">Solution 4 · Prototype</div>
+    <h1>Sale Deed <span class="em">Chain Validator</span></h1>
+    <p class="sub">Upload the deeds for a property, hit Analyze, and watch each one get read — then see whether the ownership chain holds.</p>
+  </header>
+
+  <div class="panel">
+    <div class="drop" id="drop">
+      <div class="big">Drop sale deeds here, or click to choose</div>
+      <div class="small">PDF or image (JPG/PNG) · multiple files · ideally the full chain for one property</div>
+      <input type="file" id="file" multiple accept=".pdf,.png,.jpg,.jpeg,.tif,.tiff,.webp" class="hidden">
+    </div>
+    <ul class="filelist" id="filelist"></ul>
+    <div class="actions">
+      <button class="go" id="go" disabled>Analyze</button>
+      <span class="hint" id="hint">Add 2 or more deeds to validate a chain.</span>
+    </div>
+  </div>
+
+  <section id="deedsSec" class="hidden">
+    <h2><span class="dot"></span>Reading deeds <span id="deedProgress" class="hint" style="margin-left:6px"></span></h2>
+    <p class="lead">Each file is read into structured data. A file that bundles several documents is split into one card per document.</p>
+    <div class="frows" id="files"></div>
+    <div class="deeds" id="deeds"></div>
+  </section>
+
+  <section id="chainSec" class="hidden">
+    <h2><span class="dot"></span>Combined chain analysis
+      <button class="doctoggle" id="fullReportBtn" style="margin:0 0 0 auto">📄 Open as full report</button>
+    </h2>
+    <div id="risk"></div>
+    <div id="verdict"></div>
+    <div class="glance" id="glance"></div>
+    <h2 style="font-size:17px"><span class="dot"></span>Ownership timeline</h2>
+    <div class="timeline" id="timeline"></div>
+    <h2 style="font-size:17px"><span class="dot"></span>Chronology of activity</h2>
+    <p class="lead">Every transaction in date order, with its specifics.</p>
+    <div id="chronology"></div>
+    <h2 style="font-size:17px"><span class="dot"></span>Findings</h2>
+    <div id="findings"></div>
+    <div class="note">Automated screening of the documents provided. <b>Not a legal opinion on title</b> and not verified against the government registry. It flags; a human decides.</div>
+  </section>
+
+  <div id="errSlot"></div>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

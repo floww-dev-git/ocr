@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Title Report — intuitive layout (mockup)</title>
+<style>
+  :root{
+    --ink:#1a2233;--ink2:#4a5568;--soft:#7b8595;--paper:#f4f6fa;--card:#fff;--line:#e3e8f0;
+    --brand:#3b5bdb;--brandsoft:#eef2ff;--ok:#1f9d63;--oksoft:#e6f6ee;--warn:#d98421;--warnsoft:#fdf1e1;
+    --bad:#d6336c;--badsoft:#fdebf2;--gap:#c2410c;--gapsoft:#fdeee2;--mono:'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.55}
+  .wrap{max-width:860px;margin:0 auto;padding:26px 20px 90px}
+  .kick{font-size:11.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .tag{display:inline-block;font-size:10.5px;font-weight:800;letter-spacing:.03em;padding:2px 9px;border-radius:20px}
+
+  /* ---------- VERDICT HERO ---------- */
+  .hero{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden;margin:14px 0 22px;box-shadow:0 10px 30px rgba(26,34,51,.06)}
+  .hero .top{padding:22px 24px;display:flex;gap:18px;align-items:flex-start}
+  .hero .vbadge{flex:none;width:84px;height:84px;border-radius:18px;display:grid;place-items:center;font-size:40px}
+  .vb-review{background:var(--warnsoft)}
+  .hero h1{font-size:24px;margin:2px 0 4px;line-height:1.15}
+  .hero .plain{color:var(--ink2);font-size:15px;margin:0;max-width:560px}
+  .hero .addr{font-size:13px;color:var(--soft);margin:8px 0 0;font-weight:600}
+  .hero .strip{display:flex;border-top:1px solid var(--line);background:#fafbfd}
+  .hero .stat{flex:1;padding:13px 18px;text-align:center;border-right:1px solid var(--line)}
+  .hero .stat:last-child{border-right:none}
+  .hero .stat .n{font-size:20px;font-weight:800}
+  .hero .stat .l{font-size:11px;color:var(--soft);text-transform:uppercase;letter-spacing:.04em;font-weight:700;margin-top:1px}
+  .hero .stat .n.warn{color:var(--warn)}
+
+  h2{font-size:16px;margin:34px 0 4px;display:flex;align-items:center;gap:8px}
+  h2 .ic{font-size:17px}
+  .lead{color:var(--soft);font-size:13px;margin:0 0 14px}
+
+  /* ---------- "what you're looking at" callout ---------- */
+  .callout{background:var(--brandsoft);border:1px solid #d6e0ff;border-radius:14px;padding:15px 18px;display:flex;gap:13px;align-items:flex-start}
+  .callout .ic{font-size:22px;line-height:1}
+  .callout b{color:var(--brand)}
+  .callout p{margin:3px 0 0;font-size:13.5px;color:var(--ink2)}
+
+  /* ---------- TITLE JOURNEY (ownership flow) ---------- */
+  .journey{position:relative;margin-top:6px}
+  .owner{display:grid;grid-template-columns:42px 1fr;gap:14px;align-items:center}
+  .owner .av{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;font-size:19px;background:var(--card);border:2px solid var(--line);z-index:2}
+  .owner.now .av{border-color:var(--brand);background:var(--brandsoft)}
+  .owner.root .av{border-color:var(--soft)}
+  .ocard{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:11px 16px}
+  .owner.now .ocard{border:1.5px solid var(--brand)}
+  .ocard .role{font-size:10.5px;font-weight:800;text-transform:uppercase;letter-spacing:.04em;color:var(--soft)}
+  .ocard .nm{font-size:16px;font-weight:700}
+  .ocard .meta{font-size:12.5px;color:var(--soft)}
+  .badge-now{background:var(--brandsoft);color:var(--brand)}
+  .badge-owner{background:var(--oksoft);color:var(--ok)}
+
+  /* the transfer connector between owners */
+  .transfer{display:grid;grid-template-columns:42px 1fr;gap:14px;align-items:center;margin:3px 0}
+  .transfer .rail{justify-self:center;width:2px;background:var(--line);height:100%;min-height:34px;position:relative}
+  .transfer.ok .rail{background:var(--ok)} .transfer.weak .rail{background:var(--warn)}
+  .transfer.gap .rail{background:repeating-linear-gradient(var(--gap) 0 5px,transparent 5px 11px)}
+  .transfer.auth .rail{background:repeating-linear-gradient(var(--brand) 0 5px,transparent 5px 11px)}
+  .tcard{font-size:13px;padding:8px 14px;border-radius:10px;border:1px solid var(--line);background:#fbfcfe}
+  .tcard .th{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .tcard .vmark{font-size:11px;font-weight:800;padding:1px 9px;border-radius:20px}
+  .vm-ok{background:var(--oksoft);color:var(--ok)} .vm-weak{background:var(--warnsoft);color:var(--warn)}
+  .vm-auth{background:var(--brandsoft);color:var(--brand)}
+  .tcard .dref{font-family:var(--mono);font-size:11.5px;color:var(--soft)}
+  .tcard .tn{font-size:12px;color:var(--ink2);margin-top:3px}
+  /* loud rupture */
+  .rupture{grid-column:1 / -1;background:var(--gapsoft);border:1.5px solid #f1c3a0;border-radius:12px;padding:12px 16px;display:flex;gap:12px;align-items:flex-start;margin:4px 0}
+  .rupture .ic{font-size:22px} .rupture .rh{font-weight:800;color:var(--gap);font-size:14.5px}
+  .rupture .rd{font-size:12.5px;color:var(--ink2);margin-top:2px}
+
+  /* ---------- DOCUMENTS BY ROLE ---------- */
+  .docgroup{margin-bottom:8px}
+  .ghead{font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.04em;margin:16px 0 8px;display:flex;align-items:center;gap:8px}
+  .ghead .cnt{font-size:11px;color:var(--soft);font-weight:700}
+  .doc{display:flex;gap:12px;align-items:center;background:var(--card);border:1px solid var(--line);border-radius:11px;padding:11px 15px;margin-bottom:8px}
+  .doc .di{width:34px;height:34px;flex:none;border-radius:9px;display:grid;place-items:center;font-size:17px;background:var(--paper)}
+  .doc .dt{font-weight:700;font-size:14px}
+  .doc .dm{font-size:12px;color:var(--soft);font-family:var(--mono)}
+  .doc .roletag{margin-left:auto;font-size:10px;font-weight:800;padding:3px 10px;border-radius:20px}
+  .rt-title{background:var(--oksoft);color:var(--ok)} .rt-auth{background:var(--brandsoft);color:var(--brand)} .rt-meta{background:#eef0f4;color:var(--soft)}
+
+  /* ---------- NEEDS ATTENTION ---------- */
+  .att{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--warn);border-radius:12px;padding:13px 17px;margin-bottom:10px}
+  .att.gap{border-left-color:var(--gap)}
+  .att h4{margin:0 0 3px;font-size:14.5px;display:flex;align-items:center;gap:8px}
+  .att .sev{font-size:10px;font-weight:800;padding:2px 8px;border-radius:20px}
+  .att .sev.med{background:var(--warnsoft);color:var(--warn)} .att .sev.high{background:var(--gapsoft);color:var(--gap)}
+  .att p{margin:2px 0 0;font-size:13px;color:var(--ink2)}
+  .att .do{margin:7px 0 0;font-size:12.5px;color:var(--ink)}
+  .att .do b{color:var(--brand)}
+
+  .foot{font-size:11.5px;color:var(--soft);margin-top:26px;background:#fafbfd;border:1px solid var(--line);border-radius:12px;padding:13px 16px}
+  .sample{background:var(--warnsoft);color:var(--warn);font-weight:700}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div class="kick">Title Chain Report</div>
+  <span class="tag sample" style="margin-top:6px">⚠ MOCKUP · synthetic data</span>
+
+  <!-- ===== VERDICT HERO ===== -->
+  <div class="hero">
+    <div class="top">
+      <div class="vbadge vb-review">⚠️</div>
+      <div>
+        <h1>Title traces back to 1958 — but 2 things need checking</h1>
+        <p class="plain">Ownership flows through <b>5 registered deeds</b> across 67 years and reaches the current owner. Before it can be called clean, one ownership hand-off relies on an approximate name match, and one period looks like it may be missing a deed.</p>
+        <p class="addr">📍 Sy. No. 42/2 &amp; 108/1B · 6.71 acres · Rosewood village, Hindon District</p>
+      </div>
+    </div>
+    <div class="strip">
+      <div class="stat"><div class="n">5</div><div class="l">Title deeds</div></div>
+      <div class="stat"><div class="n">1958→2026</div><div class="l">Span</div></div>
+      <div class="stat"><div class="n warn">2</div><div class="l">Need review</div></div>
+      <div class="stat"><div class="n">0</div><div class="l">Hard breaks</div></div>
+    </div>
+  </div>
+
+  <!-- ===== WHAT YOU'RE LOOKING AT ===== -->
+  <h2><span class="ic">🧭</span>What you're looking at</h2>
+  <div class="callout">
+    <div class="ic">🏗️</div>
+    <div><b>The current document is a Development Agreement cum GPA — it does not transfer ownership.</b>
+      <p>The land is <b>owned by Arjun Verma</b>; <b>Skyline Constructions</b> holds the authority to develop it and to execute sale deeds on the owner's behalf. So the real chain of title below runs through the <b>sale &amp; partition deeds</b> — not this agreement.</p>
+    </div>
+  </div>
+
+  <!-- ===== TITLE JOURNEY ===== -->
+  <h2><span class="ic">🧬</span>The title journey</h2>
+  <p class="lead">Who has owned this property, newest at the top — and whether each hand-off checks out.</p>
+  <div class="journey">
+
+    <!-- current: developer via authority -->
+    <div class="owner now">
+      <div class="av">🏗️</div>
+      <div class="ocard"><div class="role">Today · developing</div>
+        <div class="nm">Skyline Constructions <span class="tag badge-now">DEVELOPER</span></div>
+        <div class="meta">Holds development rights &amp; GPA — not the title owner</div></div>
+    </div>
+    <div class="transfer auth">
+      <div class="rail"></div>
+      <div class="tcard"><div class="th"><span class="vmark vm-auth">▷ AUTHORITY ONLY</span><span class="dref">Dev. Agreement cum GPA · 2315/2026</span></div>
+        <div class="tn">Authority to develop &amp; sell on the owner's behalf — does not itself convey title.</div></div>
+    </div>
+
+    <!-- owner -->
+    <div class="owner">
+      <div class="av">👤</div>
+      <div class="ocard"><div class="role">Owner since 2025</div>
+        <div class="nm">Arjun Verma <span class="tag badge-owner">TITLE OWNER</span></div>
+        <div class="meta">s/o D. Verma · acquired by purchase</div></div>
+    </div>
+    <div class="transfer ok">
+      <div class="rail"></div>
+      <div class="tcard"><div class="th"><span class="vmark vm-ok">✓ VERIFIED</span><span class="dref">Sale Deed · 408/2025 · ₹5.3 Cr</span></div>
+        <div class="tn">Buyer and seller, property and recital all reconcile.</div></div>
+    </div>
+
+    <!-- prev owner -->
+    <div class="owner">
+      <div class="av">👤</div>
+      <div class="ocard"><div class="role">Owner 2014–2025</div>
+        <div class="nm">M. Nair</div>
+        <div class="meta">acquired in a family partition</div></div>
+    </div>
+    <div class="transfer weak">
+      <div class="rail"></div>
+      <div class="tcard"><div class="th"><span class="vmark vm-weak">⚠ NAME TO VERIFY · 78/100</span><span class="dref">Partition Deed · 1534/2014</span></div>
+        <div class="tn">Spelled "Nayar" here vs "Nair" in the next deed — likely the same person, confirm.</div></div>
+    </div>
+
+    <!-- gap -->
+    <div class="owner">
+      <div class="av">👤</div>
+      <div class="ocard"><div class="role">Owner 1961–2014</div>
+        <div class="nm">S. Kapoor</div>
+        <div class="meta">acquired by purchase (1961)</div></div>
+    </div>
+    <div class="transfer gap">
+      <div class="rail"></div>
+      <div class="rupture"><div class="ic">⛳</div>
+        <div><div class="rh">A deed may be missing here (1961 → 2014)</div>
+          <div class="rd">53 years with only one recorded transfer — and the 2014 deed cites a 1989 document that isn't in this bundle. Obtain it (or the EC for this period) to close the gap.</div></div></div>
+    </div>
+
+    <!-- root -->
+    <div class="owner root">
+      <div class="av">📜</div>
+      <div class="ocard"><div class="role">Root of title · 1958</div>
+        <div class="nm">K. Iyer <span class="tag" style="background:#eef0f4;color:var(--soft)">MOTHER DEED</span></div>
+        <div class="meta">earliest deed in the bundle — Sale Deed 642/1958 (certified copy)</div></div>
+    </div>
+  </div>
+
+  <!-- ===== DOCUMENTS BY ROLE ===== -->
+  <h2><span class="ic">📂</span>Documents, by role</h2>
+  <p class="lead">7 documents read from the file — grouped by what they actually do.</p>
+
+  <div class="docgroup">
+    <div class="ghead">⛓️ Title chain — the conveyances <span class="cnt">· 5</span></div>
+    <div class="doc"><div class="di">📄</div><div><div class="dt">Sale Deed</div><div class="dm">408/2025 · 05-Feb-2025</div></div><span class="roletag rt-title">CONVEYS TITLE</span></div>
+    <div class="doc"><div class="di">📄</div><div><div class="dt">Partition Deed</div><div class="dm">1534/2014 · 16-Aug-2014</div></div><span class="roletag rt-title">CONVEYS TITLE</span></div>
+    <div class="doc"><div class="di">📜</div><div><div class="dt">Sale Deed (certified copy)</div><div class="dm">76/1961 · 07-Jan-1961</div></div><span class="roletag rt-title">CONVEYS TITLE</span></div>
+    <div class="doc"><div class="di">📜</div><div><div class="dt">Sale Deed (certified copy)</div><div class="dm">642/1958 · 27-Sep-1958 · root</div></div><span class="roletag rt-title">CONVEYS TITLE</span></div>
+    <div class="doc"><div class="di">📜</div><div><div class="dt">Partition Deed (certified copy)</div><div class="dm">2745/1957</div></div><span class="roletag rt-title">CONVEYS TITLE</span></div>
+  </div>
+
+  <div class="docgroup">
+    <div class="ghead">🗝️ Authority &amp; supporting — do NOT convey title <span class="cnt">· 2</span></div>
+    <div class="doc"><div class="di">🏗️</div><div><div class="dt">Development Agreement cum GPA</div><div class="dm">2315/2026 · authority to develop &amp; sell</div></div><span class="roletag rt-auth">AUTHORITY</span></div>
+    <div class="doc"><div class="di">📋</div><div><div class="dt">Registration Details / Link-Documents summary</div><div class="dm">front index sheet</div></div><span class="roletag rt-meta">METADATA</span></div>
+  </div>
+
+  <!-- ===== NEEDS ATTENTION ===== -->
+  <h2><span class="ic">🔎</span>What needs attention</h2>
+
+  <div class="att gap">
+    <h4><span class="sev high">RESOLVE</span>Possible missing deed, 1961 → 2014</h4>
+    <p>The 2014 partition cites a 1989 document not present in the bundle, and 53 years pass with one transfer.</p>
+    <div class="do"><b>Do:</b> obtain document <span class="dref">XXXX/1989</span>, or an Encumbrance Certificate for Sy. 42/2 covering 1961–2014.</div>
+  </div>
+
+  <div class="att">
+    <h4><span class="sev med">VERIFY</span>Name spelling, M. Nair (2014 → 2025)</h4>
+    <p>"Nayar" vs "Nair" — 78/100 match, same father's name. Almost certainly one person.</p>
+    <div class="do"><b>Do:</b> confirm with PAN/Aadhaar or a one-and-the-same affidavit.</div>
+  </div>
+
+  <div class="foot">
+    Automated screening of the documents provided. <b>Not a legal opinion on title</b> and not verified against the
+    government registry (EC / 22-A / revenue records) — those are a separate step. It flags; a human decides.
+  </div>
+
+</div>
+</body>
+</html>

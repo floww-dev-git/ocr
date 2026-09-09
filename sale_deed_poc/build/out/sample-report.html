@@ -1,0 +1,386 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solution 4 — Sale Deed Chain Validator · Title Report (SAMPLE)</title>
+<style>
+  :root{
+    --ink:#1b211f; --paper:#f6f4ee; --line:#ddd8c9; --card:#fff;
+    --deed:#3b5bdb;          /* primary — registry indigo */
+    --land:#2f9e6f;          /* ok / linked */
+    --warn:#e0913c;          /* weak / warning */
+    --gap:#c2410c;           /* gap / suspected missing */
+    --broke:#d6336c;         /* broken */
+    --soft:#6a6f6a; --chip:#e9e6da; --mono:'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.5}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 22px 90px}
+  header{text-align:center;padding:14px 0 4px}
+  .kicker{letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--soft);font-weight:700}
+  h1{font-size:31px;margin:6px 0 4px;line-height:1.12}
+  h1 .em{color:var(--deed)}
+  .sub{color:var(--soft);font-size:15px;max-width:680px;margin:2px auto 0}
+  .meta-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .ver{font-family:var(--mono);font-size:12px;background:var(--chip);padding:3px 10px;border-radius:20px;color:var(--soft)}
+  .ver.sample{background:#fdeede;color:var(--gap);font-weight:700}
+
+  /* verdict banner */
+  .verdict{display:flex;gap:18px;align-items:center;background:var(--card);
+    border:1px solid var(--line);border-radius:18px;padding:20px 24px;margin:24px 0 6px;
+    border-left:8px solid var(--warn);box-shadow:0 8px 26px rgba(224,145,60,.10)}
+  .verdict .badge{flex:none;width:80px;height:80px;border-radius:50%;display:grid;place-items:center;
+    font-size:38px;background:#fdeede;color:var(--warn)}
+  .verdict h2{margin:0 0 3px;font-size:25px}
+  .verdict .vsum{color:var(--soft);font-size:14.5px;margin:0}
+  .verdict .counts{display:flex;gap:7px;margin-top:9px;flex-wrap:wrap}
+  .vc{font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px}
+  .vc.ok{background:#e3f3eb;color:var(--land)} .vc.warn{background:#fdeede;color:var(--warn)}
+  .vc.gap{background:#fde7da;color:var(--gap)} .vc.broke{background:#fce4ee;color:var(--broke)}
+  .disclaimer{font-size:12.5px;color:var(--soft);text-align:center;margin:8px auto 0;max-width:680px}
+
+  /* at-a-glance */
+  .glance{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin:26px 0}
+  .g{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--deed);border-radius:12px;padding:13px 15px}
+  .g .l{font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:var(--soft);font-weight:700}
+  .g .v{font-size:17px;font-weight:700;margin-top:3px}
+  .g .v small{font-weight:400;color:var(--soft);font-size:12.5px}
+
+  h3.sec{font-size:21px;margin:46px 0 6px;display:flex;align-items:center;gap:10px}
+  h3.sec .dot{width:11px;height:11px;border-radius:50%;background:var(--deed)}
+  .lead{color:var(--soft);margin:0 0 18px;font-size:14.5px}
+
+  /* property card */
+  .prop{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:6px 4px;margin-bottom:8px}
+  .prop table{margin:0;border:none;box-shadow:none}
+  .prop td{border-bottom:1px solid var(--line)}
+  .prop tr:last-child td{border-bottom:none}
+
+  /* TIMELINE — the hero */
+  .timeline{display:flex;flex-direction:column;gap:0;margin-top:6px}
+  .owner{display:grid;grid-template-columns:54px 1fr;gap:16px;position:relative}
+  .owner .node{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;
+    font-weight:800;color:#fff;background:var(--deed);font-size:19px;z-index:2;box-shadow:0 0 0 4px var(--paper)}
+  .owner .card{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:13px 17px;margin-bottom:4px}
+  .owner .card .role{font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--soft)}
+  .owner .card .nm{font-size:17px;font-weight:700;margin:1px 0 2px}
+  .owner .card .det{font-size:13px;color:var(--soft)}
+  .owner .card .det code{font-family:var(--mono);background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+  .owner.cur .node{background:var(--land)}
+  .owner.cur .card{border:1.5px solid var(--land);box-shadow:0 6px 18px rgba(47,158,111,.10)}
+  .owner.cur .nm::after{content:'CURRENT OWNER';font-size:10px;font-weight:800;color:var(--land);
+    background:#e3f3eb;padding:2px 8px;border-radius:20px;margin-left:8px;vertical-align:middle;letter-spacing:.05em}
+
+  /* the connector / deed link between owners */
+  .link{display:grid;grid-template-columns:54px 1fr;gap:16px;position:relative}
+  .link::before{content:"";position:absolute;left:26px;top:-4px;bottom:-4px;width:2px;background:var(--line)}
+  .link .lcard{margin:4px 0;border-radius:11px;padding:10px 15px;font-size:13px;
+    border:1px dashed var(--line);background:#fcfbf7}
+  .link .lhead{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .link .badge{font-size:11px;font-weight:800;padding:2px 10px;border-radius:20px;letter-spacing:.03em}
+  .b-ok{background:#e3f3eb;color:var(--land)} .b-warn{background:#fdeede;color:var(--warn)}
+  .b-gap{background:#fde7da;color:var(--gap)} .b-broke{background:#fce4ee;color:var(--broke)}
+  .link .deedref{font-family:var(--mono);font-size:12px;color:var(--soft)}
+  .link .lnote{margin:6px 0 0;color:var(--soft);font-size:12.5px}
+  .link.ok::before{background:var(--land)} .link.warn::before{background:var(--warn)}
+  .link.gap::before{background:repeating-linear-gradient(var(--gap) 0 6px,transparent 6px 12px)}
+  .check{display:inline-flex;gap:5px;flex-wrap:wrap;margin-top:7px}
+  .check span{font-size:11px;padding:2px 8px;border-radius:6px;background:var(--chip);color:var(--soft)}
+  .check span.pass{background:#e3f3eb;color:var(--land)} .check span.fail{background:#fde7da;color:var(--gap)}
+
+  /* findings */
+  .finding{background:var(--card);border:1px solid var(--line);border-radius:13px;padding:15px 18px;margin-bottom:12px;border-left:6px solid var(--warn)}
+  .finding.gap{border-left-color:var(--gap)} .finding.ok{border-left-color:var(--land)}
+  .finding h4{margin:0 0 4px;font-size:16px;display:flex;align-items:center;gap:9px}
+  .finding .sev{font-size:11px;font-weight:800;padding:2px 9px;border-radius:20px}
+  .finding .body{font-size:14px;color:#3a403d}
+  .finding .ev{margin-top:9px;font-size:12.5px;font-family:var(--mono);background:#fbfaf5;
+    border:1px solid var(--line);border-radius:8px;padding:9px 12px;color:var(--soft);white-space:pre-wrap}
+  .finding .rec{margin-top:9px;font-size:13px}
+  .finding .rec b{color:var(--deed)}
+
+  /* per-deed extracted tables */
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--line);margin-bottom:8px}
+  th,td{text-align:left;padding:10px 14px;font-size:13.5px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--chip);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft)}
+  tr:last-child td{border-bottom:none}
+  td code{background:var(--chip);padding:1px 6px;border-radius:6px;font-size:12px;font-family:var(--mono)}
+  .deedhdr{display:flex;align-items:center;gap:10px;margin:22px 0 7px}
+  .deedhdr .dno{width:30px;height:30px;border-radius:50%;background:var(--deed);color:#fff;display:grid;place-items:center;font-weight:800;font-size:13px}
+  .deedhdr b{font-size:15px} .deedhdr .conf{margin-left:auto;font-size:11px;font-weight:700;padding:2px 9px;border-radius:20px}
+  .conf.hi{background:#e3f3eb;color:var(--land)} .conf.lo{background:#fdeede;color:var(--warn)}
+  .flagcell{color:var(--warn);font-weight:600}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 8px;border-radius:20px;margin-left:6px}
+  .tag.ai{background:#e7ebfd;color:var(--deed)} .tag.code{background:#eef0e8;color:#5a6b3a}
+
+  .note{background:#fbfaf5;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:14px}
+  .note h4{margin:0 0 6px;font-size:14px}
+  .note p{margin:0 0 8px;font-size:13px;color:var(--soft)}
+  .note p:last-child{margin:0}
+  .note .x{color:var(--broke);font-weight:700}
+  footer{text-align:center;color:var(--soft);font-size:12px;margin-top:40px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">Solution 4 · Sale Deed Chain Validator</div>
+    <h1>Title <span class="em">Chain Report</span></h1>
+    <p class="sub">Reconstructed ownership history from the uploaded deed bundle, with every transfer
+      link verified for identity, property and recital continuity.</p>
+    <div class="meta-row">
+      <span class="ver">4 deeds · 1998 → 2023</span>
+      <span class="ver">Plot 42, Sy. 127/A, Kondapur</span>
+      <span class="ver sample">⚠ SAMPLE — synthetic data</span>
+    </div>
+  </header>
+
+  <!-- VERDICT -->
+  <div class="verdict">
+    <div class="badge">⚠️</div>
+    <div>
+      <h2>Review Required — chain largely intact, 2 issues to resolve</h2>
+      <p class="vsum">Ownership flows from the 1998 root deed to the current owner, but one link relies on a
+        transliteration-variant name match and one transfer shows an unexplained increase in extent —
+        a deed may be missing. A human reviewer should clear both before the chain is treated as clean.</p>
+      <div class="counts">
+        <span class="vc ok">✓ 1 link clean</span>
+        <span class="vc warn">⚠ 1 weak link</span>
+        <span class="vc gap">⛳ 1 suspected missing deed</span>
+        <span class="vc broke">✕ 0 broken</span>
+      </div>
+    </div>
+  </div>
+  <p class="disclaimer">This is an automated screening of the documents provided. It is <b>not a legal
+    opinion on marketable title</b> and does not verify the deeds against the government registry
+    (see methodology). It flags; a human decides.</p>
+
+  <!-- AT A GLANCE -->
+  <div class="glance">
+    <div class="g"><div class="l">Overall verdict</div><div class="v" style="color:var(--warn)">Review</div></div>
+    <div class="g"><div class="l">Deeds in chain</div><div class="v">4 <small>/ 4 read</small></div></div>
+    <div class="g"><div class="l">Ownership span</div><div class="v">25 yrs <small>1998–2023</small></div></div>
+    <div class="g"><div class="l">Extraction conf.</div><div class="v">3 hi · 1 low</div></div>
+  </div>
+
+  <!-- PROPERTY -->
+  <h3 class="sec"><span class="dot"></span>Property under examination</h3>
+  <div class="prop">
+    <table>
+      <tr><th style="width:33%">Survey / Plot</th><td>Survey No. <code>127/A</code>, Plot No. <code>42</code></td></tr>
+      <tr><th>Extent</th><td>300 sq. yards (≈ 250.8 sq. m)</td></tr>
+      <tr><th>Location</th><td>Kondapur Village, Serilingampally Mandal, Ranga Reddy District, Telangana</td></tr>
+      <tr><th>Registering office (SRO)</th><td>Sub-Registrar, Serilingampally</td></tr>
+      <tr><th>Boundaries (per latest deed)</th><td>N: Plot 41 · S: 30-ft road · E: Plot 43 · W: open land</td></tr>
+    </table>
+  </div>
+
+  <!-- TIMELINE -->
+  <h3 class="sec"><span class="dot"></span>Ownership timeline <span class="tag code">judgement = code</span></h3>
+  <p class="lead">Each circle is an owner; each dashed connector is the registered deed that transferred the
+    property to the next owner, with the link's verification verdict.</p>
+
+  <div class="timeline">
+
+    <!-- Owner 1 -->
+    <div class="owner">
+      <div class="node">A</div>
+      <div class="card">
+        <div class="role">Root owner · acquired 1998</div>
+        <div class="nm">Sri Venkata Rao</div>
+        <div class="det">s/o Narasimha Rao · R/o Kondapur · acquired under <code>Doc 1234/1998</code>, SRO Serilingampally</div>
+      </div>
+    </div>
+
+    <!-- Link A→B -->
+    <div class="link ok">
+      <div></div>
+      <div class="lcard">
+        <div class="lhead">
+          <span class="badge b-ok">✓ LINKED</span>
+          <span class="deedref">Sale Deed · Doc 2451/2007 · reg. 14-Mar-2007 · ₹18,00,000</span>
+        </div>
+        <div class="check">
+          <span class="pass">identity ✓</span><span class="pass">property ✓</span>
+          <span class="pass">recital → 1234/1998 ✓</span><span class="pass">dates ✓</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Owner 2 -->
+    <div class="owner">
+      <div class="node">B</div>
+      <div class="card">
+        <div class="role">Owner · 2007</div>
+        <div class="nm">Smt. Lakshmi Devi</div>
+        <div class="det">w/o Ramesh Babu · purchaser in 2451/2007; vendor in 2007 sale below</div>
+      </div>
+    </div>
+
+    <!-- Link B→C  (weak) -->
+    <div class="link warn">
+      <div></div>
+      <div class="lcard">
+        <div class="lhead">
+          <span class="badge b-warn">⚠ WEAK LINK</span>
+          <span class="deedref">Sale Deed · Doc 7789/2015 · reg. 02-Sep-2015 · ₹42,00,000</span>
+        </div>
+        <div class="check">
+          <span class="pass">identity ✓<small></small></span><span class="pass">property ✓</span>
+          <span class="pass">recital → 2451/2007 ✓</span><span class="pass">dates ✓</span>
+        </div>
+        <p class="lnote">Vendor printed as <b>“Laxmi Devi”</b> vs <b>“Lakshmi Devi”</b> in the prior deed —
+          transliteration variance. Resolved to the same person via father/husband name + address match,
+          but a manual eyeball is advised. <i>Confidence 0.71.</i></p>
+      </div>
+    </div>
+
+    <!-- Owner 3 -->
+    <div class="owner">
+      <div class="node">C</div>
+      <div class="card">
+        <div class="role">Owner · 2015</div>
+        <div class="nm">Mohd. Imran Khan</div>
+        <div class="det">s/o Abdul Rahman Khan · purchaser in 7789/2015; vendor in 2023 sale below</div>
+      </div>
+    </div>
+
+    <!-- Link C→D  (gap) -->
+    <div class="link gap">
+      <div></div>
+      <div class="lcard">
+        <div class="lhead">
+          <span class="badge b-gap">⛳ SUSPECTED MISSING DEED</span>
+          <span class="deedref">Sale Deed · Doc 3456/2023 · reg. 21-Jun-2023 · ₹95,00,000</span>
+        </div>
+        <div class="check">
+          <span class="pass">identity ✓</span><span class="fail">property ✗ extent</span>
+          <span class="fail">recital ✗</span><span class="pass">dates ✓</span>
+        </div>
+        <p class="lnote">Vendor conveys <b>300 sq. yds</b>, but acquired only <b>200 sq. yds</b> under
+          7789/2015. The extra 100 sq. yds has no source deed in this bundle, and the 2023 recital cites an
+          unknown <code>Doc 6620/2019</code> not provided. <b>A deed is likely missing.</b></p>
+      </div>
+    </div>
+
+    <!-- Owner 4 (current) -->
+    <div class="owner cur">
+      <div class="node">D</div>
+      <div class="card">
+        <div class="role">Owner · 2023</div>
+        <div class="nm">Smt. Ananya Sharma</div>
+        <div class="det">w/o Karthik Sharma · purchaser in 3456/2023 · holds property today</div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- FINDINGS -->
+  <h3 class="sec"><span class="dot"></span>Findings &amp; recommended actions</h3>
+  <p class="lead">Every flag, with the exact evidence the verdict was based on.</p>
+
+  <div class="finding gap">
+    <h4><span class="sev" style="background:#fde7da;color:var(--gap)">HIGH</span>Unexplained increase in extent (C → D)</h4>
+    <div class="body">The 2023 sale conveys 300 sq. yds, but the vendor (Mohd. Imran Khan) is shown acquiring
+      only 200 sq. yds in 2015. The chain for the remaining 100 sq. yds is unaccounted for in this bundle.</div>
+    <div class="ev">deed[7789/2015].buyer_extent = 200 sq.yd
+deed[3456/2023].sold_extent  = 300 sq.yd
+deed[3456/2023].recital_refs = ["7789/2015", "6620/2019"]   ← 6620/2019 NOT in bundle</div>
+    <div class="rec"><b>Action:</b> obtain <b>Doc 6620/2019</b> (or an Encumbrance Certificate for Sy. 127/A,
+      2015–2023) to account for the additional extent before clearing the chain.</div>
+  </div>
+
+  <div class="finding">
+    <h4><span class="sev" style="background:#fdeede;color:var(--warn)">MEDIUM</span>Name transliteration variance (B → C)</h4>
+    <div class="body">The vendor's name is spelled differently across the two deeds. Matched to the same
+      individual on father/husband name and address, but the spelling difference is a manual-review item.</div>
+    <div class="ev">deed[2451/2007].buyer = "Lakshmi Devi, w/o Ramesh Babu"
+deed[7789/2015].seller = "Laxmi Devi, w/o Ramesh Babu"
+match_basis = {husband:"Ramesh Babu"✓, address:"Kondapur"✓}  name_similarity = 0.86</div>
+    <div class="rec"><b>Action:</b> confirm identity via PAN/Aadhaar or a notarised one-and-the-same affidavit.</div>
+  </div>
+
+  <div class="finding ok">
+    <h4><span class="sev" style="background:#e3f3eb;color:var(--land)">CLEAR</span>Root → Owner B link verified (A → B)</h4>
+    <div class="body">Identity, property identifiers, recital reference and dates all reconcile cleanly between
+      the 1998 root deed and the 2007 transfer. No action needed.</div>
+  </div>
+
+  <!-- PER-DEED EXTRACTED DATA -->
+  <h3 class="sec"><span class="dot"></span>Extracted data, per deed <span class="tag ai">reading = AI</span></h3>
+  <p class="lead">What the model read from each document — kept visible so the extraction itself is auditable.
+    Low-confidence fields are marked for review, never silently trusted.</p>
+
+  <!-- Deed 4 -->
+  <div class="deedhdr"><span class="dno">4</span><b>Sale Deed · Doc 3456/2023</b><span class="conf hi">conf 0.94</span></div>
+  <table>
+    <tr><th style="width:24%">Field</th><th>Value</th></tr>
+    <tr><td>Deed type</td><td>Sale Deed</td></tr>
+    <tr><td>Registration</td><td>21-Jun-2023 · SRO Serilingampally · <code>3456/2023</code></td></tr>
+    <tr><td>Vendor (seller)</td><td>Mohd. Imran Khan, s/o Abdul Rahman Khan</td></tr>
+    <tr><td>Vendee (buyer)</td><td>Smt. Ananya Sharma, w/o Karthik Sharma</td></tr>
+    <tr><td>Property</td><td>Plot 42, Sy. 127/A, Kondapur · <b>300 sq. yds</b></td></tr>
+    <tr><td>Consideration</td><td>₹95,00,000</td></tr>
+    <tr><td>e-Stamp</td><td><code>IN-TG48...2023</code></td></tr>
+    <tr><td>Prior-deed recital</td><td class="flagcell">"...acquired under Doc 7789/2015 and 6620/2019..." ⚠ 6620/2019 not in bundle</td></tr>
+  </table>
+
+  <!-- Deed 3 -->
+  <div class="deedhdr"><span class="dno">3</span><b>Sale Deed · Doc 7789/2015</b><span class="conf lo">conf 0.71 · review</span></div>
+  <table>
+    <tr><th style="width:24%">Field</th><th>Value</th></tr>
+    <tr><td>Registration</td><td>02-Sep-2015 · SRO Serilingampally · <code>7789/2015</code></td></tr>
+    <tr><td>Vendor (seller)</td><td class="flagcell">"Laxmi Devi", w/o Ramesh Babu ⚠ spelling variance</td></tr>
+    <tr><td>Vendee (buyer)</td><td>Mohd. Imran Khan, s/o Abdul Rahman Khan</td></tr>
+    <tr><td>Property</td><td>Plot 42, Sy. 127/A, Kondapur · <b>200 sq. yds</b></td></tr>
+    <tr><td>Consideration</td><td>₹42,00,000</td></tr>
+    <tr><td>Prior-deed recital</td><td>"...acquired under Doc 2451/2007..."</td></tr>
+  </table>
+
+  <!-- Deed 2 -->
+  <div class="deedhdr"><span class="dno">2</span><b>Sale Deed · Doc 2451/2007</b><span class="conf hi">conf 0.92</span></div>
+  <table>
+    <tr><th style="width:24%">Field</th><th>Value</th></tr>
+    <tr><td>Registration</td><td>14-Mar-2007 · SRO Serilingampally · <code>2451/2007</code></td></tr>
+    <tr><td>Vendor (seller)</td><td>Sri Venkata Rao, s/o Narasimha Rao</td></tr>
+    <tr><td>Vendee (buyer)</td><td>Smt. Lakshmi Devi, w/o Ramesh Babu</td></tr>
+    <tr><td>Property</td><td>Plot 42, Sy. 127/A, Kondapur · 300 sq. yds</td></tr>
+    <tr><td>Consideration</td><td>₹18,00,000</td></tr>
+    <tr><td>Prior-deed recital</td><td>"...acquired under Doc 1234/1998..."</td></tr>
+  </table>
+
+  <!-- Deed 1 -->
+  <div class="deedhdr"><span class="dno">1</span><b>Sale Deed · Doc 1234/1998 (root)</b><span class="conf hi">conf 0.90</span></div>
+  <table>
+    <tr><th style="width:24%">Field</th><th>Value</th></tr>
+    <tr><td>Registration</td><td>09-Jul-1998 · SRO Serilingampally · <code>1234/1998</code></td></tr>
+    <tr><td>Vendor (seller)</td><td>M/s Kondapur Developers (original layout)</td></tr>
+    <tr><td>Vendee (buyer)</td><td>Sri Venkata Rao, s/o Narasimha Rao</td></tr>
+    <tr><td>Property</td><td>Plot 42, Sy. 127/A, Kondapur · 300 sq. yds</td></tr>
+    <tr><td>Consideration</td><td>₹2,50,000</td></tr>
+    <tr><td>Prior-deed recital</td><td>Layout allotment — root of chain in this bundle</td></tr>
+  </table>
+
+  <!-- METHODOLOGY / HONESTY -->
+  <div class="note">
+    <h4>How this report was produced — and its limits</h4>
+    <p><b>Reading (AI):</b> each deed image/PDF was read by a vision model into a structured record.
+      <b>Judgement (code):</b> the chain verdict is computed by deterministic rules (identity, property,
+      recital and date continuity) — not by the model — so it is explainable and repeatable.</p>
+    <p><span class="x">Not certified here:</span> legal marketability of title, encumbrances/litigation not in
+      the bundle, and authenticity against the government registry. India has <b>no official title-lookup API</b>;
+      registry cross-check (Encumbrance Certificate, e-stamp / QR / digital-signature verification) is a planned
+      <b>Phase-2 advisory</b> step. Until then this is a screening aid that <b>flags for a human</b>, never an
+      auto-clearance.</p>
+  </div>
+
+  <footer>
+    Solution 4 · Sale Deed Chain Validator — sample title report · synthetic data for layout review only
+  </footer>
+
+</div>
+</body>
+</html>

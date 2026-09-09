@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Solution 4 — Sale Deed Chain Validator · POC Overview</title>
+<style>
+  :root{
+    --ink:#1b211f; --paper:#f6f4ee; --line:#ddd8c9; --card:#fff;
+    --deed:#3b5bdb; --land:#2f9e6f; --warn:#e0913c; --gap:#c2410c; --broke:#d6336c;
+    --soft:#6a6f6a; --chip:#e9e6da; --mono:'SFMono-Regular',Consolas,monospace;
+  }
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--paper);color:var(--ink);
+    font-family:'Segoe UI',system-ui,-apple-system,sans-serif;line-height:1.55}
+  .wrap{max-width:1000px;margin:0 auto;padding:32px 22px 90px}
+  header{text-align:center;padding:14px 0 4px}
+  .kicker{letter-spacing:.18em;text-transform:uppercase;font-size:12px;color:var(--soft);font-weight:700}
+  h1{font-size:33px;margin:6px 0 6px;line-height:1.1}
+  h1 .em{color:var(--deed)}
+  .sub{color:var(--soft);font-size:16px;max-width:680px;margin:0 auto}
+  .meta-row{display:flex;gap:8px;justify-content:center;flex-wrap:wrap;margin-top:12px}
+  .ver{font-family:var(--mono);font-size:12px;background:var(--chip);padding:3px 10px;border-radius:20px;color:var(--soft)}
+
+  .tldr{background:var(--card);border:1px solid var(--line);border-radius:16px;border-left:7px solid var(--deed);
+    padding:18px 22px;margin:24px 0;box-shadow:0 8px 24px rgba(59,91,219,.08)}
+  .tldr b{color:var(--deed)}
+  .tldr .spine{margin-top:8px;font-size:13.5px;color:var(--soft)}
+  .tldr .spine code{font-family:var(--mono);background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+
+  h2{font-size:23px;margin:48px 0 6px;display:flex;align-items:center;gap:10px}
+  h2 .dot{width:12px;height:12px;border-radius:50%;background:var(--deed)}
+  .lead{color:var(--soft);margin:0 0 18px;font-size:14.5px}
+
+  /* problem strip */
+  .pain{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+  .pain .p{background:var(--card);border:1px solid var(--line);border-radius:12px;padding:14px 16px}
+  .pain .p .ic{font-size:22px}
+  .pain .p b{display:block;margin:6px 0 2px;font-size:15px}
+  .pain .p span{font-size:13px;color:var(--soft)}
+
+  /* pipeline */
+  .pipe{display:flex;flex-direction:column;gap:0}
+  .step{display:grid;grid-template-columns:48px 1fr;gap:15px;align-items:start;position:relative;padding:11px 0}
+  .step .n{width:48px;height:48px;border-radius:50%;display:grid;place-items:center;font-weight:800;color:#fff;background:var(--deed);font-size:15px;z-index:2}
+  .step:not(:last-child)::after{content:"";position:absolute;left:24px;top:48px;bottom:-11px;width:2px;background:var(--line);z-index:1}
+  .step .body b{font-size:16px}
+  .step .body .d{color:var(--soft);font-size:14px}
+  .step .n.ai{background:var(--deed)} .step .n.code{background:#5a6b3a} .step .n.rep{background:var(--land)}
+  .tag{display:inline-block;font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 8px;border-radius:20px;margin-left:6px;vertical-align:middle}
+  .tag.ai{background:#e7ebfd;color:var(--deed)} .tag.code{background:#eef0e8;color:#5a6b3a} .tag.rep{background:#e3f3eb;color:var(--land)}
+
+  /* tier ladder */
+  .ladder{display:flex;flex-direction:column;gap:11px}
+  .tier{background:var(--card);border:1px solid var(--line);border-left:6px solid var(--deed);border-radius:13px;padding:14px 18px}
+  .tier h4{margin:0 0 3px;font-size:16px;display:flex;align-items:center;gap:9px;flex-wrap:wrap}
+  .tier .scope{font-size:10px;font-weight:800;letter-spacing:.04em;padding:2px 9px;border-radius:20px}
+  .scope.core{background:#e3f3eb;color:var(--land)} .scope.demo{background:#fdeede;color:var(--warn)}
+  .scope.stub{background:#e7ebfd;color:var(--deed)}
+  .tier p{margin:4px 0 0;font-size:13.5px;color:#3a403d}
+  .tier.t1{border-left-color:var(--deed)} .tier.t2{border-left-color:var(--land)}
+  .tier.t3{border-left-color:var(--warn)} .tier.t4{border-left-color:var(--soft)}
+  .tier code{font-family:var(--mono);background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+
+  /* value props */
+  .vps{display:grid;grid-template-columns:repeat(2,1fr);gap:12px}
+  .vp{background:var(--card);border:1px solid var(--line);border-top:4px solid var(--deed);border-radius:12px;padding:14px 16px}
+  .vp.hero{border-top-color:var(--gap);box-shadow:0 8px 22px rgba(194,65,12,.10)}
+  .vp .ic{font-size:20px}
+  .vp b{display:block;margin:5px 0 3px;font-size:15px}
+  .vp span{font-size:13px;color:var(--soft)}
+  .vp .star{font-size:10px;font-weight:800;color:var(--gap);background:#fde7da;padding:2px 8px;border-radius:20px;margin-left:6px}
+
+  /* plan table */
+  table{width:100%;border-collapse:collapse;background:var(--card);border-radius:12px;overflow:hidden;border:1px solid var(--line)}
+  th,td{text-align:left;padding:11px 14px;font-size:13.5px;border-bottom:1px solid var(--line);vertical-align:top}
+  th{background:var(--chip);font-size:11px;letter-spacing:.04em;text-transform:uppercase;color:var(--soft)}
+  tr:last-child td{border-bottom:none}
+  td .ph{font-weight:800;color:var(--deed)}
+  td code{font-family:var(--mono);background:var(--chip);padding:1px 6px;border-radius:5px;font-size:12px}
+  .gate{font-size:10px;font-weight:800;color:var(--gap);background:#fde7da;padding:2px 8px;border-radius:20px}
+  .ip{font-size:10px;font-weight:800;color:var(--land);background:#e3f3eb;padding:2px 8px;border-radius:20px}
+
+  /* stack chips */
+  .stack{display:flex;gap:8px;flex-wrap:wrap;margin-top:6px}
+  .stack span{font-size:12px;background:var(--card);border:1px solid var(--line);border-radius:20px;padding:5px 12px}
+  .stack span b{color:var(--deed)}
+
+  .note{background:#fbfaf5;border:1px solid var(--line);border-radius:14px;padding:16px 20px;margin-top:16px}
+  .note h4{margin:0 0 6px;font-size:14px}
+  .note p{margin:0 0 8px;font-size:13px;color:var(--soft)}
+  .note p:last-child{margin:0}
+  .note .x{color:var(--broke);font-weight:700}
+  .note .ok{color:var(--land);font-weight:700}
+  footer{text-align:center;color:var(--soft);font-size:12px;margin-top:42px}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <div class="kicker">Solution 4 · Sale Deed Chain Validator</div>
+    <h1>From a stack of deeds to a <span class="em">verified ownership chain</span></h1>
+    <p class="sub">A POC that reads property sale deeds (PDF or photo), reconstructs the chain of title,
+      and flags every broken or missing link — with the evidence to back each call.</p>
+    <div class="meta-row">
+      <span class="ver">POC · ~5–6 days</span>
+      <span class="ver">Python + Gemini</span>
+      <span class="ver">flags, never auto-clears</span>
+    </div>
+  </header>
+
+  <div class="tldr">
+    <b>The idea.</b> Title due-diligence today means a person reading a pile of deeds line by line to check
+    that ownership flows unbroken from one owner to the next. Solution 4 does that first pass in minutes and
+    shows its working.
+    <div class="spine"><b>Design spine — </b><code>the AI reads, the code judges</code>: a vision model turns
+      messy scans into structured data; deterministic code decides whether the chain holds. So the verdict is
+      explainable, repeatable, and defensible — not a black box.</div>
+  </div>
+
+  <!-- PROBLEM -->
+  <h2><span class="dot"></span>The pain it removes</h2>
+  <div class="pain">
+    <div class="p"><div class="ic">⏳</div><b>High TAT</b><span>Manual title search takes hours–days of expert reading per property.</span></div>
+    <div class="p"><div class="ic">🔍</div><b>Easy to miss a gap</b><span>A missing intermediate deed or a sells-more-than-owned jump slips past a tired reviewer.</span></div>
+    <div class="p"><div class="ic">🌐</div><b>Vernacular & scanned</b><span>Deeds are multilingual, photographed, handwritten — hard to process at scale.</span></div>
+  </div>
+
+  <!-- PIPELINE -->
+  <h2><span class="dot"></span>How it works — 4 stages</h2>
+  <p class="lead">Each stage is a small, independently testable unit.</p>
+  <div class="pipe">
+    <div class="step"><div class="n">1</div><div class="body"><b>Ingest</b><span class="tag code">code</span>
+      <div class="d">Accept PDF or image; render pages, handle multi-page deeds, assign each a doc ID.</div></div></div>
+    <div class="step"><div class="n ai">2</div><div class="body"><b>Extract</b><span class="tag ai">AI</span>
+      <div class="d">A vision-LLM reads each deed into a strict JSON record — parties, property, extent, dates, consideration, e-stamp, and the prior-deed recital. Low-confidence fields are flagged, never silently trusted.</div></div></div>
+    <div class="step"><div class="n code">3</div><div class="body"><b>Chain-link &amp; validate</b><span class="tag code">code</span>
+      <div class="d">Deterministic rules sort the deeds into a timeline and check each transfer: identity continuity, property &amp; extent, recital linkage, dates → a verdict per link.</div></div></div>
+    <div class="step"><div class="n rep">4</div><div class="body"><b>Report</b><span class="tag rep">output</span>
+      <div class="d">A structured JSON ownership graph + a visual HTML title report — timeline, findings with evidence, and an auditable per-deed data table.</div></div></div>
+  </div>
+
+  <!-- ANALYSIS SURFACE -->
+  <h2><span class="dot"></span>What it can analyze</h2>
+  <p class="lead">Organised as tiers. The POC <b>commits</b> to 0–2, <b>demos a slice</b> of 3, and <b>stubs</b> 4.</p>
+  <div class="ladder">
+    <div class="tier t1"><h4>Tier 0 · Extraction <span class="scope core">POC core</span></h4>
+      <p>Per deed: doc no, SRO, dates, <b>deed type</b>; parties (father/spouse, PAN, <b>GPA holder</b>); property (survey/plot, <b>extent</b>, boundaries, ULPIN); financials (consideration, <b>stamp duty, e-stamp no</b>); and the <b>flow-of-title recital</b>.</p></div>
+    <div class="tier t1"><h4>Tier 1 · Single-deed checks <span class="scope core">POC core</span></h4>
+      <p>Completeness · words-vs-figures consistency · <b>"is this really a sale, or a GPA / Agreement-to-Sell?"</b> (legally weak post-2011) · stamp-duty adequacy · party red flags (minor / NRI / POA / agri land).</p></div>
+    <div class="tier t2"><h4>Tier 2 · Chain checks <span class="scope core">POC core — the IP</span></h4>
+      <p>Identity continuity · property continuity · <b>extent arithmetic</b> (the "sells more than they own" = missing deed) · recital linkage · temporal gaps · traces-to-root · and telling a <b>missing registered deed</b> apart from a legitimate <b>non-registrable transition</b> (inheritance/partition) so it doesn't cry wolf.</p></div>
+    <div class="tier t3"><h4>Tier 3 · Risk &amp; fraud signals <span class="scope demo">POC demos a subset</span></h4>
+      <p>GPA-sale flag · under-valuation / under-stamping · suspicious price movement · boundary drift · encumbrance contradiction · (image-level) tamper signs.</p></div>
+    <div class="tier t4"><h4>Tier 4 · Registry &amp; authenticity <span class="scope stub">Phase-2 · advisory</span></h4>
+      <p>e-Stamp verify (SHCIL) · PKI signature validation · QR decode · EC cross-check via aggregator. <b>Reality:</b> India has <b>no official title API</b> — registry retrieval is manual/CAPTCHA, so this tier is advisory, never presented as authoritative.</p></div>
+  </div>
+
+  <!-- VALUE PROPS -->
+  <h2><span class="dot"></span>What we can credibly project</h2>
+  <p class="lead">Every one is demoable on real sample deeds — not slideware.</p>
+  <div class="vps">
+    <div class="vp hero"><div class="ic">🎯</div><b>Catches the missing deed <span class="star">money-shot</span></b><span>Extent-arithmetic + recital-gap detection surfaces an incomplete/fraudulent chain a human skims past.</span></div>
+    <div class="vp"><div class="ic">⚡</div><b>Minutes, not days</b><span>The preliminary title read that takes an associate hours — done in minutes. Hits the core TAT pain.</span></div>
+    <div class="vp"><div class="ic">📖</div><b>Reads the hard documents</b><span>Vernacular, scanned, handwritten-endorsed deeds — multilingual OCR + understanding in one pass. The differentiator.</span></div>
+    <div class="vp"><div class="ic">🧾</div><b>Explainable, not black-box</b><span>Every flag cites the exact field/recital — defensible in a government/audit setting.</span></div>
+    <div class="vp"><div class="ic">🔗</div><b>Structured output</b><span>A pile of PDFs → a clean JSON ownership graph the BuildNow permit flow can consume.</span></div>
+    <div class="vp"><div class="ic">🗂️</div><b>Triage at scale</b><span>Auto-pass clean chains, escalate only the flagged ones. Shadow-safe, like Solution 2.</span></div>
+  </div>
+
+  <!-- PLAN -->
+  <h2><span class="dot"></span>The build plan</h2>
+  <p class="lead">Phased so each step is independently demoable and risk is de-risked early. ~5–6 focused days, committed incrementally.</p>
+  <table>
+    <tr><th style="width:8%">Phase</th><th style="width:42%">What</th><th>Proves</th><th style="width:11%">Est.</th></tr>
+    <tr><td><span class="ph">0</span></td><td>Scaffold — folders, <b>deed JSON schema</b> (the contract), model wrapper, CLI</td><td>structure</td><td>0.5d</td></tr>
+    <tr><td><span class="ph">1</span></td><td>Extract one deed — vision-LLM → JSON + confidence flags, on <b>real</b> samples <span class="gate">de-risk first</span></td><td><b>the hard part works</b> — go/no-go gate</td><td>1–1.5d</td></tr>
+    <tr><td><span class="ph">2</span></td><td>Single-deed analysis + report-of-one — Tier-1 checks, render one deed</td><td>per-deed intelligence</td><td>1d</td></tr>
+    <tr><td><span class="ph">3</span></td><td>Chain link + validate — the Tier-2 engine, deterministic <span class="ip">core IP</span></td><td>the differentiator</td><td>1.5d</td></tr>
+    <tr><td><span class="ph">4</span></td><td>Report polish + demo — real data → timeline report, one command</td><td>the deliverable</td><td>0.5–1d</td></tr>
+    <tr><td><span class="ph">5</span></td><td><i>(optional)</i> authenticity stub — e-stamp / SHCIL teaser</td><td>the Phase-2 story</td><td>0.5d</td></tr>
+  </table>
+  <div class="stack">
+    <span><b>Python</b></span><span>Gemini <b>extract</b> (→ Claude fallback)</span><span>rapidfuzz <b>name match</b></span>
+    <span>Jinja2 <b>report</b></span><span>JSON on disk · no DB</span>
+  </div>
+
+  <!-- HONESTY -->
+  <div class="note">
+    <h4>What the POC proves — and its limits</h4>
+    <p><span class="ok">Proves:</span> extraction quality, chain-validation logic, and explainable reporting on a handful of real deeds.</p>
+    <p><span class="x">Does not:</span> give a legal opinion on marketable title, verify against the government
+      registry, or prove production scale. It <b>flags for a human, never auto-clears</b> title — failure in the safe direction.</p>
+  </div>
+
+  <footer>Solution 4 · Sale Deed Chain Validator — POC overview · sits alongside S1 (WhatsApp), S2 (Zoho routing), S3 (Voice)</footer>
+
+</div>
+</body>
+</html>
