@@ -65,6 +65,19 @@ _SCENARIOS = (
         "label": "Poor-quality scan",
         "demonstrates": "The scan is too blurred to rely on.",
     },
+    {
+        # A two-document scenario: attach this PAN first, then the "Wrong person"
+        # Aadhaar. On its own the PAN agrees with the application; the point is what
+        # happens when it sits on the same file as a different person's Aadhaar.
+        "id": "cross_document",
+        "filename": "pan_rithika.pdf",
+        "label": "Cross-document — PAN vs Aadhaar",
+        "demonstrates": (
+            "Attach this PAN, then the 'Wrong person' Aadhaar: the two identity "
+            "documents name different people, and the cross-document check flags it "
+            "for review."
+        ),
+    },
 )
 
 _SCENARIOS_BY_FILENAME = {scenario["filename"]: scenario for scenario in _SCENARIOS}

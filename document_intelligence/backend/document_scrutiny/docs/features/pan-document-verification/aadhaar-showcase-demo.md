@@ -11,7 +11,8 @@ different specimen lights up a different capability. The specimens are synthetic
 # Generate the specimens (once; deterministic).
 cd backend && uv run python scripts/generate_aadhaar_specimens.py
 # -> backend/samples/aadhaar/{aadhaar_clean,aadhaar_tampered_qr,
-#    aadhaar_invalid_number,aadhaar_mismatch,aadhaar_poor_scan}.pdf
+#    aadhaar_invalid_number,aadhaar_mismatch,aadhaar_poor_scan,aadhaar_name_typo,
+#    aadhaar_impossible_dob,pan_rithika}.pdf
 
 # Serve with REAL Gemini extraction and the mock safety net underneath, so a
 # dropped network or spent key cannot stop the demo on stage.
@@ -26,7 +27,7 @@ Open **BN/2026/0601**. The **Demo** menu (top bar) lists the Aadhaar scenarios; 
 attaches the specimen and runs it in one click. (You can also drag any specimen PDF
 from `backend/samples/aadhaar/` into the workspace.)
 
-## The six scenarios
+## The scenarios
 
 | Scenario | Specimen | What the reviewer sees | Capability shown |
 | --- | --- | --- | --- |
@@ -34,9 +35,16 @@ from `backend/samples/aadhaar/` into the workspace.)
 | **Misread name** | `aadhaar_name_typo.pdf` | Name reads "Ritika" for "Rithika" (93% similar) → "Needs a look" with the score; needs a look | Fuzzy name matching — a near-match is flagged for review, not rejected. The QR carries the correct spelling (so QR-vs-print is clean — a misread, not a tamper), and the department vouches for the card while noting the name, so the misread shows up twice over |
 | **Tampered — QR ≠ print** | `aadhaar_tampered_qr.pdf` | "QR code contradicts the printed details" (name + number); document flagged | Real QR decode + integrity check (the honest tamper signal) |
 | **Invalid number** | `aadhaar_invalid_number.pdf` | "Aadhaar number fails its checksum"; failed | Real Verhoeff checksum validation |
-| **Wrong person** | `aadhaar_mismatch.pdf` | Name and date of birth disagree with the application; failed | Cross-document field matching (fuzzy name, exact date) |
+| **Impossible date of birth** | `aadhaar_impossible_dob.pdf` | "The date of birth is in the future"; failed, caught before any comparison | Internal-consistency check — the document is judged against itself (a future/absurd DOB), from the document alone |
+| **Wrong person** | `aadhaar_mismatch.pdf` | Name and date of birth disagree with the application; failed | Cross-document field matching against the application (fuzzy name, exact date) |
+| **Cross-document — PAN vs Aadhaar** | `pan_rithika.pdf`, then `aadhaar_mismatch.pdf` | The PAN reads clean against the application; the Aadhaar then carries "Name does not match another document", naming the PAN it disagrees with | Cross-document consistency — the identity documents on one file are reconciled against **each other**, not just the application |
 | **Poor scan** | `aadhaar_poor_scan.pdf` | "Scan quality is poor — verify against the original"; needs a look | Document quality assessment |
 | **Department down** | `aadhaar_clean.pdf` + Demo → "Never respond" | UIDAI could not be reached; retry offered | Issuer verification unavailable + retry |
+
+The **Cross-document** scenario is the only two-document one: attach the applicant's
+PAN first, then the "Wrong person" Aadhaar. The check runs on the second document to
+settle, comparing its name against the ones already read off the file — so it names
+the PAN on the Aadhaar's report.
 
 ## Notes to say out loud (honest boundaries)
 
@@ -47,5 +55,14 @@ from `backend/samples/aadhaar/` into the workspace.)
   not pixel forensics.
 - Quality assessment is a heuristic (scan sharpness + resolution); it judges
   legibility, not authenticity.
+- The internal-consistency check on the DOB is plausibility, not identity: a future
+  date or one implying an age over ~120 fails; a year-only date (`yyyy-01-01`) or an
+  unreadable one is a "needs a look", not a failure.
+- The cross-document check runs during analysis, on the last identity document to
+  settle on the file — so it names the siblings already read. It is not recomputed
+  when a field is later edited by hand; re-running the analysis is what refreshes it.
 - Extraction is real Gemini; the mock reader is only a fallback so the demo cannot
   hard-fail. Which engine produced a result is surfaced when the fallback is used.
+- The PAN specimen (`pan_rithika.pdf`) is a plain synthetic card (watermarked
+  "SPECIMEN — NOT A REAL PAN"), enough to read a name/DOB/PAN off for the
+  cross-document scenario; it is not a faithful PAN reproduction.
